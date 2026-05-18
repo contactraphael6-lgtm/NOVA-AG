@@ -1,0 +1,3937 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova — Votre Assistant IA Personnel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+
+/* ===== PAGE D'ACCUEIL ===== */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #020610;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+#splash.hidden { opacity: 0; pointer-events: none; transform: scale(1.04); }
+
+/* Grille circuit */
+.splash-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,80,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,80,255,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Lignes animées circuit */
+.circuit-lines {
+  position: absolute; inset: 0; overflow: hidden;
+}
+.circuit-lines::before, .circuit-lines::after {
+  content: '';
+  position: absolute;
+  background: linear-gradient(90deg, transparent, rgba(0,120,255,0.6), transparent);
+  height: 1px; width: 300px;
+  animation: scanH 4s linear infinite;
+}
+.circuit-lines::before { top: 30%; animation-delay: 0s; }
+.circuit-lines::after { top: 70%; animation-delay: 2s; }
+
+@keyframes scanH {
+  0% { left: -300px; }
+  100% { left: 110%; }
+}
+
+/* Particules flottantes */
+.splash-particles {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.particle {
+  position: absolute; border-radius: 50%;
+  background: rgba(0, 120, 255, 0.7);
+  animation: floatParticle linear infinite;
+}
+
+@keyframes floatParticle {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-120vh) scale(0.3); opacity: 0; }
+}
+
+/* Vagues bleues */
+.splash-waves {
+  position: absolute; right: -100px; top: 50%; transform: translateY(-50%);
+  width: 600px; height: 600px; opacity: 0.15;
+}
+
+/* Logo central */
+.splash-center {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+
+/* Anneaux rotatifs */
+.ring-container {
+  position: relative; width: 340px; height: 340px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.ring {
+  position: absolute; border-radius: 50%; border: 1px solid;
+  animation: spinRing linear infinite;
+}
+.ring-1 {
+  width: 340px; height: 340px;
+  border-color: rgba(0,120,255,0.5);
+  box-shadow: 0 0 20px rgba(0,120,255,0.3), inset 0 0 20px rgba(0,120,255,0.1);
+  animation-duration: 8s;
+}
+.ring-2 {
+  width: 290px; height: 290px;
+  border-color: rgba(0,160,255,0.3);
+  animation-duration: 12s; animation-direction: reverse;
+}
+.ring-3 {
+  width: 240px; height: 240px;
+  border-color: rgba(0,200,255,0.2);
+  animation-duration: 6s;
+}
+
+/* Points sur les anneaux */
+.ring-1::before, .ring-1::after {
+  content: ''; position: absolute; width: 8px; height: 8px;
+  border-radius: 50%; background: rgba(0,150,255,0.9);
+  box-shadow: 0 0 12px rgba(0,150,255,1);
+  top: 50%; left: -4px; transform: translateY(-50%);
+}
+.ring-1::after { left: auto; right: -4px; }
+
+@keyframes spinRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Cercle central */
+.ring-core {
+  width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #0a1a3a, #020610);
+  border: 1.5px solid rgba(0,120,255,0.6);
+  box-shadow: 0 0 40px rgba(0,100,255,0.4), inset 0 0 30px rgba(0,80,255,0.2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+}
+
+/* Logo N */
+.nova-logo-n {
+  font-family: 'Orbitron', monospace;
+  font-size: 52px; font-weight: 900;
+  background: linear-gradient(135deg, #4488ff, #88ccff, #ffffff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(100,180,255,0.8));
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.nova-logo-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.4em;
+  color: rgba(180,220,255,0.9);
+  text-shadow: 0 0 10px rgba(100,180,255,0.6);
+}
+
+.nova-logo-sub {
+  font-size: 9px; letter-spacing: 0.15em; color: rgba(100,150,255,0.7);
+  margin-top: 4px; font-family: 'DM Sans', sans-serif; text-transform: uppercase;
+}
+
+/* Texte gauche */
+.splash-text-left {
+  position: absolute; left: 48px; top: 50%; transform: translateY(-50%);
+  z-index: 10;
+}
+.splash-text-left h1 {
+  font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900;
+  color: #fff; letter-spacing: 0.25em; line-height: 1;
+  text-shadow: 0 0 20px rgba(100,180,255,0.5);
+  margin-bottom: 20px;
+}
+.splash-taglines { display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px; }
+.splash-tagline {
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: rgba(180,210,255,0.8); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.splash-tagline span { color: #4488ff; }
+
+.splash-dots { display: flex; gap: 8px; }
+.sdot { width: 28px; height: 3px; border-radius: 2px; }
+.sdot:nth-child(1) { background: #4488ff; }
+.sdot:nth-child(2) { background: rgba(255,255,255,0.2); }
+.sdot:nth-child(3) { background: rgba(255,255,255,0.2); }
+
+/* Bas de page */
+.splash-bottom {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  z-index: 10; text-align: center;
+}
+.splash-slogan {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  letter-spacing: 0.3em; color: rgba(150,200,255,0.5);
+  text-transform: uppercase;
+}
+.splash-slogan span { color: #4488ff; }
+
+/* Bouton flèche */
+.splash-arrow-btn {
+  position: absolute; bottom: 36px; right: 48px; z-index: 10;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px solid rgba(0,120,255,0.7);
+  background: radial-gradient(circle, rgba(0,60,180,0.4), rgba(0,20,80,0.6));
+  box-shadow: 0 0 20px rgba(0,100,255,0.4), 0 0 40px rgba(0,100,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s;
+  animation: pulseBtn 2.5s ease-in-out infinite;
+}
+.splash-arrow-btn:hover {
+  box-shadow: 0 0 30px rgba(0,150,255,0.7), 0 0 60px rgba(0,150,255,0.4);
+  border-color: rgba(0,180,255,1);
+  transform: scale(1.08);
+}
+.splash-arrow-btn svg { width: 28px; height: 28px; fill: none; stroke: #88ccff; stroke-width: 2.5; }
+
+@keyframes pulseBtn {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,100,255,0.4), 0 0 40px rgba(0,100,255,0.2); }
+  50% { box-shadow: 0 0 30px rgba(0,150,255,0.6), 0 0 60px rgba(0,150,255,0.3); }
+}
+
+/* Coins décoratifs */
+.corner { position: absolute; width: 40px; height: 40px; z-index: 10; }
+.corner-tl { top: 20px; left: 20px; border-top: 2px solid rgba(0,120,255,0.5); border-left: 2px solid rgba(0,120,255,0.5); }
+.corner-tr { top: 20px; right: 20px; border-top: 2px solid rgba(0,120,255,0.5); border-right: 2px solid rgba(0,120,255,0.5); }
+.corner-bl { bottom: 20px; left: 20px; border-bottom: 2px solid rgba(0,120,255,0.5); border-left: 2px solid rgba(0,120,255,0.5); }
+.corner-br { bottom: 20px; right: 20px; border-bottom: 2px solid rgba(0,120,255,0.5); border-right: 2px solid rgba(0,120,255,0.5); }
+
+/* Scan line vertical */
+.splash-scanV {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(0,150,255,0.5), transparent);
+  animation: scanV 6s linear infinite;
+  z-index: 5;
+}
+@keyframes scanV {
+  0% { left: -10px; }
+  100% { left: 110%; }
+}
+
+/* ===== APP ===== */
+#app {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg, #0e0e10);
+  color: var(--text, #f0ede8);
+  overflow: hidden;
+}
+#app.visible { opacity: 1; pointer-events: all; }
+
+</style>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #c8a96e;
+    --accent2: #e8c98a;
+    --text: #f0ede8;
+    --muted: #7a7870;
+    --muted2: #a8a49e;
+    --nova-bubble: #1e1e24;
+    --user-bubble: #2a2318;
+    --danger: #e05c5c;
+    --success: #5cb87a;
+  }
+
+  body {
+    margin: 0; padding: 0;
+    background: #020610;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,169,110,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,169,110,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app header {
+    flex-shrink: 0;
+  }
+
+  #app .app-body {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nova-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2a2318, #3d3020);
+    border: 1.5px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--accent);
+    position: relative;
+  }
+
+  .nova-avatar::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--success);
+    border-radius: 50%;
+    bottom: -1px;
+    right: -1px;
+    border: 2px solid var(--bg);
+  }
+
+  .nova-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--accent2);
+    letter-spacing: 0.02em;
+  }
+
+  .nova-status {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .shopify-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--muted2);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .shopify-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .shopify-btn.connected { border-color: rgba(92,184,122,0.4); color: var(--success); }
+
+  /* Gmail panel */
+  .gmail-panel {
+    width: 340px;
+    border-left: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+  .gmail-panel.hidden { width: 0; border: none; overflow: hidden; }
+
+  .gmail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .gmail-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gmail-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .gmail-tab {
+    flex: 1;
+    padding: 9px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .gmail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .gmail-tab:hover { color: var(--text); }
+
+  .gmail-body { flex: 1; overflow-y: auto; }
+  .gmail-body::-webkit-scrollbar { width: 3px; }
+  .gmail-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Email list */
+  .email-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .email-item:hover { background: var(--surface); }
+  .email-item.unread .email-sender { font-weight: 500; color: var(--text); }
+  .email-sender { font-size: 12px; color: var(--muted2); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .email-subject { font-size: 13px; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-preview { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 2px; }
+
+  /* Compose form */
+  .compose-form { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .compose-field { display: flex; flex-direction: column; gap: 4px; }
+  .compose-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .compose-input {
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .compose-input:focus { border-color: var(--accent); }
+  .compose-input::placeholder { color: var(--muted); }
+  .compose-textarea { min-height: 120px; resize: vertical; }
+
+  /* Email detail */
+  .email-detail { padding: 16px; }
+  .email-detail-header { margin-bottom: 12px; }
+  .email-detail-subject { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .email-detail-meta { font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .email-detail-body { font-size: 13px; color: var(--muted2); line-height: 1.7; border-top: 1px solid var(--border); padding-top: 12px; white-space: pre-wrap; }
+
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted); cursor: pointer;
+    border: none; background: transparent; font-family: 'DM Sans', sans-serif;
+    margin-bottom: 12px; padding: 0;
+  }
+  .back-btn:hover { color: var(--accent); }
+
+  .gmail-connect-prompt {
+    padding: 24px 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .gmail-connect-prompt p { font-size: 13px; color: var(--muted2); line-height: 1.6; }
+
+  .gmail-setup-steps {
+    text-align: left;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 4px;
+    width: 100%;
+  }
+  .gmail-setup-steps p { font-size: 12px; color: var(--muted2); margin-bottom: 6px; font-weight: 500; }
+  .gmail-setup-steps ol { padding-left: 16px; }
+  .gmail-setup-steps li { font-size: 11px; color: var(--muted); line-height: 1.8; }
+  .gmail-setup-steps a { color: var(--accent); text-decoration: none; }
+  .gmail-setup-steps a:hover { text-decoration: underline; }
+
+  .clientid-input-row { display: flex; gap: 8px; width: 100%; margin-top: 8px; }
+  .clientid-input {
+    flex: 1; padding: 8px 10px; border-radius: 7px;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+  .clientid-input:focus { border-color: var(--accent); }
+  .clientid-input::placeholder { color: var(--muted); }
+
+  /* Sidebar + main layout */
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px 16px 8px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.15s;
+    font-size: 13px;
+    color: var(--muted2);
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .quick-action:hover { background: var(--surface); color: var(--text); }
+  .quick-action .qa-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 16px;
+  }
+
+  /* Main chat area */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Messages */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    max-width: 760px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-family: 'DM Serif Display', serif;
+  }
+
+  .msg.nova .msg-avatar {
+    background: linear-gradient(135deg, #2a2318, #3d3020);
+    border: 1px solid rgba(200,169,110,0.4);
+    color: var(--accent);
+  }
+
+  .msg.user .msg-avatar {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+  }
+
+  .msg-bubble {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 600px;
+  }
+
+  .msg.nova .msg-bubble {
+    background: var(--nova-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--user-bubble);
+    border: 1px solid rgba(200,169,110,0.15);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+  .msg.user .msg-time { text-align: right; }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+  .typing-indicator span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.4;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Action cards in messages */
+  .action-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    font-size: 12px;
+    color: var(--muted2);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 6px;
+  }
+  .action-card:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Shopify modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px;
+    width: 420px;
+    max-width: 90vw;
+  }
+
+  .modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+
+  .modal p { font-size: 13px; color: var(--muted2); margin-bottom: 20px; line-height: 1.6; }
+
+  .modal-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-input::placeholder { color: var(--muted); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+  .btn-primary {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #1a1208;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+
+  .btn-ghost {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted2);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== EXCEL EDITOR ===== */
+  .excel-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 300; display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  .excel-overlay.open { display: flex; }
+  .excel-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; width: 95vw; max-width: 1100px; height: 88vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .excel-toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+  }
+  .excel-toolbar-title { font-family: 'DM Serif Display',serif; font-size: 16px; color: var(--accent2); margin-right: 8px; }
+  .excel-filename { font-size: 12px; color: var(--muted); flex: 1; }
+  .tb-btn {
+    display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+    border-radius: 7px; border: 1px solid var(--border2); background: transparent;
+    color: var(--muted2); font-size: 12px; font-family: 'DM Sans',sans-serif;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tb-btn.primary { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 500; }
+  .tb-btn.primary:hover { background: var(--accent2); }
+  .tb-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  .excel-tabs {
+    display: flex; gap: 2px; padding: 6px 16px 0; border-bottom: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0; overflow-x: auto;
+  }
+  .sheet-tab {
+    padding: 6px 14px; font-size: 12px; border-radius: 6px 6px 0 0;
+    border: 1px solid var(--border2); border-bottom: none;
+    background: var(--surface); color: var(--muted2); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap; font-family: 'DM Sans',sans-serif;
+  }
+  .sheet-tab.active { background: var(--bg); color: var(--accent); border-color: var(--accent); }
+  .sheet-tab:hover:not(.active) { color: var(--text); }
+  .add-sheet-btn { padding: 6px 10px; font-size: 14px; background: none; border: 1px dashed var(--border2); border-bottom: none; border-radius: 6px 6px 0 0; color: var(--muted); cursor: pointer; }
+  .add-sheet-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .excel-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  .excel-grid-wrap { flex: 1; overflow: auto; position: relative; }
+  .excel-grid-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  .excel-grid-wrap::-webkit-scrollbar-track { background: var(--bg); }
+  .excel-grid-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  .excel-grid { border-collapse: collapse; font-size: 13px; font-family: 'DM Sans',sans-serif; }
+  .excel-grid th.row-num {
+    background: var(--surface); color: var(--muted); font-weight: 400;
+    padding: 0 8px; min-width: 40px; text-align: center; font-size: 11px;
+    border: 1px solid var(--border); position: sticky; left: 0; z-index: 2;
+    user-select: none;
+  }
+  .excel-grid th.col-header {
+    background: var(--surface); color: var(--muted); font-weight: 500;
+    padding: 6px 8px; min-width: 120px; text-align: center; font-size: 11px;
+    border: 1px solid var(--border); position: sticky; top: 0; z-index: 2;
+    user-select: none; cursor: pointer; white-space: nowrap;
+  }
+  .excel-grid th.col-header:hover { background: var(--surface2); color: var(--accent); }
+  .excel-grid th.corner { position: sticky; top: 0; left: 0; z-index: 3; background: var(--surface2); border: 1px solid var(--border); }
+  .excel-grid td {
+    border: 1px solid var(--border); padding: 0; min-width: 120px; max-width: 200px;
+    height: 28px; position: relative;
+  }
+  .excel-grid td.selected { outline: 2px solid var(--accent); outline-offset: -1px; z-index: 1; }
+  .excel-grid td input {
+    width: 100%; height: 100%; padding: 4px 8px; border: none; outline: none;
+    background: transparent; color: var(--text); font-size: 13px;
+    font-family: 'DM Sans',sans-serif;
+  }
+  .excel-grid td input:focus { background: var(--nova-bubble); }
+  .excel-grid tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+  .excel-grid tr:hover td { background: rgba(200,169,110,0.04); }
+
+  .excel-formula-bar {
+    display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+    border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+  }
+  .formula-cell-ref { font-size: 12px; color: var(--accent); font-weight: 500; min-width: 50px; }
+  .formula-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 13px; font-family: 'DM Sans',sans-serif;
+  }
+
+  .excel-statusbar {
+    display: flex; gap: 16px; padding: 4px 16px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted); flex-shrink: 0; background: var(--bg);
+  }
+
+  /* Nova AI modify panel */
+  .excel-ai-bar {
+    display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0; align-items: center;
+  }
+  .excel-ai-input {
+    flex: 1; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2);
+    background: var(--bg); color: var(--text); font-size: 13px;
+    font-family: 'DM Sans',sans-serif; outline: none;
+  }
+  .excel-ai-input:focus { border-color: var(--accent); }
+  .excel-ai-input::placeholder { color: var(--muted); }
+
+  /* Input area */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row:focus-within { border-color: rgba(200,169,110,0.4); }
+
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+  #user-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    border: none;
+    background: var(--accent);
+    color: #1a1208;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+    font-size: 16px;
+  }
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  /* Shopify data display */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--muted);
+    font-weight: 400;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .data-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .badge.paid { background: rgba(92,184,122,0.15); color: var(--success); }
+  .badge.pending { background: rgba(200,169,110,0.15); color: var(--accent); }
+
+  /* Scrollbar for sidebar */
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Facture panel */
+  .facture-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  .facture-overlay.open { display: flex; }
+  .facture-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 18px; width: 680px; max-width: 96vw; max-height: 92vh;
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .facture-modal::-webkit-scrollbar { width: 4px; }
+  .facture-modal::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .facture-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 0; position: sticky; top: 0;
+    background: var(--surface); z-index: 2; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .facture-header h2 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--accent2); }
+  .facture-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .facture-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .facture-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .facture-field { display: flex; flex-direction: column; gap: 5px; }
+  .facture-field.full { grid-column: 1 / -1; }
+  .facture-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .facture-input {
+    padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border2);
+    background: var(--bg); color: var(--text); font-size: 13px;
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .facture-input:focus { border-color: var(--accent); }
+  .facture-input::placeholder { color: var(--muted); }
+  .facture-section-title {
+    font-size: 11px; color: var(--accent); text-transform: uppercase;
+    letter-spacing: 0.1em; font-weight: 500; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  }
+  .items-table { width: 100%; border-collapse: collapse; }
+  .items-table th {
+    text-align: left; padding: 6px 8px; font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border);
+  }
+  .items-table td { padding: 6px 4px; vertical-align: middle; }
+  .items-table input { width: 100%; }
+  .item-desc { min-width: 180px; }
+  .add-item-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+    border-radius: 7px; border: 1px dashed var(--border2); background: transparent;
+    color: var(--muted2); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s; margin-top: 6px;
+  }
+  .add-item-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .del-item { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 4px; }
+  .del-item:hover { color: var(--danger); }
+  .totaux {
+    background: var(--bg); border-radius: 10px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .total-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted2); }
+  .total-row.grand { font-size: 15px; color: var(--text); font-weight: 500; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px; }
+  .total-row.grand span:last-child { color: var(--accent2); }
+  .facture-actions { display: flex; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+
+  /* ===== CALENDAR PANEL ===== */
+  .cal-panel {
+    width: 360px; border-left: 1px solid var(--border);
+    background: var(--bg); display: flex; flex-direction: column;
+    flex-shrink: 0; overflow: hidden; transition: width 0.3s ease;
+  }
+  .cal-panel.hidden { width: 0; border: none; overflow: hidden; }
+
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .cal-title { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+
+  .cal-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .cal-tab {
+    flex: 1; padding: 8px 6px; font-size: 11px; text-align: center;
+    color: var(--muted); cursor: pointer; border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .cal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .cal-body { flex: 1; overflow-y: auto; }
+  .cal-body::-webkit-scrollbar { width: 3px; }
+  .cal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Mini calendar grid */
+  .mini-cal { padding: 14px 16px; }
+  .mini-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .mini-cal-nav span { font-size: 13px; font-weight: 500; color: var(--text); }
+  .mini-cal-nav button { background: none; border: 1px solid var(--border2); color: var(--muted2); width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .mini-cal-nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-name { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cal-day {
+    text-align: center; padding: 6px 2px; font-size: 12px; color: var(--muted2);
+    border-radius: 6px; cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .cal-day:hover { background: var(--surface); color: var(--text); }
+  .cal-day.today { color: var(--accent); font-weight: 600; }
+  .cal-day.selected { background: var(--accent); color: #1a1208 !important; font-weight: 600; }
+  .cal-day.has-event::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .cal-day.other-month { opacity: 0.3; }
+
+  /* Events list */
+  .events-list { padding: 0 16px 16px; }
+  .events-date-header { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .event-item {
+    display: flex; gap: 10px; padding: 8px 10px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .event-item:hover { border-color: var(--accent); }
+  .event-color-bar { width: 3px; border-radius: 2px; flex-shrink: 0; align-self: stretch; }
+  .event-info { flex: 1; min-width: 0; }
+  .event-title { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .event-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .event-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px; }
+  .event-del:hover { color: var(--danger); }
+
+  /* New event form */
+  .new-event-form { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .cal-connect-prompt { padding: 20px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .cal-connect-prompt p { font-size: 13px; color: var(--muted2); line-height: 1.6; }
+
+  /* ===== GESTIONNAIRE FICHIERS EXCEL ===== */
+  .xl-manager-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 250; display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  .xl-manager-overlay.open { display: flex; }
+  .xl-manager-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; width: 680px; max-width: 95vw; max-height: 85vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .xl-manager-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+  }
+  .xl-manager-header h2 { font-family: 'DM Serif Display',serif; font-size: 18px; color: var(--accent2); }
+  .xl-manager-body { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .xl-manager-body::-webkit-scrollbar { width: 4px; }
+  .xl-manager-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .xl-file-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    transition: border-color 0.15s;
+  }
+  .xl-file-item:hover { border-color: var(--accent); }
+  .xl-file-icon { font-size: 24px; flex-shrink: 0; }
+  .xl-file-info { flex: 1; min-width: 0; }
+  .xl-file-name { font-size: 14px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xl-file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .xl-file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .xl-file-btn {
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border2);
+    background: transparent; color: var(--muted2); font-size: 11px;
+    font-family: 'DM Sans',sans-serif; cursor: pointer; transition: all 0.15s;
+  }
+  .xl-file-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .xl-file-btn.dl { background: var(--accent); color: #1a1208; border-color: var(--accent); }
+  .xl-file-btn.dl:hover { background: var(--accent2); }
+  .xl-file-btn.del:hover { border-color: var(--danger); color: var(--danger); }
+  .xl-empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* ===== MODE CONVERSATION VOCALE ===== */
+  .voice-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(2, 6, 16, 0.96);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 32px;
+    backdrop-filter: blur(20px);
+  }
+  .voice-overlay.open { display: flex; }
+
+  .voice-ring-wrap {
+    position: relative; width: 220px; height: 220px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .voice-ring {
+    position: absolute; border-radius: 50%; border: 1.5px solid rgba(0,120,255,0.3);
+    animation: voicePulse 2s ease-in-out infinite;
+  }
+  .voice-ring:nth-child(1) { width: 220px; height: 220px; animation-delay: 0s; }
+  .voice-ring:nth-child(2) { width: 180px; height: 180px; animation-delay: 0.3s; }
+  .voice-ring:nth-child(3) { width: 140px; height: 140px; animation-delay: 0.6s; }
+
+  .voice-ring.listening { border-color: rgba(255,80,80,0.5); animation-name: voicePulseRed; }
+  .voice-ring.speaking  { border-color: rgba(0,200,120,0.5); animation-name: voicePulseGreen; }
+
+  @keyframes voicePulse {
+    0%,100% { transform: scale(1); opacity: 0.3; }
+    50%      { transform: scale(1.06); opacity: 0.7; }
+  }
+  @keyframes voicePulseRed {
+    0%,100% { transform: scale(1); opacity: 0.4; box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+    50%      { transform: scale(1.08); opacity: 0.9; box-shadow: 0 0 30px rgba(255,80,80,0.3); }
+  }
+  @keyframes voicePulseGreen {
+    0%,100% { transform: scale(1); opacity: 0.4; }
+    50%      { transform: scale(1.08); opacity: 0.9; box-shadow: 0 0 30px rgba(0,200,120,0.3); }
+  }
+
+  .voice-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #1a2a4a, #020610);
+    border: 2px solid rgba(0,120,255,0.5);
+    box-shadow: 0 0 30px rgba(0,100,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900;
+    color: #88ccff; position: relative; z-index: 2;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .voice-avatar.listening {
+    border-color: rgba(255,80,80,0.7);
+    box-shadow: 0 0 40px rgba(255,80,80,0.4);
+  }
+  .voice-avatar.speaking {
+    border-color: rgba(0,200,120,0.7);
+    box-shadow: 0 0 40px rgba(0,200,120,0.4);
+  }
+
+  /* Ondes audio */
+  .voice-waves {
+    display: flex; gap: 5px; align-items: center; height: 40px;
+  }
+  .voice-wave-bar {
+    width: 4px; border-radius: 2px; background: rgba(0,120,255,0.5);
+    animation: waveIdle 1.5s ease-in-out infinite;
+  }
+  .voice-wave-bar:nth-child(1) { animation-delay: 0s; }
+  .voice-wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .voice-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .voice-wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .voice-wave-bar:nth-child(5) { animation-delay: 0.4s; }
+  .voice-wave-bar:nth-child(6) { animation-delay: 0.5s; }
+  .voice-wave-bar:nth-child(7) { animation-delay: 0.3s; }
+  .voice-wave-bar:nth-child(8) { animation-delay: 0.2s; }
+
+  @keyframes waveIdle {
+    0%,100% { height: 6px; opacity: 0.3; }
+    50%      { height: 20px; opacity: 0.7; }
+  }
+
+  .voice-waves.listening .voice-wave-bar {
+    background: rgba(255,80,80,0.7);
+    animation-name: waveActive;
+  }
+  .voice-waves.speaking .voice-wave-bar {
+    background: rgba(0,200,120,0.7);
+    animation-name: waveActive;
+  }
+
+  @keyframes waveActive {
+    0%,100% { height: 6px; }
+    50%      { height: 36px; }
+  }
+
+  .voice-status {
+    font-family: 'Orbitron', monospace; font-size: 13px;
+    color: rgba(150,200,255,0.8); letter-spacing: 0.15em;
+    text-transform: uppercase; text-align: center;
+    min-height: 20px;
+  }
+
+  .voice-transcript {
+    max-width: 500px; text-align: center; padding: 0 24px;
+    font-size: 15px; color: rgba(200,220,255,0.9); line-height: 1.6;
+    min-height: 48px; font-family: 'DM Sans', sans-serif;
+    font-style: italic;
+  }
+
+  .voice-controls { display: flex; gap: 16px; align-items: center; }
+
+  .voice-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1.5px solid rgba(0,120,255,0.5);
+    background: rgba(0,40,120,0.4);
+    color: #88ccff; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .voice-btn:hover { border-color: rgba(0,180,255,0.8); box-shadow: 0 0 20px rgba(0,120,255,0.3); }
+  .voice-btn.end {
+    width: 64px; height: 64px; font-size: 22px;
+    border-color: rgba(255,80,80,0.5); color: #ff6060;
+    background: rgba(120,20,20,0.4);
+  }
+  .voice-btn.end:hover { border-color: rgba(255,80,80,0.9); box-shadow: 0 0 20px rgba(255,80,80,0.3); }
+  .voice-btn.mute { border-color: rgba(255,160,0,0.5); color: #ffa030; }
+
+  .voice-elevenlabs-setup {
+    position: fixed; inset: 0; z-index: 600;
+    background: rgba(2,6,16,0.97); display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(20px);
+  }
+  .voice-elevenlabs-setup.open { display: flex; }
+  .voice-setup-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; width: 460px; max-width: 92vw; padding: 28px;
+  }
+  .voice-setup-modal h2 { font-family: 'DM Serif Display',serif; font-size: 20px; color: var(--accent2); margin-bottom: 8px; }
+  .voice-setup-modal p { font-size: 13px; color: var(--muted2); line-height: 1.7; margin-bottom: 16px; }
+
+</style>
+</head>
+<body>
+
+<!-- ===== PAGE D'ACCUEIL SPLASH ===== -->
+<div id="splash">
+  <div class="splash-grid"></div>
+  <div class="circuit-lines"></div>
+  <div class="splash-scanV"></div>
+  <div class="splash-particles" id="splash-particles"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div class="splash-text-left">
+    <h1>NOVA</h1>
+    <div class="splash-taglines">
+      <div class="splash-tagline">PLUS INTELLIGENT.</div>
+      <div class="splash-tagline">PLUS RAPIDE.</div>
+      <div class="splash-tagline">TOUJOURS LÀ POUR <span>VOUS.</span></div>
+    </div>
+    <div class="splash-dots">
+      <div class="sdot"></div><div class="sdot"></div><div class="sdot"></div>
+    </div>
+  </div>
+
+  <div class="splash-center">
+    <div class="ring-container">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="ring-core">
+        <div class="nova-logo-n">N</div>
+        <div class="nova-logo-text">NOVA</div>
+        <div class="nova-logo-sub">Votre Assistant IA Personnel</div>
+      </div>
+    </div>
+  </div>
+
+  <svg class="splash-waves" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50,250 Q150,100 250,250 T450,250" fill="none" stroke="rgba(0,120,255,0.4)" stroke-width="1.5"/>
+    <path d="M30,280 Q130,130 230,280 T430,280" fill="none" stroke="rgba(0,150,255,0.3)" stroke-width="1"/>
+    <path d="M70,220 Q170,70 270,220 T470,220" fill="none" stroke="rgba(0,100,255,0.25)" stroke-width="1"/>
+    <path d="M20,310 Q120,160 220,310 T420,310" fill="none" stroke="rgba(0,180,255,0.2)" stroke-width="0.8"/>
+  </svg>
+
+  <div class="splash-bottom">
+    <div class="splash-slogan">ORGANISEZ. <span>AUTOMATISEZ.</span> DÉVELOPPEZ.</div>
+  </div>
+
+  <button class="splash-arrow-btn" onclick="lancerNova()" title="Accéder à Nova">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#88ccff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="7,4 15,12 7,20"/>
+      <polyline points="13,4 21,12 13,20"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ===== APPLICATION NOVA ===== -->
+<div id="app">
+
+<!-- ===== MODE CONVERSATION VOCALE ===== -->
+<div class="voice-overlay" id="voice-overlay">
+  <div class="voice-ring-wrap">
+    <div class="voice-ring" id="vr1"></div>
+    <div class="voice-ring" id="vr2"></div>
+    <div class="voice-ring" id="vr3"></div>
+    <div class="voice-avatar" id="voice-avatar">N</div>
+  </div>
+
+  <div class="voice-waves" id="voice-waves">
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+    <div class="voice-wave-bar"></div>
+  </div>
+
+  <div class="voice-status" id="voice-status">En attente...</div>
+  <div class="voice-transcript" id="voice-transcript"></div>
+  <div id="voice-debug" style="font-size:10px;color:rgba(255,100,100,0.7);text-align:center;max-width:400px;padding:0 20px;min-height:14px"></div>
+
+  <div class="voice-controls">
+    <button class="voice-btn mute" id="voice-mute-btn" onclick="toggleMute()" title="Muet">🎤</button>
+    <button class="voice-btn end" onclick="terminerConversation()" title="Terminer">📵</button>
+    <button class="voice-btn" onclick="voiceSkip()" title="Passer">⏭</button>
+  </div>
+</div>
+
+<!-- Setup ElevenLabs -->
+<div class="voice-elevenlabs-setup" id="el-setup">
+  <div class="voice-setup-modal">
+    <h2>🎙 Configurer la voix de Nova</h2>
+    <p>Nova utilise <strong>ElevenLabs</strong> pour une voix ultra-réaliste. Crée un compte gratuit sur <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent)">elevenlabs.io</a> et copie ta clé API.</p>
+    <div class="gmail-setup-steps">
+      <p>Étapes :</p>
+      <ol>
+        <li>Crée un compte gratuit sur <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a></li>
+        <li>Va dans <strong>Profile → API Key</strong></li>
+        <li>Copie ta clé API et colle-la ci-dessous</li>
+        <li>Choisis la voix de Nova (français recommandé)</li>
+      </ol>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+      <div class="facture-field">
+        <label class="facture-label">Clé API ElevenLabs</label>
+        <input class="facture-input" id="el-api-key" type="password" placeholder="sk_xxxxxxxxxxxxxxxxxxxx" />
+      </div>
+      <div class="facture-field">
+        <label class="facture-label">Voix (Voice ID)</label>
+        <select class="facture-input" id="el-voice-id">
+          <option value="21m00Tcm4TlvDq8ikWAM">Rachel (anglais, naturelle)</option>
+          <option value="AZnzlk1XvdvUeBnXmlld">Domi (anglais, forte)</option>
+          <option value="EXAVITQu4vr4xnSDxMaL">Bella (anglais, douce)</option>
+          <option value="custom">Personnalisée (entrer ID manuellement)</option>
+        </select>
+      </div>
+      <div class="facture-field" id="custom-voice-field" style="display:none">
+        <label class="facture-label">Voice ID personnalisé</label>
+        <input class="facture-input" id="el-custom-voice" placeholder="ID de voix ElevenLabs..." />
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-ghost" onclick="fermerSetupVoix()">Annuler</button>
+      <button class="btn-primary" onclick="sauvegarderVoix()">🎙 Démarrer Nova Vocal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gestionnaire fichiers Excel -->
+<div class="xl-manager-overlay" id="xl-manager-overlay">
+  <div class="xl-manager-modal">
+    <div class="xl-manager-header">
+      <h2>📁 Mes fichiers Excel</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label class="xl-file-btn" style="cursor:pointer;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);color:var(--muted2);font-size:12px;font-family:'DM Sans',sans-serif">
+          📂 Importer
+          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importerDepuisGestionnaire(this)" />
+        </label>
+        <button class="back-btn" onclick="fermerGestionnaire()" style="margin:0">✕</button>
+      </div>
+    </div>
+    <div class="xl-manager-body" id="xl-manager-body">
+      <div class="xl-empty">Aucun fichier Excel encore sauvegardé.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Excel Editor Modal -->
+<div class="excel-overlay" id="excel-overlay">
+  <div class="excel-modal">
+    <div class="excel-toolbar">
+      <span class="excel-toolbar-title">📊 Nova Excel</span>
+      <span class="excel-filename" id="xl-filename">nouveau-fichier.xlsx</span>
+      <button class="tb-btn" onclick="ouvrirGestionnaire()">📁 Mes fichiers</button>
+      <label class="tb-btn" title="Importer un fichier Excel">
+        📂 Ouvrir
+        <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importerExcel(this)" />
+      </label>
+      <button class="tb-btn" onclick="ajouterLigne()">+ Ligne</button>
+      <button class="tb-btn" onclick="ajouterColonne()">+ Colonne</button>
+      <button class="tb-btn danger" onclick="supprimerLigneSelectionnee()">🗑 Ligne</button>
+      <button class="tb-btn" onclick="telechargerExcel()" style="margin-left:auto">⬇️ Excel</button>
+      <button class="tb-btn" onclick="telechargerCSV()">⬇️ CSV</button>
+      <button class="tb-btn primary" onclick="fermerExcel()">✕ Fermer</button>
+    </div>
+
+    <div class="excel-formula-bar">
+      <span class="formula-cell-ref" id="xl-cell-ref">A1</span>
+      <span style="color:var(--muted);font-size:13px">ƒx</span>
+      <input class="formula-input" id="xl-formula" placeholder="Valeur de la cellule..." oninput="syncFormulaToCell()" />
+    </div>
+
+    <div class="excel-tabs" id="xl-tabs"></div>
+
+    <div class="excel-body">
+      <div class="excel-grid-wrap" id="xl-grid-wrap">
+        <table class="excel-grid" id="xl-grid"></table>
+      </div>
+    </div>
+
+    <div class="excel-ai-bar">
+      <span style="font-size:13px">✨</span>
+      <input class="excel-ai-input" id="xl-ai-input" placeholder="Demandez à Nova de modifier ce tableau... ex: 'Ajoute une ligne totaux', 'Trie par montant', 'Ajoute une colonne TVQ'" onkeydown="if(event.key==='Enter')modifierAvecNova()" />
+      <button class="tb-btn primary" onclick="modifierAvecNova()">Modifier</button>
+    </div>
+
+    <div class="excel-statusbar">
+      <span id="xl-status">Prêt</span>
+      <span id="xl-selection-info"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Profil Modal -->
+<div class="facture-overlay" id="profil-modal">
+  <div class="facture-modal" style="width:520px">
+    <div class="facture-header">
+      <h2>🧠 Mémoire de Nova</h2>
+      <button class="back-btn" onclick="toggleProfilPanel()" style="margin:0">✕</button>
+    </div>
+    <div class="facture-body">
+
+      <div class="facture-section-title">Votre profil</div>
+      <div class="facture-row">
+        <div class="facture-field">
+          <label class="facture-label">Votre prénom</label>
+          <input class="facture-input" id="p-nom" placeholder="Ex: Raphaël" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Votre rôle</label>
+          <input class="facture-input" id="p-role" placeholder="Ex: Propriétaire, Directeur..." />
+        </div>
+      </div>
+      <div class="facture-field">
+        <label class="facture-label">Style de communication préféré</label>
+        <input class="facture-input" id="p-style" placeholder="Ex: Direct et efficace, formel, décontracté..." />
+      </div>
+      <div class="facture-field">
+        <label class="facture-label">Infos importantes pour Nova</label>
+        <textarea class="facture-input" id="p-infos" rows="3" placeholder="Ex: Je vends des parfums d'auto, j'ai 3 dépanneurs à Québec, mes clients sont surtout des grossistes..."></textarea>
+      </div>
+
+      <div class="facture-section-title" style="margin-top:8px">Clients récurrents</div>
+      <div id="clients-liste" style="max-height:150px;overflow-y:auto"></div>
+
+      <div class="facture-section-title" style="margin-top:8px">Factures récentes</div>
+      <div id="factures-liste" style="max-height:150px;overflow-y:auto"></div>
+
+      <div style="margin-top:12px;text-align:center">
+        <button onclick="effacerMemoire()" style="font-size:11px;color:var(--danger);background:transparent;border:1px solid var(--danger);padding:5px 14px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">
+          🗑 Effacer toute la mémoire
+        </button>
+      </div>
+
+    </div>
+    <div class="facture-actions">
+      <button class="btn-ghost" onclick="toggleProfilPanel()">Fermer</button>
+      <button class="btn-primary" onclick="sauvegarderProfil()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Facture Modal -->
+<div class="facture-overlay" id="facture-overlay">
+  <div class="facture-modal">
+    <div class="facture-header">
+      <h2>🧾 Nouvelle Facture</h2>
+      <button class="back-btn" onclick="toggleFacturePanel()" style="margin:0">✕</button>
+    </div>
+    <div class="facture-body">
+
+      <!-- Info entreprise -->
+      <div class="facture-section-title">Votre entreprise</div>
+      <div class="facture-row">
+        <div class="facture-field">
+          <label class="facture-label">Nom de l'entreprise</label>
+          <input class="facture-input" id="f-entreprise" placeholder="Ma Compagnie Inc." />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">No. TPS / No. TVQ</label>
+          <input class="facture-input" id="f-taxes-no" placeholder="TPS: 123456789 RT0001" />
+        </div>
+      </div>
+      <div class="facture-row">
+        <div class="facture-field">
+          <label class="facture-label">Adresse</label>
+          <input class="facture-input" id="f-adresse" placeholder="123 rue Principale, Québec, QC" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Téléphone / Email</label>
+          <input class="facture-input" id="f-contact" placeholder="info@macompagnie.com" />
+        </div>
+      </div>
+
+      <!-- Info client -->
+      <div class="facture-section-title">Client</div>
+      <div class="facture-row">
+        <div class="facture-field">
+          <label class="facture-label">Nom du client</label>
+          <input class="facture-input" id="f-client" placeholder="Jean Tremblay" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Entreprise du client</label>
+          <input class="facture-input" id="f-client-entreprise" placeholder="Entreprise du client (optionnel)" />
+        </div>
+      </div>
+      <div class="facture-row">
+        <div class="facture-field">
+          <label class="facture-label">Adresse client</label>
+          <input class="facture-input" id="f-client-adresse" placeholder="456 avenue des Érables" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Email client</label>
+          <input class="facture-input" id="f-client-email" placeholder="client@email.com" />
+        </div>
+      </div>
+
+      <!-- Numéro et dates -->
+      <div class="facture-section-title">Détails de la facture</div>
+      <div class="facture-row three">
+        <div class="facture-field">
+          <label class="facture-label">Numéro de facture</label>
+          <input class="facture-input" id="f-numero" placeholder="FAC-001" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Date d'émission</label>
+          <input class="facture-input" id="f-date" type="date" />
+        </div>
+        <div class="facture-field">
+          <label class="facture-label">Date d'échéance</label>
+          <input class="facture-input" id="f-echeance" type="date" />
+        </div>
+      </div>
+
+      <!-- Articles -->
+      <div class="facture-section-title">Articles / Services</div>
+      <table class="items-table" id="items-table">
+        <thead>
+          <tr>
+            <th style="width:40%">Description</th>
+            <th style="width:12%">Qté</th>
+            <th style="width:18%">Prix unitaire</th>
+            <th style="width:10%">TPS</th>
+            <th style="width:10%">TVQ</th>
+            <th style="width:15%">Sous-total</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody id="items-tbody"></tbody>
+      </table>
+      <button class="add-item-btn" onclick="addItem()">+ Ajouter un article</button>
+
+      <!-- Totaux -->
+      <div class="totaux" id="totaux-block">
+        <div class="total-row"><span>Sous-total (avant taxes)</span><span id="t-subtotal">0,00 $</span></div>
+        <div class="total-row"><span>TPS (5%)</span><span id="t-tps">0,00 $</span></div>
+        <div class="total-row"><span>TVQ (9,975%)</span><span id="t-tvq">0,00 $</span></div>
+        <div class="total-row grand"><span>TOTAL</span><span id="t-total">0,00 $</span></div>
+      </div>
+
+      <!-- Notes -->
+      <div class="facture-field">
+        <label class="facture-label">Notes / Conditions de paiement</label>
+        <textarea class="facture-input" id="f-notes" rows="2" placeholder="Ex: Paiement dû dans 30 jours. Merci pour votre confiance !"></textarea>
+      </div>
+
+    </div>
+    <div class="facture-actions">
+      <button class="btn-ghost" onclick="toggleFacturePanel()">Annuler</button>
+      <button class="btn-primary" onclick="genererFactureExcel()" style="flex:0;padding:10px 18px;white-space:nowrap">📊 Excel</button>
+      <button class="btn-primary" onclick="genererFacturePDF()" style="flex:1;background:var(--accent2)">🧾 Générer Facture PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shopify Modal -->
+<div class="modal-overlay" id="shopify-modal">
+  <div class="modal">
+    <h2>Connecter Shopify</h2>
+    <p>Entre les informations de ton store Shopify. Nova pourra ensuite consulter tes commandes, produits et statistiques.</p>
+    <input class="modal-input" id="shop-url" placeholder="ton-store.myshopify.com" />
+    <input class="modal-input" id="shop-token" type="password" placeholder="Token d'accès Admin API" />
+    <p style="font-size:11px; color:var(--muted); margin-top:-4px;">
+      Obtenir le token : Admin Shopify → Apps → Develop apps → Create app → Admin API access token
+    </p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeShopifyModal()">Annuler</button>
+      <button class="btn-primary" onclick="connectShopify()">Connecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="nova-avatar">N</div>
+    <div>
+      <div class="nova-name">Nova</div>
+      <div class="nova-status" id="nova-status-text">En ligne · Prête à vous aider</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="shopify-btn" id="voice-launch-btn" onclick="lancerConversationVocale()" style="background:rgba(0,80,180,0.2);border-color:rgba(0,120,255,0.4);color:#88ccff">
+      <span>🎙</span> <span>Parler à Nova</span>
+    </button>
+    <button class="shopify-btn" id="cal-toggle-btn" onclick="toggleCalPanel()">
+      <span>📅</span> <span id="cal-btn-text">Calendrier</span>
+    </button>
+    <button class="shopify-btn" id="facture-toggle-btn" onclick="toggleFacturePanel()">
+      <span>🧾</span> <span id="facture-btn-text">Facturation</span>
+    </button>
+    <button class="shopify-btn" id="gmail-toggle-btn" onclick="toggleGmailPanel()">
+      <span>📧</span> <span id="gmail-btn-text">Gmail</span>
+    </button>
+    <button class="shopify-btn" id="shopify-btn" onclick="openShopifyModal()">
+      <span>🛍</span> <span id="shopify-btn-text">Connecter Shopify</span>
+    </button>
+    <button class="shopify-btn" onclick="toggleProfilPanel()" title="Mémoire & Profil">
+      <span>🧠</span> <span>Profil</span>
+    </button>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Actions rapides</div>
+
+    <button class="quick-action" onclick="toggleCalPanel(); showCalTab('nouveau')">
+      <span class="qa-icon">📅</span> Nouveau RDV
+    </button>
+    <button class="quick-action" onclick="toggleCalPanel(); showCalTab('agenda')">
+      <span class="qa-icon">🗓</span> Mon agenda
+    </button>
+    <button class="quick-action" onclick="toggleFacturePanel()">
+      <span class="qa-icon">🧾</span> Nouvelle facture
+    </button>
+    <button class="quick-action" onclick="quickSend('Montre-moi mes dernières commandes Shopify')">
+      <span class="qa-icon">📦</span> Commandes récentes
+    </button>
+    <button class="quick-action" onclick="ouvrirGestionnaire()">
+      <span class="qa-icon">📁</span> Mes fichiers Excel
+    </button>
+    <button class="quick-action" onclick="ouvrirEditeurExcel({filename:'nouveau-fichier.xlsx',sheets:[{name:'Feuille1',headers:['Colonne A','Colonne B','Colonne C','Colonne D'],rows:Array(20).fill(null).map(()=>['','','',''])}]})">
+      <span class="qa-icon">📊</span> Éditeur Excel
+    </button>
+    <button class="quick-action" onclick="quickSend('Crée-moi un fichier Excel avec un tableau de suivi des ventes')">
+      <span class="qa-icon">📊</span> Tableau Excel
+    </button>
+    <button class="quick-action" onclick="quickSend('Rédige un rapport Word de mes ventes du mois')">
+      <span class="qa-icon">📝</span> Rapport Word
+    </button>
+    <button class="quick-action" onclick="quickSend('Crée une présentation PowerPoint pour mon entreprise')">
+      <span class="qa-icon">📋</span> Présentation
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Aide</div>
+
+    <button class="quick-action" onclick="quickSend('Quelles sont toutes les choses que tu peux faire pour moi ?')">
+      <span class="qa-icon">✨</span> Mes capacités
+    </button>
+    <button class="quick-action" onclick="quickSend('Donne-moi des conseils pour améliorer mes ventes en ligne')">
+      <span class="qa-icon">💡</span> Conseils business
+    </button>
+    <button class="quick-action" onclick="toggleGmailPanel(); showTab('compose')">
+      <span class="qa-icon">📧</span> Rédiger un email
+    </button>
+    <button class="quick-action" onclick="toggleGmailPanel(); showTab('inbox')">
+      <span class="qa-icon">📬</span> Voir mes emails
+    </button>  </aside>
+
+  <!-- Calendar Panel -->
+  <aside class="cal-panel hidden" id="cal-panel">
+    <div class="cal-header">
+      <div class="cal-title">📅 Calendrier</div>
+      <button class="back-btn" onclick="toggleCalPanel()" style="margin:0">✕</button>
+    </div>
+
+    <!-- Not connected -->
+    <div id="cal-not-connected">
+      <div class="cal-connect-prompt">
+        <div style="font-size:32px">📅</div>
+        <p>Utilise le même Client ID Google que Gmail pour connecter ton Google Calendar.</p>
+        <div class="gmail-setup-steps" style="text-align:left;width:100%">
+          <p>Si Gmail est déjà connecté :</p>
+          <ol>
+            <li>Va sur <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
+            <li>API et services → Bibliothèque → <strong>Google Calendar API</strong> → Activer</li>
+            <li>Reviens ici et colle ton Client ID</li>
+          </ol>
+        </div>
+        <div class="clientid-input-row">
+          <input class="clientid-input" id="cal-client-id" placeholder="Client ID Google..." />
+          <button class="btn-primary" style="white-space:nowrap;padding:8px 14px;flex:0" onclick="initCalAuth()">Connecter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connected -->
+    <div id="cal-connected" style="display:none;flex-direction:column;height:100%;overflow:hidden">
+      <div class="cal-tabs">
+        <button class="cal-tab active" id="ctab-agenda" onclick="showCalTab('agenda')">Agenda</button>
+        <button class="cal-tab" id="ctab-nouveau" onclick="showCalTab('nouveau')">+ Nouveau</button>
+        <button class="cal-tab" id="ctab-semaine" onclick="showCalTab('semaine')">Semaine</button>
+      </div>
+
+      <!-- Agenda view -->
+      <div class="cal-body" id="cal-agenda-view">
+        <div class="mini-cal" id="mini-cal-container"></div>
+        <div class="events-list" id="events-list">
+          <div style="padding:10px;text-align:center;color:var(--muted);font-size:13px">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- New event form -->
+      <div class="cal-body" id="cal-nouveau-view" style="display:none">
+        <div class="new-event-form">
+          <div class="compose-field">
+            <label class="compose-label">Titre</label>
+            <input class="compose-input" id="ev-titre" placeholder="Réunion, RDV client..." />
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Date</label>
+            <input class="compose-input" id="ev-date" type="date" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="compose-field">
+              <label class="compose-label">Début</label>
+              <input class="compose-input" id="ev-debut" type="time" value="09:00" />
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Fin</label>
+              <input class="compose-input" id="ev-fin" type="time" value="10:00" />
+            </div>
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Description (optionnel)</label>
+            <textarea class="compose-input" id="ev-desc" rows="2" placeholder="Notes, adresse, lien..."></textarea>
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Invités (emails séparés par virgule)</label>
+            <input class="compose-input" id="ev-invites" placeholder="email1@gmail.com, email2@gmail.com" />
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Rappel</label>
+            <select class="compose-input" id="ev-rappel">
+              <option value="0">Aucun rappel</option>
+              <option value="10" selected>10 minutes avant</option>
+              <option value="30">30 minutes avant</option>
+              <option value="60">1 heure avant</option>
+              <option value="1440">1 jour avant</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="creerEvenement()">✅ Créer l'événement</button>
+          <div id="ev-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px"></div>
+        </div>
+      </div>
+
+      <!-- Semaine view -->
+      <div class="cal-body" id="cal-semaine-view" style="display:none">
+        <div id="semaine-container" style="padding:12px"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main chat -->
+  <main class="main">
+    <div class="messages" id="messages">
+      <!-- Welcome message -->
+      <div class="msg nova">
+        <div class="msg-avatar">N</div>
+        <div>
+          <div class="msg-bubble">
+            Bonjour ! Je suis <strong>Nova</strong>, votre secrétaire IA personnelle. Je suis ici pour vous faciliter la vie au quotidien.<br><br>
+            Je peux vous aider à :<br>
+            • 📅 Gérer votre <strong>Google Calendar</strong> — RDV, rappels, semaine<br>
+            • 🧾 Créer des <strong>factures avec TPS/TVQ</strong> québécoise<br>
+            • 📦 Consulter vos commandes et ventes <strong>Shopify</strong><br>
+            • 📧 Lire et envoyer des emails <strong>Gmail</strong><br>
+            • 📊 Créer des fichiers <strong>Excel, Word et PowerPoint</strong><br>
+            • 💡 Répondre à vos questions et donner des conseils<br><br>
+            Comment puis-je vous aider aujourd'hui ?
+          </div>
+          <div class="msg-time">Maintenant</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="user-input" placeholder="Écrivez à Nova..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">Appuyez sur Entrée pour envoyer · Maj+Entrée pour un saut de ligne</div>
+    </div>
+  </main>
+
+  <!-- Gmail Panel -->
+  <aside class="gmail-panel hidden" id="gmail-panel">
+    <div class="gmail-header">
+      <div class="gmail-title">📧 Gmail</div>
+      <button class="back-btn" onclick="toggleGmailPanel()" style="margin:0">✕</button>
+    </div>
+
+    <!-- Not connected state -->
+    <div id="gmail-not-connected">
+      <div class="gmail-connect-prompt">
+        <div style="font-size:32px">📧</div>
+        <p>Pour connecter Gmail, tu dois créer un Client ID Google gratuit en 5 minutes.</p>
+        <div class="gmail-setup-steps">
+          <p>Étapes :</p>
+          <ol>
+            <li>Va sur <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
+            <li>Crée un projet → Active l'API Gmail</li>
+            <li>Identifiants → OAuth 2.0 → Type : Application Web</li>
+            <li>Origine JS autorisée : <code style="color:var(--accent);font-size:10px">http://localhost</code> et l'URL de ce fichier</li>
+            <li>Copie ton <strong>Client ID</strong> ci-dessous</li>
+          </ol>
+        </div>
+        <div class="clientid-input-row">
+          <input class="clientid-input" id="gmail-client-id" placeholder="Colle ton Client ID Google ici..." />
+          <button class="btn-primary" style="white-space:nowrap;padding:8px 14px;flex:0" onclick="initGoogleAuth()">Connecter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connected state -->
+    <div id="gmail-connected" style="display:none; flex-direction:column; height:100%; overflow:hidden;">
+      <div class="gmail-tabs">
+        <button class="gmail-tab active" id="tab-inbox" onclick="showTab('inbox')">Boîte de réception</button>
+        <button class="gmail-tab" id="tab-compose" onclick="showTab('compose')">Composer</button>
+      </div>
+
+      <div class="gmail-body" id="gmail-inbox-view">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px" id="gmail-loading">Chargement des emails...</div>
+      </div>
+
+      <div class="gmail-body" id="gmail-compose-view" style="display:none">
+        <div class="compose-form">
+          <div class="compose-field">
+            <label class="compose-label">À</label>
+            <input class="compose-input" id="compose-to" placeholder="destinataire@email.com" />
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Objet</label>
+            <input class="compose-input" id="compose-subject" placeholder="Objet du message" />
+          </div>
+          <div class="compose-field">
+            <label class="compose-label">Message</label>
+            <textarea class="compose-input compose-textarea" id="compose-body" placeholder="Écrivez votre message..."></textarea>
+          </div>
+          <button class="btn-primary" onclick="sendGmail()" style="margin-top:4px">Envoyer ✉️</button>
+          <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px"></div>
+        </div>
+      </div>
+
+      <div class="gmail-body" id="gmail-detail-view" style="display:none">
+        <div class="email-detail">
+          <button class="back-btn" onclick="showTab('inbox')">← Retour</button>
+          <div class="email-detail-header">
+            <div class="email-detail-subject" id="detail-subject"></div>
+            <div class="email-detail-meta" id="detail-meta"></div>
+          </div>
+          <div class="email-detail-body" id="detail-body"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const CLAUDE_API = "https://api.anthropic.com/v1/messages";
+let shopifyConfig = null;
+let conversationHistory = [];
+
+// =====================
+// MÉMOIRE PERSISTANTE
+// =====================
+const MEM = {
+  save(key, val) { try { localStorage.setItem('nova_' + key, JSON.stringify(val)); } catch(e) {} },
+  load(key, def = null) { try { const v = localStorage.getItem('nova_' + key); return v ? JSON.parse(v) : def; } catch(e) { return def; } },
+  del(key) { try { localStorage.removeItem('nova_' + key); } catch(e) {} }
+};
+
+// Charger tout au démarrage
+function chargerMemoire() {
+  // Shopify
+  const sh = MEM.load('shopify');
+  if (sh) {
+    shopifyConfig = sh;
+    document.getElementById('shopify-btn').classList.add('connected');
+    document.getElementById('shopify-btn-text').textContent = '✓ Shopify';
+    document.getElementById('shop-url').value = sh.url;
+    document.getElementById('shop-token').value = sh.token;
+  }
+
+  // Historique conversations (max 30 derniers messages)
+  const hist = MEM.load('historique', []);
+  conversationHistory = hist;
+
+  // Infos entreprise dans le formulaire facture
+  const ent = MEM.load('entreprise');
+  if (ent) {
+    setTimeout(() => {
+      if (document.getElementById('f-entreprise')) {
+        document.getElementById('f-entreprise').value = ent.nom || '';
+        document.getElementById('f-taxes-no').value = ent.taxesNo || '';
+        document.getElementById('f-adresse').value = ent.adresse || '';
+        document.getElementById('f-contact').value = ent.contact || '';
+      }
+    }, 500);
+  }
+
+  // Préférences
+  const prefs = MEM.load('prefs');
+  if (prefs && prefs.nom) {
+    document.querySelector('.msg-avatar.user-av') && (document.querySelector('.msg-avatar.user-av').textContent = prefs.nom[0].toUpperCase());
+  }
+
+  // Clients récurrents
+  window.clientsRecurrents = MEM.load('clients', []);
+
+  // Factures
+  window.facturesHistorique = MEM.load('factures', []);
+}
+
+// Sauvegarder infos entreprise automatiquement
+function sauvegarderEntreprise() {
+  const nom = document.getElementById('f-entreprise')?.value;
+  const taxesNo = document.getElementById('f-taxes-no')?.value;
+  const adresse = document.getElementById('f-adresse')?.value;
+  const contact = document.getElementById('f-contact')?.value;
+  if (nom || adresse) MEM.save('entreprise', { nom, taxesNo, adresse, contact });
+}
+
+// Sauvegarder client récurrent
+function sauvegarderClient(client, entreprise, adresse, email) {
+  if (!client) return;
+  const clients = MEM.load('clients', []);
+  const existe = clients.find(c => c.nom === client);
+  if (!existe) {
+    clients.unshift({ nom: client, entreprise, adresse, email, date: new Date().toISOString() });
+    if (clients.length > 50) clients.pop();
+    MEM.save('clients', clients);
+    window.clientsRecurrents = clients;
+  }
+}
+
+// Sauvegarder facture dans l'historique
+function sauvegarderFacture(data) {
+  const factures = MEM.load('factures', []);
+  factures.unshift({ ...data, items: data.items, createdAt: new Date().toISOString() });
+  if (factures.length > 200) factures.pop();
+  MEM.save('factures', factures);
+  window.facturesHistorique = factures;
+}
+
+// Sauvegarder historique conversation (max 30 messages)
+function sauvegarderHistorique() {
+  const hist = conversationHistory.slice(-30);
+  MEM.save('historique', hist);
+}
+
+// Panel mémoire / profil
+function toggleProfilPanel() {
+  const panel = document.getElementById('profil-modal');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  chargerProfilUI();
+}
+
+function chargerProfilUI() {
+  const prefs = MEM.load('prefs', {});
+  document.getElementById('p-nom').value = prefs.nom || '';
+  document.getElementById('p-role').value = prefs.role || '';
+  document.getElementById('p-style').value = prefs.style || '';
+  document.getElementById('p-infos').value = prefs.infos || '';
+
+  // Afficher clients récurrents
+  const clients = MEM.load('clients', []);
+  const clientsHtml = clients.length ? clients.slice(0, 10).map(c =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;color:var(--text)">${c.nom}</div><div style="font-size:11px;color:var(--muted)">${c.entreprise || c.email || ''}</div></div>
+      <button onclick="remplirClient('${c.nom}','${c.entreprise||''}','${c.adresse||''}','${c.email||''}')" style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--accent);cursor:pointer">Utiliser</button>
+    </div>`
+  ).join('') : '<div style="font-size:12px;color:var(--muted)">Aucun client encore sauvegardé.</div>';
+  document.getElementById('clients-liste').innerHTML = clientsHtml;
+
+  // Afficher factures
+  const factures = MEM.load('factures', []);
+  const facturesHtml = factures.length ? factures.slice(0, 8).map(f =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;color:var(--text)">${f.numero} — ${f.client}</div>
+      <div style="font-size:11px;color:var(--muted)">${f.date} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div></div>
+    </div>`
+  ).join('') : '<div style="font-size:12px;color:var(--muted)">Aucune facture encore créée.</div>';
+  document.getElementById('factures-liste').innerHTML = facturesHtml;
+}
+
+function sauvegarderProfil() {
+  const prefs = {
+    nom: document.getElementById('p-nom').value,
+    role: document.getElementById('p-role').value,
+    style: document.getElementById('p-style').value,
+    infos: document.getElementById('p-infos').value
+  };
+  MEM.save('prefs', prefs);
+  toggleProfilPanel();
+  addNovaMessage(`✅ Parfait **${prefs.nom || 'patron'}** ! J'ai bien mémorisé votre profil. Je m'en souviendrai à chaque fois que vous revenez.`);
+}
+
+function remplirClient(nom, entreprise, adresse, email) {
+  document.getElementById('f-client').value = nom;
+  document.getElementById('f-client-entreprise').value = entreprise;
+  document.getElementById('f-client-adresse').value = adresse;
+  document.getElementById('f-client-email').value = email;
+  toggleProfilPanel();
+  if (!facturePanelOpen) toggleFacturePanel();
+}
+
+function effacerMemoire() {
+  if (!confirm('Effacer toute la mémoire de Nova ? Cette action est irréversible.')) return;
+  ['shopify','historique','entreprise','prefs','clients','factures'].forEach(k => MEM.del(k));
+  conversationHistory = [];
+  location.reload();
+}
+
+// --- Shopify Modal ---
+function openShopifyModal() { document.getElementById('shopify-modal').classList.add('open'); }
+function closeShopifyModal() { document.getElementById('shopify-modal').classList.remove('open'); }
+
+function connectShopify() {
+  const url = document.getElementById('shop-url').value.trim();
+  const token = document.getElementById('shop-token').value.trim();
+  if (!url || !token) { alert('Veuillez remplir les deux champs.'); return; }
+  shopifyConfig = { url: url.replace(/^https?:\/\//, '').replace(/\/$/, ''), token };
+  MEM.save('shopify', shopifyConfig);
+  document.getElementById('shopify-btn').classList.add('connected');
+  document.getElementById('shopify-btn-text').textContent = '✓ Shopify';
+  closeShopifyModal();
+  addNovaMessage(`✅ Parfait ! J'ai bien connecté votre store **${shopifyConfig.url}** et je m'en souviendrai pour vos prochaines visites.`);
+}
+
+// =====================
+// MODE CONVERSATION VOCALE
+// =====================
+let voiceActive = false;
+let voiceMuted = false;
+let recognition = null;
+let voiceSkipAudio = false;
+let elApiKey = null;
+let elVoiceId = '21m00Tcm4TlvDq8ikWAM';
+let currentAudio = null;
+let voiceConvHistory = [];
+
+function lancerConversationVocale() {
+  // Vérifier si déjà configuré
+  const savedKey = MEM.load('el_api_key') || 'sk_d1500382829308396d883ebe059a3ecbf3060cfe83e60600';
+  const savedVoice = MEM.load('el_voice_id') || '3C1zYzXNXNzrB66ON8rj';
+  elApiKey = savedKey;
+  elVoiceId = savedVoice;
+  MEM.save('el_api_key', elApiKey);
+  MEM.save('el_voice_id', elVoiceId);
+  demarrerVoice();
+}
+
+function fermerSetupVoix() {
+  document.getElementById('el-setup').classList.remove('open');
+}
+
+function sauvegarderVoix() {
+  const key = document.getElementById('el-api-key').value.trim();
+  if (!key) { alert('Entre ta clé API ElevenLabs.'); return; }
+  const voiceSel = document.getElementById('el-voice-id').value;
+  const voiceId = voiceSel === 'custom' ? document.getElementById('el-custom-voice').value.trim() : voiceSel;
+  elApiKey = key;
+  elVoiceId = voiceId || '21m00Tcm4TlvDq8ikWAM';
+  MEM.save('el_api_key', elApiKey);
+  MEM.save('el_voice_id', elVoiceId);
+  fermerSetupVoix();
+  demarrerVoice();
+}
+
+function demarrerVoice() {
+  if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+    alert('Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome.');
+    return;
+  }
+  voiceActive = true;
+  voiceMuted = false;
+  voiceConvHistory = [...conversationHistory];
+  document.getElementById('voice-overlay').classList.add('open');
+  setVoiceState('idle');
+  // Message de bienvenue
+  const prefs = MEM.load('prefs', {});
+  const nom = prefs.nom ? `, ${prefs.nom}` : '';
+  parlerNova(`Bonjour${nom} ! Je suis Nova, votre assistante IA. Comment puis-je vous aider ?`);
+}
+
+function terminerConversation() {
+  voiceActive = false;
+  stopRecognition();
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  document.getElementById('voice-overlay').classList.remove('open');
+  setVoiceState('idle');
+  addNovaMessage('📵 Conversation vocale terminée.');
+}
+
+function toggleMute() {
+  voiceMuted = !voiceMuted;
+  document.getElementById('voice-mute-btn').textContent = voiceMuted ? '🔇' : '🎤';
+  if (voiceMuted) stopRecognition();
+  else if (voiceActive) ecouterUtilisateur();
+}
+
+function voiceSkip() {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  voiceSkipAudio = true;
+  if (voiceActive && !voiceMuted) ecouterUtilisateur();
+}
+
+function setVoiceState(state) {
+  const avatar = document.getElementById('voice-avatar');
+  const waves = document.getElementById('voice-waves');
+  const status = document.getElementById('voice-status');
+  const rings = [document.getElementById('vr1'), document.getElementById('vr2'), document.getElementById('vr3')];
+
+  avatar.className = 'voice-avatar ' + (state !== 'idle' ? state : '');
+  waves.className = 'voice-waves ' + (state !== 'idle' ? state : '');
+  rings.forEach(r => { r.className = 'voice-ring ' + (state !== 'idle' ? state : ''); });
+
+  const labels = { idle: 'En attente...', listening: 'Je vous écoute...', speaking: 'Nova parle...', thinking: 'Nova réfléchit...' };
+  status.textContent = labels[state] || state;
+}
+
+function ecouterUtilisateur() {
+  if (!voiceActive || voiceMuted) return;
+  stopRecognition();
+  setVoiceState('listening');
+  document.getElementById('voice-transcript').textContent = '';
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'fr-CA';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('voice-transcript').textContent = '« ' + transcript + ' »';
+    if (e.results[e.results.length - 1].isFinal) {
+      traiterMessageVocal(transcript);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'no-speech' && voiceActive) {
+      setTimeout(() => ecouterUtilisateur(), 500);
+    }
+  };
+
+  recognition.onend = () => {
+    // Si rien capté et toujours actif, réécouuter
+    if (voiceActive && !voiceMuted) {
+      const transcript = document.getElementById('voice-transcript').textContent;
+      if (!transcript) setTimeout(() => ecouterUtilisateur(), 300);
+    }
+  };
+
+  recognition.start();
+}
+
+function stopRecognition() {
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+}
+
+async function traiterMessageVocal(texte) {
+  if (!texte.trim()) { ecouterUtilisateur(); return; }
+  stopRecognition();
+  setVoiceState('thinking');
+  document.getElementById('voice-transcript').textContent = '« ' + texte + ' »';
+
+  // Ajouter dans le chat aussi
+  addUserMessage(texte);
+
+  try {
+    const prefs = MEM.load('prefs', {});
+    const ent = MEM.load('entreprise', {});
+    const clients = MEM.load('clients', []);
+
+    const systemPrompt = `Tu es Nova, une secrétaire IA professionnelle qui parle en français. Tu es en mode conversation vocale — donc tes réponses doivent être COURTES (2-4 phrases max), naturelles et conversationnelles. Pas de listes à puces, pas de markdown, pas de caractères spéciaux. Parle comme dans une vraie conversation.
+
+Utilisateur: ${prefs.nom || 'patron'}
+Entreprise: ${ent.nom || 'non renseigné'}
+Shopify: ${shopifyConfig ? 'connecté' : 'non connecté'}
+Gmail: ${gmailToken ? 'connecté' : 'non connecté'}
+Calendar: ${calToken ? 'connecté' : 'non connecté'}
+
+Contexte additionnel: ${prefs.infos || ''}
+
+IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureuse.`;
+
+    voiceConvHistory.push({ role: 'user', content: texte });
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: voiceConvHistory.slice(-10)
+      })
+    });
+    const data = await res.json();
+    const reponse = data.content?.[0]?.text || 'Désolée, je n\'ai pas compris.';
+    voiceConvHistory.push({ role: 'assistant', content: reponse });
+
+    // Afficher dans le chat
+    addNovaMessage(reponse);
+    document.getElementById('voice-transcript').textContent = reponse;
+
+    // Parler avec ElevenLabs
+    await parlerNova(reponse);
+
+  } catch(e) {
+    setVoiceState('idle');
+    if (voiceActive) ecouterUtilisateur();
+  }
+}
+
+async function parlerNova(texte) {
+  setVoiceState('speaking');
+  voiceSkipAudio = false;
+
+  const texteVoix = texte
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/[📅📧📊🧾✅❌⚠️📦💡🎙📵⏭🎤🔇]/gu, '')
+    .trim();
+
+  try {
+    // Passer par le proxy Cloudflare Worker (évite les restrictions CORS)
+    const res = await fetch('https://nova-voice.contact-raphael6.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: texteVoix,
+        voice_id: elVoiceId
+      })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Worker error:', res.status, errText);
+      throw new Error('Worker: ' + res.status);
+    }
+
+    const audioBlob = await res.blob();
+    if (audioBlob.size < 100) throw new Error('Audio vide reçu');
+
+    const audioUrl = URL.createObjectURL(audioBlob);
+    currentAudio = new Audio(audioUrl);
+    currentAudio.volume = 1.0;
+
+    await new Promise((resolve) => {
+      currentAudio.onended = resolve;
+      currentAudio.onerror = (e) => { console.error('Audio error:', e); resolve(); };
+      if (voiceSkipAudio) { resolve(); return; }
+      currentAudio.play().catch(e => { console.error('Play error:', e); resolve(); });
+    });
+
+    URL.revokeObjectURL(audioUrl);
+    // Effacer le message d'erreur si succès
+    const dbg = document.getElementById('voice-debug');
+    if (dbg) dbg.textContent = '';
+
+  } catch(e) {
+    console.warn('Worker échoué:', e.message, '→ fallback navigateur');
+    const dbg = document.getElementById('voice-debug');
+    if (dbg) dbg.textContent = 'Erreur: ' + e.message + ' → voix navigateur';
+    await fallbackVoixNavigateur(texteVoix);
+  }
+
+  currentAudio = null;
+  if (voiceActive && !voiceMuted) {
+    setTimeout(() => ecouterUtilisateur(), 400);
+  } else {
+    setVoiceState('idle');
+  }
+}
+
+async function fallbackVoixNavigateur(texte) {
+  return new Promise((resolve) => {
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(texte);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 0.92;
+    utterance.pitch = 1.1;
+    utterance.volume = 1.0;
+    // Attendre que les voix soient chargées
+    const setVoice = () => {
+      const voicesFR = speechSynthesis.getVoices().filter(v =>
+        v.lang.startsWith('fr') && !v.name.includes('Google') === false || v.lang.startsWith('fr')
+      );
+      if (voicesFR.length) {
+        // Préférer une voix féminine française
+        const voixFem = voicesFR.find(v => v.name.toLowerCase().includes('female') || v.name.includes('Amélie') || v.name.includes('Marie') || v.name.includes('Audrey'));
+        utterance.voice = voixFem || voicesFR[0];
+      }
+    };
+    if (speechSynthesis.getVoices().length) setVoice();
+    else speechSynthesis.onvoiceschanged = setVoice;
+    utterance.onend = resolve;
+    utterance.onerror = resolve;
+    speechSynthesis.speak(utterance);
+  });
+}
+
+// =====================
+// GOOGLE CALENDAR
+// =====================
+let calToken = null;
+let calPanelOpen = false;
+let calCurrentDate = new Date();
+let calSelectedDate = new Date();
+let calEvents = [];
+
+function toggleCalPanel() {
+  calPanelOpen = !calPanelOpen;
+  document.getElementById('cal-panel').classList.toggle('hidden', !calPanelOpen);
+  const saved = MEM.load('cal_client_id');
+  if (saved && document.getElementById('cal-client-id')) document.getElementById('cal-client-id').value = saved;
+  const gmailId = document.getElementById('gmail-client-id')?.value;
+  if (gmailId && document.getElementById('cal-client-id') && !document.getElementById('cal-client-id').value)
+    document.getElementById('cal-client-id').value = gmailId;
+  if (calToken && calPanelOpen) { renderMiniCal(); chargerEvenements(); }
+}
+
+async function initCalAuth() {
+  const clientId = document.getElementById('cal-client-id').value.trim();
+  if (!clientId) { alert('Colle ton Client ID Google.'); return; }
+  MEM.save('cal_client_id', clientId);
+  const loadGSI = () => new Promise(res => {
+    if (window.google?.accounts) return res();
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = res; document.head.appendChild(s);
+  });
+  await loadGSI();
+  google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/calendar',
+    callback: (resp) => {
+      if (resp.access_token) { calToken = resp.access_token; onCalConnected(); }
+      else alert('Connexion échouée. Vérifie ton Client ID.');
+    }
+  }).requestAccessToken();
+}
+
+function onCalConnected() {
+  document.getElementById('cal-not-connected').style.display = 'none';
+  document.getElementById('cal-connected').style.display = 'flex';
+  document.getElementById('cal-btn-text').textContent = '✓ Calendrier';
+  document.getElementById('cal-toggle-btn').classList.add('connected');
+  document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
+  renderMiniCal(); chargerEvenements(); demarrerRappels();
+  addNovaMessage('✅ **Google Calendar connecté !** Je peux voir vos rendez-vous, en créer et vous envoyer des rappels automatiques. Essayez de me dire *"Crée un RDV demain à 14h"* !');
+}
+
+async function chargerEvenements(dateDebut, dateFin) {
+  if (!calToken) return;
+  const now = dateDebut || new Date();
+  const end = dateFin || new Date(now.getFullYear(), now.getMonth() + 2, 1);
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`,
+      { headers: { Authorization: 'Bearer ' + calToken } }
+    );
+    const data = await res.json();
+    calEvents = data.items || [];
+    renderEventsList(calSelectedDate); renderMiniCal();
+    if (document.getElementById('cal-semaine-view')?.style.display !== 'none') renderSemaine();
+  } catch(e) {
+    const el = document.getElementById('events-list');
+    if (el) el.innerHTML = '<div style="padding:10px;color:var(--danger);font-size:13px">Erreur de chargement</div>';
+  }
+}
+
+function renderMiniCal() {
+  const container = document.getElementById('mini-cal-container');
+  if (!container) return;
+  const year = calCurrentDate.getFullYear(), month = calCurrentDate.getMonth();
+  const today = new Date();
+  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const dayNames = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+  const eventDays = new Set(calEvents.map(e => {
+    const d = new Date(e.start?.dateTime || e.start?.date);
+    return d.getFullYear()===year && d.getMonth()===month ? d.getDate() : null;
+  }).filter(Boolean));
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+  let html = `<div class="mini-cal-nav"><button onclick="navMiniCal(-1)">‹</button><span>${monthNames[month]} ${year}</span><button onclick="navMiniCal(1)">›</button></div><div class="cal-grid">`;
+  dayNames.forEach(d => html += `<div class="cal-day-name">${d}</div>`);
+  for (let i=firstDay-1;i>=0;i--) html += `<div class="cal-day other-month">${prevDays-i}</div>`;
+  for (let d=1;d<=daysInMonth;d++) {
+    const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+    const isSel = d===calSelectedDate.getDate()&&month===calSelectedDate.getMonth()&&year===calSelectedDate.getFullYear();
+    html += `<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''} ${eventDays.has(d)?'has-event':''}" onclick="selectDay(${year},${month},${d})">${d}</div>`;
+  }
+  const rem = 42-firstDay-daysInMonth;
+  for (let d=1;d<=Math.min(rem,14);d++) html += `<div class="cal-day other-month">${d}</div>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function navMiniCal(dir) { calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth()+dir, 1); renderMiniCal(); }
+
+function selectDay(y,m,d) {
+  calSelectedDate = new Date(y,m,d);
+  renderMiniCal(); renderEventsList(calSelectedDate);
+  document.getElementById('ev-date').value = calSelectedDate.toISOString().split('T')[0];
+}
+
+function renderEventsList(date) {
+  const container = document.getElementById('events-list');
+  if (!container) return;
+  const joursNoms = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const moisNoms = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const debut = new Date(date); debut.setHours(0,0,0,0);
+  const fin = new Date(debut); fin.setDate(fin.getDate()+7);
+  const evs = calEvents.filter(e => { const d=new Date(e.start?.dateTime||e.start?.date); return d>=debut&&d<fin; });
+  if (!evs.length) { container.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Aucun événement cette semaine.<br><span style="color:var(--accent);cursor:pointer" onclick="showCalTab('nouveau')">+ Créer un événement</span></div>`; return; }
+  const groups = {};
+  evs.forEach(e => { const d=new Date(e.start?.dateTime||e.start?.date); const k=d.toDateString(); if(!groups[k])groups[k]=[]; groups[k].push(e); });
+  const colors = ['#c8a96e','#5cb87a','#5b9bd5','#e07b39','#9b59b6'];
+  let html = '';
+  Object.entries(groups).forEach(([k,evs]) => {
+    const d=new Date(k);
+    html += `<div class="events-date-header">${joursNoms[d.getDay()]} ${d.getDate()} ${moisNoms[d.getMonth()]}</div>`;
+    evs.forEach((e,i) => {
+      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}) : 'Toute la journée';
+      const end = e.end?.dateTime ? new Date(e.end.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}) : '';
+      html += `<div class="event-item" onclick="voirEvenement('${e.id}')"><div class="event-color-bar" style="background:${colors[i%colors.length]}"></div><div class="event-info"><div class="event-title">${escapeHtml(e.summary||'Sans titre')}</div><div class="event-time">${start}${end?' → '+end:''}</div></div><button class="event-del" onclick="event.stopPropagation();supprimerEvenement('${e.id}')">✕</button></div>`;
+    });
+  });
+  container.innerHTML = html;
+}
+
+function renderSemaine() {
+  const container = document.getElementById('semaine-container');
+  if (!container) return;
+  const lundi = new Date(calSelectedDate);
+  const day = lundi.getDay();
+  lundi.setDate(lundi.getDate()-(day===0?6:day-1));
+  const joursNoms=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const moisNoms=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">';
+  for (let i=0;i<7;i++) {
+    const d=new Date(lundi); d.setDate(d.getDate()+i);
+    const isToday=d.toDateString()===new Date().toDateString();
+    const evCount=calEvents.filter(e=>{const ed=new Date(e.start?.dateTime||e.start?.date);return ed.toDateString()===d.toDateString();}).length;
+    html+=`<div onclick="selectDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})" style="text-align:center;padding:6px 2px;border-radius:7px;cursor:pointer;background:${isToday?'var(--accent)':'var(--surface)'};border:1px solid var(--border)"><div style="font-size:9px;color:${isToday?'#1a1208':'var(--muted)'}">${joursNoms[i]}</div><div style="font-size:13px;font-weight:600;color:${isToday?'#1a1208':'var(--text)'}">${d.getDate()}</div><div style="font-size:9px;color:${isToday?'#1a1208':'var(--muted)'}">${moisNoms[d.getMonth()]}</div>${evCount?`<div style="width:5px;height:5px;background:${isToday?'#1a1208':'var(--accent)'};border-radius:50%;margin:2px auto 0"></div>`:''}</div>`;
+  }
+  html += '</div>';
+  for (let i=0;i<7;i++) {
+    const d=new Date(lundi); d.setDate(d.getDate()+i);
+    calEvents.filter(e=>{const ed=new Date(e.start?.dateTime||e.start?.date);return ed.toDateString()===d.toDateString();}).forEach(e=>{
+      const start=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Tj.';
+      html+=`<div style="display:flex;gap:8px;padding:5px 8px;margin-bottom:3px;background:var(--surface);border-radius:7px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--accent);width:32px;flex-shrink:0">${start}</div><div style="font-size:12px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtml(e.summary||'Sans titre')}</div></div>`;
+    });
+  }
+  container.innerHTML = html;
+}
+
+async function creerEvenement() {
+  if (!calToken) { alert('Calendrier non connecté.'); return; }
+  const titre = document.getElementById('ev-titre').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const debut = document.getElementById('ev-debut').value;
+  const fin = document.getElementById('ev-fin').value;
+  const desc = document.getElementById('ev-desc').value;
+  const invites = document.getElementById('ev-invites').value;
+  const rappelMin = parseInt(document.getElementById('ev-rappel').value);
+  if (!titre||!date) { document.getElementById('ev-status').textContent='Titre et date requis.'; return; }
+  document.getElementById('ev-status').textContent='Création en cours...';
+  const event = {
+    summary: titre, description: desc,
+    start: { dateTime:`${date}T${debut}:00`, timeZone:'America/Toronto' },
+    end:   { dateTime:`${date}T${fin}:00`,   timeZone:'America/Toronto' },
+    reminders: rappelMin ? {useDefault:false,overrides:[{method:'popup',minutes:rappelMin}]} : {useDefault:true}
+  };
+  if (invites.trim()) event.attendees = invites.split(',').map(e=>({email:e.trim()})).filter(e=>e.email);
+  try {
+    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method:'POST', headers:{Authorization:'Bearer '+calToken,'Content-Type':'application/json'}, body:JSON.stringify(event)
+    });
+    if (res.ok) {
+      document.getElementById('ev-status').style.color='var(--success)';
+      document.getElementById('ev-status').textContent='✓ Événement créé !';
+      document.getElementById('ev-titre').value=''; document.getElementById('ev-desc').value=''; document.getElementById('ev-invites').value='';
+      await chargerEvenements(); showCalTab('agenda');
+      addNovaMessage(`✅ **"${titre}"** ajouté à votre calendrier le **${new Date(date).toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'})}** de ${debut} à ${fin}.${invites?' Invitations envoyées.':''}`);
+      setTimeout(()=>{document.getElementById('ev-status').textContent='';},3000);
+    } else throw new Error();
+  } catch { document.getElementById('ev-status').style.color='var(--danger)'; document.getElementById('ev-status').textContent="Erreur lors de la création."; }
+}
+
+async function creerEvenementDepuisNova(data) {
+  if (!calToken) { addNovaMessage("⚠️ Connectez d'abord votre Google Calendar avec le bouton **Calendrier** en haut."); return; }
+  const event = {
+    summary: data.titre, description: data.description||'',
+    start: { dateTime: data.debut, timeZone:'America/Toronto' },
+    end:   { dateTime: data.fin,   timeZone:'America/Toronto' },
+    reminders: { useDefault:true }
+  };
+  try {
+    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+      method:'POST', headers:{Authorization:'Bearer '+calToken,'Content-Type':'application/json'}, body:JSON.stringify(event)
+    });
+    if (res.ok) { await chargerEvenements(); return true; }
+  } catch{}
+  return false;
+}
+
+async function supprimerEvenement(id) {
+  if (!calToken||!confirm('Supprimer cet événement ?')) return;
+  try {
+    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`,{method:'DELETE',headers:{Authorization:'Bearer '+calToken}});
+    calEvents = calEvents.filter(e=>e.id!==id);
+    renderEventsList(calSelectedDate); renderMiniCal();
+    addNovaMessage('🗑 Événement supprimé de votre calendrier.');
+  } catch { alert('Erreur lors de la suppression.'); }
+}
+
+function voirEvenement(id) {
+  const ev = calEvents.find(e=>e.id===id);
+  if (!ev) return;
+  const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString('fr-CA',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}) : ev.start?.date;
+  addNovaMessage(`📅 **${ev.summary||'Sans titre'}**\n🕐 ${start}${ev.description?'\n📝 '+ev.description:''}`);
+}
+
+function showCalTab(tab) {
+  ['agenda','nouveau','semaine'].forEach(t=>{
+    const el=document.getElementById('cal-'+t+'-view'); if(el) el.style.display=t===tab?'block':'none';
+    const btn=document.getElementById('ctab-'+t); if(btn) btn.classList.toggle('active',t===tab);
+  });
+  if (tab==='semaine') renderSemaine();
+}
+
+function demarrerRappels() {
+  setInterval(async()=>{
+    if(!calToken) return;
+    const maintenant=new Date();
+    calEvents.forEach(e=>{
+      if(!e.start?.dateTime) return;
+      const debut=new Date(e.start.dateTime);
+      const diff=(debut-maintenant)/60000;
+      if(diff>9&&diff<11) addNovaMessage(`⏰ **Rappel !** Vous avez **"${e.summary}"** dans 10 minutes (${debut.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'})}).`);
+    });
+  },60000);
+}
+
+// --- Shopify API ---
+async function fetchShopifyOrders() {
+  if (!shopifyConfig) return null;
+  try {
+    const res = await fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?limit=10&status=any`, {
+      headers: { 'X-Shopify-Access-Token': shopifyConfig.token, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.orders || [];
+  } catch { return null; }
+}
+
+function renderOrders(orders) {
+  if (!orders || orders.length === 0) return '<em>Aucune commande trouvée.</em>';
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>`;
+  orders.slice(0, 8).forEach(o => {
+    const date = new Date(o.created_at).toLocaleDateString('fr-CA');
+    const status = o.financial_status === 'paid' ? 'paid' : 'pending';
+    const label = o.financial_status === 'paid' ? 'Payée' : 'En attente';
+    const name = o.billing_address ? `${o.billing_address.first_name} ${o.billing_address.last_name}` : (o.email || 'Anonyme');
+    html += `<tr><td>#${o.order_number}</td><td>${name}</td><td>${parseFloat(o.total_price).toFixed(2)} ${o.currency}</td><td><span class="badge ${status}">${label}</span></td><td>${date}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+// --- Claude API ---
+async function callClaude(userMessage) {
+  const prefs = MEM.load('prefs', {});
+  const ent = MEM.load('entreprise', {});
+  const clients = MEM.load('clients', []);
+
+  const systemPrompt = `Tu es Nova, une secrétaire IA professionnelle et chaleureuse qui parle en français. Tu aides un entrepreneur avec son quotidien : gestion Shopify, emails Gmail, création de fichiers, facturation, réponses aux questions, conseils business.
+
+PROFIL DE L'UTILISATEUR (mémorisé) :
+- Nom : ${prefs.nom || 'non renseigné'}
+- Rôle : ${prefs.role || 'entrepreneur'}
+- Style préféré : ${prefs.style || 'professionnel et efficace'}
+- Infos supplémentaires : ${prefs.infos || 'aucune'}
+
+ENTREPRISE (mémorisée) :
+- Nom : ${ent.nom || 'non renseigné'}
+- Adresse : ${ent.adresse || 'non renseignée'}
+- Contact : ${ent.contact || 'non renseigné'}
+- No. TPS/TVQ : ${ent.taxesNo || 'non renseigné'}
+
+CLIENTS RÉCURRENTS (${clients.length}) :
+${clients.slice(0,5).map(c => `- ${c.nom}${c.entreprise ? ' ('+c.entreprise+')' : ''}`).join('\n') || 'Aucun encore'}
+
+CONNEXIONS ACTIVES :
+- Shopify : ${shopifyConfig ? 'connecté (' + shopifyConfig.url + ')' : 'non connecté'}
+- Gmail : ${gmailToken ? 'connecté' : 'non connecté'}
+- Google Calendar : ${calToken ? 'connecté' : 'non connecté'}
+
+INSTRUCTIONS :
+- Tu connais l'utilisateur par son nom (${prefs.nom || 'patron'}) et utilise-le naturellement
+- Tu te souviens des conversations passées grâce à l'historique fourni
+- Tu parles toujours en français, de façon professionnelle mais chaleureuse et personnalisée
+- Tu es proactive et suggères des actions utiles basées sur le contexte
+- Si on te demande des données Shopify, indique [SHOPIFY_DATA] dans ta réponse
+- Si on te demande des factures, rappelle d'utiliser le bouton "Facturation" en haut
+- Pour créer des fichiers, utilise les balises [CRÉER_EXCEL], [CRÉER_WORD], [CRÉER_PPT]
+- Pour créer un événement dans le calendrier par message, utilise [CRÉER_ÉVÉNEMENT]{"titre":"...","debut":"2026-05-20T14:00:00","fin":"2026-05-20T15:00:00","description":"..."}[/CRÉER_ÉVÉNEMENT]
+- Pour les événements, calcule les dates à partir d'aujourd'hui (${new Date().toISOString().split('T')[0]}) — "demain", "vendredi", etc.
+- Quand tu crées un événement par message, mets aussi une confirmation textuelle avant la balise
+
+CRÉATION DE FICHIERS :
+[CRÉER_EXCEL]{"filename":"nom.xlsx","sheets":[{"name":"Feuille1","headers":["Col1","Col2","Col3"],"rows":[["val1","val2","val3"]]}]}[/CRÉER_EXCEL]
+[CRÉER_WORD]{"filename":"nom.doc","title":"Titre","sections":[{"heading":"Section","content":"Contenu"}]}[/CRÉER_WORD]
+[CRÉER_PPT]{"filename":"nom.html","title":"Titre","slides":[{"title":"Slide 1","subtitle":"Sous-titre"},{"title":"Slide 2","bullets":["Point 1","Point 2"]}]}[/CRÉER_PPT]
+Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
+
+  conversationHistory.push({ role: 'user', content: userMessage });
+
+  const res = await fetch(CLAUDE_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: conversationHistory
+    })
+  });
+
+  const data = await res.json();
+  const reply = data.content?.[0]?.text || "Désolée, une erreur s'est produite.";
+  conversationHistory.push({ role: 'assistant', content: reply });
+  sauvegarderHistorique();
+  return reply;
+}
+
+// --- UI ---
+function getTime() {
+  return new Date().toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+}
+
+function addUserMessage(text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `
+    <div class="msg-avatar">V</div>
+    <div>
+      <div class="msg-bubble">${escapeHtml(text)}</div>
+      <div class="msg-time">${getTime()}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addNovaMessage(text, extraHtml = '') {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg nova';
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = `
+    <div class="msg-avatar">N</div>
+    <div>
+      <div class="msg-bubble">${formatted}${extraHtml}</div>
+      <div class="msg-time">${getTime()}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function addTypingIndicator() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg nova';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="msg-avatar">N</div>
+    <div>
+      <div class="msg-bubble">
+        <div class="typing-indicator"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+
+  addUserMessage(text);
+  addTypingIndicator();
+
+  try {
+    const reply = await callClaude(text);
+    removeTypingIndicator();
+
+    if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
+      const orders = await fetchShopifyOrders();
+      const cleanReply = reply.replace('[SHOPIFY_DATA]', '');
+      addNovaMessage(cleanReply, orders ? renderOrders(orders) : '<em>Impossible de charger les données Shopify.</em>');
+    } else if (reply.includes('[CRÉER_EXCEL]')) {
+      const jsonMatch = reply.match(/\[CRÉER_EXCEL\]([\s\S]*?)\[\/CRÉER_EXCEL\]/);
+      const cleanReply = reply.replace(/\[CRÉER_EXCEL\][\s\S]*?\[\/CRÉER_EXCEL\]/, '');
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          const dlHtml = createExcelFile(data);
+          addNovaMessage(cleanReply || 'Voici votre fichier Excel :', dlHtml);
+        } catch { addNovaMessage(cleanReply); }
+      } else { addNovaMessage(cleanReply); }
+    } else if (reply.includes('[CRÉER_WORD]')) {
+      const jsonMatch = reply.match(/\[CRÉER_WORD\]([\s\S]*?)\[\/CRÉER_WORD\]/);
+      const cleanReply = reply.replace(/\[CRÉER_WORD\][\s\S]*?\[\/CRÉER_WORD\]/, '');
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          const dlHtml = createWordFile(data);
+          addNovaMessage(cleanReply || 'Voici votre document Word :', dlHtml);
+        } catch { addNovaMessage(cleanReply); }
+      } else { addNovaMessage(cleanReply); }
+    } else if (reply.includes('[CRÉER_PPT]')) {
+      const jsonMatch = reply.match(/\[CRÉER_PPT\]([\s\S]*?)\[\/CRÉER_PPT\]/);
+      const cleanReply = reply.replace(/\[CRÉER_PPT\][\s\S]*?\[\/CRÉER_PPT\]/, '');
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          const dlHtml = createPptFile(data);
+          addNovaMessage(cleanReply || 'Voici votre présentation :', dlHtml);
+        } catch { addNovaMessage(cleanReply); }
+      } else { addNovaMessage(cleanReply); }
+    } else if (reply.includes('[CRÉER_ÉVÉNEMENT]')) {
+      const jsonMatch = reply.match(/\[CRÉER_ÉVÉNEMENT\]([\s\S]*?)\[\/CRÉER_ÉVÉNEMENT\]/);
+      const cleanReply = reply.replace(/\[CRÉER_ÉVÉNEMENT\][\s\S]*?\[\/CRÉER_ÉVÉNEMENT\]/, '');
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          const ok = await creerEvenementDepuisNova(data);
+          addNovaMessage(cleanReply || (ok
+            ? `✅ Événement **"${data.titre}"** ajouté à votre calendrier !`
+            : "⚠️ Connectez d'abord votre Google Calendar avec le bouton **Calendrier** en haut."));
+        } catch { addNovaMessage(cleanReply || reply); }
+      } else { addNovaMessage(cleanReply || reply); }
+    } else {
+      addNovaMessage(reply);
+    }
+  } catch (err) {
+    removeTypingIndicator();
+    addNovaMessage('Désolée, une erreur est survenue. Veuillez réessayer.');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+// =====================
+// CRÉATION DE FICHIERS
+// =====================
+
+function downloadBtn(filename, url) {
+  return `<div style="margin-top:12px">
+    <a href="${url}" download="${filename}" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:var(--accent);color:#1a1208;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500">
+      ⬇️ Télécharger ${filename}
+    </a>
+  </div>`;
+}
+
+function createExcelFile(data) {
+  try {
+    // Ouvrir l'éditeur au lieu de télécharger directement
+    ouvrirEditeurExcel(data);
+    return `<div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);font-size:12px;color:var(--muted2)">
+      📊 L'éditeur Excel s'est ouvert — modifiez le tableau puis cliquez <strong>⬇️ Excel</strong> pour télécharger.
+      <button onclick="ouvrirEditeurExcel(${JSON.stringify(data).replace(/"/g,'&quot;')})" style="margin-left:8px;padding:3px 10px;border-radius:5px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Rouvrir l'éditeur</button>
+    </div>`;
+  } catch(e) {
+    return `<em style="color:var(--danger)">Erreur création Excel: ${e.message}</em>`;
+  }
+}
+
+function createWordFile(data) {
+  // data = { filename, title, sections: [{ heading, content }] }
+  try {
+    let html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <style>body{font-family:Calibri,sans-serif;margin:2.5cm;font-size:12pt;line-height:1.5}
+    h1{font-size:18pt;color:#2c3e50}h2{font-size:14pt;color:#34495e;margin-top:20px}
+    table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 10px}
+    th{background:#f0f0f0;font-weight:bold}</style></head><body>`;
+    if (data.title) html += `<h1>${data.title}</h1>`;
+    (data.sections || []).forEach(s => {
+      if (s.heading) html += `<h2>${s.heading}</h2>`;
+      if (s.content) html += `<p>${s.content.replace(/\n/g,'<br>')}</p>`;
+      if (s.table) {
+        html += '<table><tr>' + s.table.headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+        s.table.rows.forEach(r => { html += '<tr>' + r.map(c=>`<td>${c}</td>`).join('') + '</tr>'; });
+        html += '</table>';
+      }
+    });
+    html += '</body></html>';
+    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    return downloadBtn(data.filename || 'nova-document.doc', url);
+  } catch(e) {
+    return `<em style="color:var(--danger)">Erreur création Word: ${e.message}</em>`;
+  }
+}
+
+function createPptFile(data) {
+  // data = { filename, slides: [{ title, content, bullets }] }
+  // Creates an HTML presentation (opens in browser, printable as PDF)
+  try {
+    const colors = ['#1a1a2e','#16213e','#0f3460','#1b262c'];
+    let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.title||'Présentation'}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#111}
+    .slide{width:1280px;min-height:720px;display:flex;flex-direction:column;justify-content:center;
+      padding:80px;page-break-after:always;position:relative;overflow:hidden}
+    .slide-num{font-size:24px;font-weight:700;color:rgba(255,255,255,0.15);position:absolute;bottom:30px;right:40px}
+    h1{font-size:52px;font-weight:700;color:#fff;margin-bottom:20px;line-height:1.1}
+    h2{font-size:38px;font-weight:600;color:#fff;margin-bottom:30px}
+    .subtitle{font-size:24px;color:rgba(255,255,255,0.7);margin-bottom:10px}
+    .content{font-size:22px;color:rgba(255,255,255,0.85);line-height:1.7}
+    ul{list-style:none;padding:0}
+    ul li{padding:10px 0;padding-left:30px;position:relative;font-size:22px;color:rgba(255,255,255,0.85)}
+    ul li::before{content:"▸";position:absolute;left:0;color:#c8a96e}
+    .accent{position:absolute;bottom:0;left:0;height:5px;width:100%;background:linear-gradient(90deg,#c8a96e,transparent)}
+    @media print{.slide{page-break-after:always}}
+    </style></head><body>`;
+
+    (data.slides || []).forEach((slide, i) => {
+      const bg = colors[i % colors.length];
+      html += `<div class="slide" style="background:${bg}">`;
+      if (i === 0) {
+        html += `<h1>${slide.title||''}</h1>`;
+        if (slide.subtitle) html += `<div class="subtitle">${slide.subtitle}</div>`;
+      } else {
+        html += `<h2>${slide.title||''}</h2>`;
+      }
+      if (slide.content) html += `<div class="content">${slide.content.replace(/\n/g,'<br>')}</div>`;
+      if (slide.bullets && slide.bullets.length) {
+        html += '<ul>' + slide.bullets.map(b=>`<li>${b}</li>`).join('') + '</ul>';
+      }
+      html += `<div class="slide-num">${i+1}/${data.slides.length}</div>`;
+      html += '<div class="accent"></div></div>';
+    });
+    html += '</body></html>';
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    return downloadBtn(data.filename || 'nova-presentation.html', url) +
+      '<div style="font-size:11px;color:var(--muted);margin-top:6px">Ouvre le fichier dans ton navigateur · Imprime en PDF pour partager</div>';
+  } catch(e) {
+    return `<em style="color:var(--danger)">Erreur création présentation: ${e.message}</em>`;
+  }
+}
+
+function quickSend(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Close modal on overlay click
+document.getElementById('shopify-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeShopifyModal();
+});
+
+// Charger la mémoire au démarrage
+document.addEventListener('DOMContentLoaded', chargerMemoire);
+
+// =====================
+// GESTIONNAIRE FICHIERS EXCEL
+// =====================
+
+function sauvegarderFichierExcel(nom, workbook) {
+  const fichiers = MEM.load('excel_fichiers', []);
+  const idx = fichiers.findIndex(f => f.nom === nom);
+  const entry = {
+    nom,
+    workbook: JSON.parse(JSON.stringify(workbook)),
+    date: new Date().toISOString(),
+    lignes: workbook.reduce((t, s) => t + (s.rows?.length || 0), 0),
+    feuilles: workbook.length
+  };
+  if (idx >= 0) fichiers[idx] = entry;
+  else fichiers.unshift(entry);
+  if (fichiers.length > 50) fichiers.pop();
+  MEM.save('excel_fichiers', fichiers);
+}
+
+function ouvrirGestionnaire() {
+  document.getElementById('xl-manager-overlay').classList.add('open');
+  renderGestionnaire();
+}
+
+function fermerGestionnaire() {
+  document.getElementById('xl-manager-overlay').classList.remove('open');
+}
+
+function renderGestionnaire() {
+  const fichiers = MEM.load('excel_fichiers', []);
+  const body = document.getElementById('xl-manager-body');
+  if (!fichiers.length) {
+    body.innerHTML = `<div class="xl-empty">
+      <div style="font-size:36px;margin-bottom:12px">📂</div>
+      <div>Aucun fichier Excel sauvegardé pour l'instant.</div>
+      <div style="margin-top:8px;font-size:12px">Créez un fichier Excel via Nova ou importez-en un existant.</div>
+    </div>`;
+    return;
+  }
+  body.innerHTML = fichiers.map((f, i) => {
+    const date = new Date(f.date).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return `<div class="xl-file-item">
+      <div class="xl-file-icon">📊</div>
+      <div class="xl-file-info">
+        <div class="xl-file-name">${escapeHtml(f.nom)}</div>
+        <div class="xl-file-meta">${f.feuilles} feuille${f.feuilles>1?'s':''} · ${f.lignes} ligne${f.lignes>1?'s':''} · ${date}</div>
+      </div>
+      <div class="xl-file-actions">
+        <button class="xl-file-btn" onclick="ouvrirDepuisGestionnaire(${i})">✏️ Ouvrir</button>
+        <button class="xl-file-btn dl" onclick="telechargerDepuisGestionnaire(${i})">⬇️ Excel</button>
+        <button class="xl-file-btn del" onclick="supprimerFichierGestionnaire(${i})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function ouvrirDepuisGestionnaire(i) {
+  const fichiers = MEM.load('excel_fichiers', []);
+  const f = fichiers[i];
+  if (!f) return;
+  fermerGestionnaire();
+  ouvrirEditeurExcel({ filename: f.nom, sheets: f.workbook });
+}
+
+function telechargerDepuisGestionnaire(i) {
+  const fichiers = MEM.load('excel_fichiers', []);
+  const f = fichiers[i];
+  if (!f) return;
+  const XLSX = window.XLSX;
+  if (!XLSX) { alert('Bibliothèque Excel non chargée.'); return; }
+  const wb = XLSX.utils.book_new();
+  f.workbook.forEach(sheet => {
+    const wsData = [sheet.headers, ...sheet.rows.map(r => sheet.headers.map((_, ci) => r[ci] ?? ''))];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = sheet.headers.map(h => ({ wch: Math.max(String(h).length + 4, 12) }));
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name || 'Feuille1');
+  });
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = f.nom; a.click();
+}
+
+function supprimerFichierGestionnaire(i) {
+  if (!confirm('Supprimer ce fichier de la mémoire de Nova ?')) return;
+  const fichiers = MEM.load('excel_fichiers', []);
+  fichiers.splice(i, 1);
+  MEM.save('excel_fichiers', fichiers);
+  renderGestionnaire();
+}
+
+function importerDepuisGestionnaire(input) {
+  const file = input.files[0]; if (!file) return;
+  const XLSX = window.XLSX;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const workbook = wb.SheetNames.map(name => {
+        const ws = wb.Sheets[name];
+        const data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+        const headers = (data[0]||[]).map(h => String(h));
+        const rows = data.slice(1).map(r => headers.map((_,ci) => String(r[ci]??'')));
+        return { name, headers, rows };
+      });
+      sauvegarderFichierExcel(file.name, workbook);
+      fermerGestionnaire();
+      ouvrirEditeurExcel({ filename: file.name, sheets: workbook });
+      addNovaMessage(`📂 **${file.name}** importé et sauvegardé dans Mes fichiers !`);
+    } catch(err) { alert('Erreur lecture fichier : ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// =====================
+// ÉDITEUR EXCEL
+// =====================
+let xlWorkbook = null;    // données: [{name, headers, rows}]
+let xlSheetIdx = 0;
+let xlSelectedRow = 0;
+let xlSelectedCol = 0;
+let xlFilename = 'nouveau-fichier.xlsx';
+
+function ouvrirEditeurExcel(data) {
+  xlFilename = data.filename || 'nova-fichier.xlsx';
+  xlWorkbook = JSON.parse(JSON.stringify(data.sheets || [data]));
+  xlSheetIdx = 0;
+  document.getElementById('xl-filename').textContent = xlFilename;
+  document.getElementById('excel-overlay').classList.add('open');
+  // Sauvegarder automatiquement dans le gestionnaire
+  sauvegarderFichierExcel(xlFilename, xlWorkbook);
+  renderXlTabs();
+  renderXlGrid();
+}
+
+function fermerExcel() {
+  document.getElementById('excel-overlay').classList.remove('open');
+}
+
+function renderXlTabs() {
+  const tabs = document.getElementById('xl-tabs');
+  tabs.innerHTML = xlWorkbook.map((s, i) =>
+    `<div class="sheet-tab ${i===xlSheetIdx?'active':''}" onclick="switchSheet(${i})">${s.name||'Feuille'+(i+1)}</div>`
+  ).join('') + `<button class="add-sheet-btn" onclick="ajouterFeuille()" title="Nouvelle feuille">+</button>`;
+}
+
+function switchSheet(i) {
+  xlSheetIdx = i;
+  renderXlTabs();
+  renderXlGrid();
+}
+
+function ajouterFeuille() {
+  xlWorkbook.push({ name: 'Feuille' + (xlWorkbook.length + 1), headers: ['Colonne 1'], rows: [[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],[''],['']].slice(0,20) });
+  xlSheetIdx = xlWorkbook.length - 1;
+  renderXlTabs(); renderXlGrid();
+}
+
+function getSheet() { return xlWorkbook[xlSheetIdx]; }
+
+function renderXlGrid() {
+  const sheet = getSheet();
+  const headers = sheet.headers || [];
+  const rows = sheet.rows || [];
+  const colLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  let html = '<thead><tr><th class="corner"></th>';
+  headers.forEach((h, ci) => {
+    html += `<th class="col-header" ondblclick="renommerColonne(${ci})">${colLetters[ci]||ci+1}<br><span style="font-size:10px;font-weight:400">${escapeHtml(h)}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((row, ri) => {
+    html += `<tr><th class="row-num">${ri+1}</th>`;
+    headers.forEach((_, ci) => {
+      const val = row[ci] !== undefined ? row[ci] : '';
+      const isSelected = ri===xlSelectedRow && ci===xlSelectedCol;
+      html += `<td class="${isSelected?'selected':''}" onclick="selectCell(${ri},${ci})">
+        <input value="${escapeHtml(String(val))}"
+          onchange="updateCell(${ri},${ci},this.value)"
+          oninput="syncCellToFormula(${ri},${ci},this.value)"
+          onfocus="selectCell(${ri},${ci})"
+          onkeydown="xlKeyNav(event,${ri},${ci})"
+          id="xl-cell-${ri}-${ci}" />
+      </td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+
+  document.getElementById('xl-grid').innerHTML = html;
+  updateStatusBar();
+  syncFormulaBar();
+}
+
+function selectCell(ri, ci) {
+  xlSelectedRow = ri; xlSelectedCol = ci;
+  const cols = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  document.getElementById('xl-cell-ref').textContent = (cols[ci]||ci+1) + (ri+1);
+  // Highlight
+  document.querySelectorAll('.excel-grid td').forEach(td => td.classList.remove('selected'));
+  const cell = document.getElementById(`xl-cell-${ri}-${ci}`);
+  if (cell) { cell.parentElement.classList.add('selected'); cell.focus(); }
+  syncFormulaBar();
+}
+
+function syncFormulaBar() {
+  const sheet = getSheet();
+  const val = sheet.rows[xlSelectedRow]?.[xlSelectedCol] ?? '';
+  document.getElementById('xl-formula').value = val;
+}
+
+function syncCellToFormula(ri, ci, val) {
+  if (ri === xlSelectedRow && ci === xlSelectedCol) {
+    document.getElementById('xl-formula').value = val;
+  }
+  updateCell(ri, ci, val);
+}
+
+function syncFormulaToCell() {
+  const val = document.getElementById('xl-formula').value;
+  const cell = document.getElementById(`xl-cell-${xlSelectedRow}-${xlSelectedCol}`);
+  if (cell) cell.value = val;
+  updateCell(xlSelectedRow, xlSelectedCol, val);
+}
+
+function updateCell(ri, ci, val) {
+  const sheet = getSheet();
+  if (!sheet.rows[ri]) sheet.rows[ri] = [];
+  while (sheet.rows[ri].length <= ci) sheet.rows[ri].push('');
+  sheet.rows[ri][ci] = val;
+  updateStatusBar();
+}
+
+function xlKeyNav(e, ri, ci) {
+  const sheet = getSheet();
+  let nr = ri, nc = ci;
+  if (e.key === 'Tab') { e.preventDefault(); nc = ci + 1; if (nc >= sheet.headers.length) { nc = 0; nr++; } }
+  else if (e.key === 'Enter') { e.preventDefault(); nr = ri + 1; }
+  else if (e.key === 'ArrowDown') nr = ri + 1;
+  else if (e.key === 'ArrowUp') nr = ri - 1;
+  else if (e.key === 'ArrowRight' && e.target.selectionEnd === e.target.value.length) nc = ci + 1;
+  else if (e.key === 'ArrowLeft' && e.target.selectionStart === 0) nc = ci - 1;
+  else return;
+  nr = Math.max(0, Math.min(nr, sheet.rows.length - 1));
+  nc = Math.max(0, Math.min(nc, sheet.headers.length - 1));
+  selectCell(nr, nc);
+}
+
+function renommerColonne(ci) {
+  const sheet = getSheet();
+  const nom = prompt('Nouveau nom de colonne :', sheet.headers[ci]);
+  if (nom !== null) { sheet.headers[ci] = nom; renderXlGrid(); }
+}
+
+function ajouterLigne() {
+  const sheet = getSheet();
+  sheet.rows.push(new Array(sheet.headers.length).fill(''));
+  renderXlGrid();
+  // Scroll to bottom
+  const wrap = document.getElementById('xl-grid-wrap');
+  setTimeout(() => { wrap.scrollTop = wrap.scrollHeight; }, 50);
+}
+
+function ajouterColonne() {
+  const sheet = getSheet();
+  const nom = prompt('Nom de la nouvelle colonne :', 'Nouvelle colonne');
+  if (nom === null) return;
+  sheet.headers.push(nom);
+  sheet.rows.forEach(r => r.push(''));
+  renderXlGrid();
+}
+
+function supprimerLigneSelectionnee() {
+  const sheet = getSheet();
+  if (sheet.rows.length <= 1) return;
+  if (!confirm(`Supprimer la ligne ${xlSelectedRow + 1} ?`)) return;
+  sheet.rows.splice(xlSelectedRow, 1);
+  xlSelectedRow = Math.min(xlSelectedRow, sheet.rows.length - 1);
+  renderXlGrid();
+}
+
+function updateStatusBar() {
+  const sheet = getSheet();
+  const total = sheet.rows.length;
+  const cols = sheet.headers.length;
+  // Calcul somme de la colonne sélectionnée
+  const vals = sheet.rows.map(r => parseFloat(r[xlSelectedCol])).filter(v => !isNaN(v));
+  const somme = vals.reduce((a,b) => a+b, 0);
+  document.getElementById('xl-status').textContent = `${total} lignes · ${cols} colonnes`;
+  document.getElementById('xl-selection-info').textContent = vals.length > 1 ? `Somme: ${somme.toFixed(2)} · Moy: ${(somme/vals.length).toFixed(2)} · Nb: ${vals.length}` : '';
+}
+
+function telechargerExcel() {
+  const XLSX = window.XLSX;
+  if (!XLSX) { alert('Bibliothèque Excel non chargée.'); return; }
+  const wb = XLSX.utils.book_new();
+  xlWorkbook.forEach(sheet => {
+    const wsData = [sheet.headers, ...sheet.rows.map(r => sheet.headers.map((_, ci) => r[ci] ?? ''))];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = sheet.headers.map(h => ({ wch: Math.max(String(h).length + 4, 12) }));
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name || 'Feuille1');
+  });
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = xlFilename; a.click();
+  // Sauvegarder dans le gestionnaire
+  sauvegarderFichierExcel(xlFilename, xlWorkbook);
+  document.getElementById('xl-status').textContent = '✓ Téléchargé et sauvegardé dans Mes fichiers !';
+  setTimeout(() => updateStatusBar(), 3000);
+}
+
+function telechargerCSV() {
+  const sheet = getSheet();
+  const rows = [sheet.headers, ...sheet.rows.map(r => sheet.headers.map((_, ci) => r[ci] ?? ''))];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = xlFilename.replace('.xlsx', '.csv'); a.click();
+}
+
+async function importerExcel(input) {
+  const file = input.files[0]; if (!file) return;
+  const XLSX = window.XLSX;
+  if (!XLSX) { alert('Bibliothèque Excel non chargée.'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      xlWorkbook = wb.SheetNames.map(name => {
+        const ws = wb.Sheets[name];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        const headers = (data[0] || []).map(h => String(h));
+        const rows = data.slice(1).map(r => headers.map((_, ci) => String(r[ci] ?? '')));
+        return { name, headers, rows };
+      });
+      xlFilename = file.name; xlSheetIdx = 0;
+      document.getElementById('xl-filename').textContent = xlFilename;
+      // Sauvegarder dans le gestionnaire
+      sauvegarderFichierExcel(file.name, xlWorkbook);
+      renderXlTabs(); renderXlGrid();
+      addNovaMessage(`📂 Fichier **${file.name}** importé — ${xlWorkbook.length} feuille(s), ${xlWorkbook[0].rows.length} lignes. Vous pouvez maintenant le modifier !`);
+    } catch(err) { alert('Erreur lors de la lecture du fichier : ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function modifierAvecNova() {
+  const input = document.getElementById('xl-ai-input');
+  const instruction = input.value.trim();
+  if (!instruction) return;
+  input.value = '';
+  document.getElementById('xl-status').textContent = '✨ Nova modifie le tableau...';
+
+  const sheet = getSheet();
+  const context = JSON.stringify({ headers: sheet.headers, rows: sheet.rows.slice(0,30) });
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `Tu es un assistant Excel. Voici un tableau JSON :
+${context}
+
+Instruction de l'utilisateur : "${instruction}"
+
+Retourne UNIQUEMENT un JSON valide avec cette structure exacte (sans markdown, sans explication) :
+{"headers":["col1","col2"],"rows":[["val1","val2"],["val3","val4"]],"message":"Explication courte en français de ce que tu as fait"}
+
+IMPORTANT :
+- Garde toutes les données existantes sauf si l'instruction dit de les supprimer
+- Pour ajouter une ligne : ajoute-la dans rows
+- Pour trier : trie les rows
+- Pour ajouter une colonne : ajoute dans headers ET dans chaque row
+- Le message doit expliquer ce qui a été fait`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(clean);
+    sheet.headers = result.headers;
+    sheet.rows = result.rows;
+    renderXlGrid();
+    document.getElementById('xl-status').textContent = '✓ ' + (result.message || 'Modifié !');
+    // Sauvegarder automatiquement
+    sauvegarderFichierExcel(xlFilename, xlWorkbook);
+    addNovaMessage(`✅ **Tableau modifié :** ${result.message || instruction}`);
+  } catch(err) {
+    document.getElementById('xl-status').textContent = 'Erreur — réessayez';
+    addNovaMessage('⚠️ Je n\'ai pas pu modifier le tableau. Réessayez avec une instruction plus précise.');
+  }
+}
+
+// =====================
+let facturePanelOpen = false;
+let itemCount = 0;
+
+function toggleFacturePanel() {
+  facturePanelOpen = !facturePanelOpen;
+  document.getElementById('facture-overlay').classList.toggle('open', facturePanelOpen);
+  if (facturePanelOpen && itemCount === 0) {
+    // Init dates
+    const today = new Date();
+    const echeance = new Date(today); echeance.setDate(echeance.getDate() + 30);
+    document.getElementById('f-date').value = today.toISOString().split('T')[0];
+    document.getElementById('f-echeance').value = echeance.toISOString().split('T')[0];
+    // Numéro auto
+    document.getElementById('f-numero').value = 'FAC-' + String(Date.now()).slice(-4);
+    addItem(); addItem(); // 2 lignes vides par défaut
+  }
+}
+
+function addItem() {
+  itemCount++;
+  const id = itemCount;
+  const tbody = document.getElementById('items-tbody');
+  const tr = document.createElement('tr');
+  tr.id = 'item-' + id;
+  tr.innerHTML = `
+    <td><input class="facture-input item-desc" placeholder="Description du service..." oninput="calcTotaux()" id="desc-${id}"/></td>
+    <td><input class="facture-input" type="number" value="1" min="0" step="any" oninput="calcTotaux()" id="qty-${id}" style="width:60px"/></td>
+    <td><input class="facture-input" type="number" value="" min="0" step="0.01" placeholder="0.00" oninput="calcTotaux()" id="prix-${id}"/></td>
+    <td><input type="checkbox" id="tps-${id}" checked onchange="calcTotaux()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/></td>
+    <td><input type="checkbox" id="tvq-${id}" checked onchange="calcTotaux()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/></td>
+    <td id="st-${id}" style="font-size:13px;color:var(--muted2);padding-left:8px">0,00 $</td>
+    <td><button class="del-item" onclick="removeItem(${id})">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function removeItem(id) {
+  const el = document.getElementById('item-' + id);
+  if (el) el.remove();
+  calcTotaux();
+}
+
+function calcTotaux() {
+  let subtotal = 0, totalTPS = 0, totalTVQ = 0;
+  const TPS = 0.05, TVQ = 0.09975;
+  for (let i = 1; i <= itemCount; i++) {
+    const row = document.getElementById('item-' + i);
+    if (!row) continue;
+    const qty = parseFloat(document.getElementById('qty-' + i)?.value || 0);
+    const prix = parseFloat(document.getElementById('prix-' + i)?.value || 0);
+    const hasTPS = document.getElementById('tps-' + i)?.checked;
+    const hasTVQ = document.getElementById('tvq-' + i)?.checked;
+    const st = qty * prix;
+    subtotal += st;
+    if (hasTPS) totalTPS += st * TPS;
+    if (hasTVQ) totalTVQ += st * TVQ;
+    const stEl = document.getElementById('st-' + i);
+    if (stEl) stEl.textContent = fmt(st);
+  }
+  const total = subtotal + totalTPS + totalTVQ;
+  document.getElementById('t-subtotal').textContent = fmt(subtotal);
+  document.getElementById('t-tps').textContent = fmt(totalTPS);
+  document.getElementById('t-tvq').textContent = fmt(totalTVQ);
+  document.getElementById('t-total').textContent = fmt(total);
+  return { subtotal, totalTPS, totalTVQ, total };
+}
+
+function fmt(n) { return n.toFixed(2).replace('.', ',') + ' $'; }
+function fmtNum(n) { return n.toFixed(2); }
+
+function getFactureData() {
+  const totaux = calcTotaux();
+  const items = [];
+  for (let i = 1; i <= itemCount; i++) {
+    const row = document.getElementById('item-' + i);
+    if (!row) continue;
+    const desc = document.getElementById('desc-' + i)?.value.trim();
+    const qty = parseFloat(document.getElementById('qty-' + i)?.value || 0);
+    const prix = parseFloat(document.getElementById('prix-' + i)?.value || 0);
+    const hasTPS = document.getElementById('tps-' + i)?.checked;
+    const hasTVQ = document.getElementById('tvq-' + i)?.checked;
+    if (desc || prix) items.push({ desc: desc || '-', qty, prix, hasTPS, hasTVQ, st: qty * prix });
+  }
+  return {
+    entreprise: document.getElementById('f-entreprise').value,
+    taxesNo: document.getElementById('f-taxes-no').value,
+    adresse: document.getElementById('f-adresse').value,
+    contact: document.getElementById('f-contact').value,
+    client: document.getElementById('f-client').value,
+    clientEntreprise: document.getElementById('f-client-entreprise').value,
+    clientAdresse: document.getElementById('f-client-adresse').value,
+    clientEmail: document.getElementById('f-client-email').value,
+    numero: document.getElementById('f-numero').value,
+    date: document.getElementById('f-date').value,
+    echeance: document.getElementById('f-echeance').value,
+    notes: document.getElementById('f-notes').value,
+    items, ...totaux
+  };
+}
+
+function genererFacturePDF() {
+  const d = getFactureData();
+  if (!d.client) { alert('Veuillez entrer le nom du client.'); return; }
+  if (d.items.length === 0) { alert('Ajoutez au moins un article.'); return; }
+
+  const TPS_RATE = 5, TVQ_RATE = 9.975;
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+  <title>Facture ${d.numero}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;background:#fff;padding:40px;font-size:13px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
+    .company-name{font-size:26px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .company-info{font-size:12px;color:#555;line-height:1.7}
+    .facture-title{text-align:right}
+    .facture-title h1{font-size:32px;font-weight:800;color:#c8a96e;letter-spacing:-0.02em}
+    .facture-title p{font-size:12px;color:#888;margin-top:4px}
+    .divider{height:2px;background:linear-gradient(90deg,#c8a96e,#e8c98a,transparent);margin:20px 0}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+    .info-block h3{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#c8a96e;margin-bottom:8px}
+    .info-block p{font-size:12px;color:#333;line-height:1.7}
+    .dates{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:#f8f6f0;border-radius:10px;padding:14px 18px;margin-bottom:28px}
+    .date-item label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#999;display:block;margin-bottom:3px}
+    .date-item span{font-size:13px;font-weight:500;color:#1a1a2e}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px}
+    thead tr{background:#1a1a2e;color:#fff}
+    thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em}
+    thead th:last-child{text-align:right}
+    tbody tr:nth-child(even){background:#fafaf8}
+    tbody td{padding:9px 12px;font-size:12px;border-bottom:1px solid #eee}
+    tbody td:last-child{text-align:right;font-weight:500}
+    .totaux{margin-left:auto;width:280px}
+    .tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#555;border-bottom:1px solid #f0ede8}
+    .tot-row.grand{font-size:16px;font-weight:700;color:#1a1a2e;border-bottom:none;padding-top:10px}
+    .tot-row.grand span:last-child{color:#c8a96e}
+    .footer{margin-top:36px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#999;text-align:center}
+    .notes{background:#faf8f2;border-left:3px solid #c8a96e;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;font-size:12px;color:#555}
+    .badge-paid{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-left:8px}
+    @media print{body{padding:20px}button{display:none}}
+  </style>
+</head><body>
+  <div class="header">
+    <div>
+      <div class="company-name">${d.entreprise || 'Votre Entreprise'}</div>
+      <div class="company-info">
+        ${d.adresse ? d.adresse + '<br>' : ''}
+        ${d.contact ? d.contact + '<br>' : ''}
+        ${d.taxesNo ? '<span style="color:#c8a96e">' + d.taxesNo + '</span>' : ''}
+      </div>
+    </div>
+    <div class="facture-title">
+      <h1>FACTURE</h1>
+      <p style="font-size:14px;font-weight:600">${d.numero}</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="info-grid">
+    <div class="info-block">
+      <h3>Facturer à</h3>
+      <p><strong>${d.client}</strong><br>
+      ${d.clientEntreprise ? d.clientEntreprise + '<br>' : ''}
+      ${d.clientAdresse ? d.clientAdresse + '<br>' : ''}
+      ${d.clientEmail ? d.clientEmail : ''}</p>
+    </div>
+    <div class="info-block">
+      <h3>Détails</h3>
+      <p>
+        <strong>Date :</strong> ${d.date}<br>
+        <strong>Échéance :</strong> ${d.echeance}<br>
+        <strong>Statut :</strong> <span style="color:#e07b39;font-weight:600">En attente</span>
+      </p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:45%">Description</th>
+        <th style="width:8%">Qté</th>
+        <th style="width:15%">Prix unit.</th>
+        <th style="width:8%">TPS</th>
+        <th style="width:8%">TVQ</th>
+        <th style="width:16%">Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${d.items.map(item => `<tr>
+        <td>${item.desc}</td>
+        <td>${item.qty}</td>
+        <td>${fmtNum(item.prix)} $</td>
+        <td>${item.hasTPS ? TPS_RATE + '%' : '—'}</td>
+        <td>${item.hasTVQ ? TVQ_RATE + '%' : '—'}</td>
+        <td>${fmtNum(item.st)} $</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <div style="display:flex;justify-content:flex-end">
+    <div class="totaux">
+      <div class="tot-row"><span>Sous-total</span><span>${fmtNum(d.subtotal)} $</span></div>
+      <div class="tot-row"><span>TPS (5%)</span><span>${fmtNum(d.totalTPS)} $</span></div>
+      <div class="tot-row"><span>TVQ (9,975%)</span><span>${fmtNum(d.totalTVQ)} $</span></div>
+      <div class="tot-row grand"><span>TOTAL DÛ</span><span>${fmtNum(d.total)} $</span></div>
+    </div>
+  </div>
+
+  ${d.notes ? `<div class="notes">📝 ${d.notes}</div>` : ''}
+
+  <div class="footer">
+    Merci pour votre confiance · ${d.entreprise || ''} · ${d.contact || ''}
+  </div>
+
+  <div style="text-align:center;margin-top:24px">
+    <button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#1a1208;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">🖨️ Imprimer / Sauvegarder en PDF</button>
+  </div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  sauvegarderEntreprise();
+  sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
+  sauvegarderFacture(d);
+  toggleFacturePanel();
+  addNovaMessage(`✅ Facture **${d.numero}** générée pour **${d.client}** — Total : **${fmtNum(d.total)} $** (TPS+TVQ incluses). La facture s'est ouverte dans un nouvel onglet — clique sur "Imprimer / Sauvegarder en PDF" pour la télécharger.`);
+}
+
+function genererFactureExcel() {
+  const d = getFactureData();
+  if (!d.client) { alert('Veuillez entrer le nom du client.'); return; }
+  const XLSX = window.XLSX;
+  if (!XLSX) { alert('Bibliothèque Excel non chargée, réessayez.'); return; }
+
+  const rows = [
+    ['FACTURE', d.numero, '', '', '', ''],
+    ['Date', d.date, 'Échéance', d.echeance, '', ''],
+    [''],
+    ['Fournisseur', d.entreprise, '', 'Client', d.client, ''],
+    ['Adresse', d.adresse, '', 'Adresse', d.clientAdresse, ''],
+    ['Contact', d.contact, '', 'Email', d.clientEmail, ''],
+    ['No. TPS/TVQ', d.taxesNo, '', '', '', ''],
+    [''],
+    ['Description', 'Quantité', 'Prix unitaire ($)', 'TPS', 'TVQ', 'Sous-total ($)'],
+    ...d.items.map(i => [i.desc, i.qty, fmtNum(i.prix), i.hasTPS ? '5%' : '-', i.hasTVQ ? '9.975%' : '-', fmtNum(i.st)]),
+    [''],
+    ['', '', '', '', 'Sous-total', fmtNum(d.subtotal)],
+    ['', '', '', '', 'TPS (5%)', fmtNum(d.totalTPS)],
+    ['', '', '', '', 'TVQ (9.975%)', fmtNum(d.totalTVQ)],
+    ['', '', '', '', 'TOTAL DÛ ($)', fmtNum(d.total)],
+    [''],
+    ['Notes', d.notes],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Facture');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Facture-${d.numero}.xlsx`; a.click();
+  sauvegarderEntreprise();
+  sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
+  sauvegarderFacture(d);
+  addNovaMessage(`✅ Facture **${d.numero}** exportée en Excel pour **${d.client}** — Total : **${fmtNum(d.total)} $**`);
+}
+
+// Close facture on overlay click
+document.getElementById('facture-overlay').addEventListener('click', function(e) {
+  if (e.target === this) toggleFacturePanel();
+});
+
+// =====================
+// GMAIL
+// =====================
+let gmailToken = null;
+let gmailPanelOpen = false;
+
+function toggleGmailPanel() {
+  gmailPanelOpen = !gmailPanelOpen;
+  const panel = document.getElementById('gmail-panel');
+  panel.classList.toggle('hidden', !gmailPanelOpen);
+}
+
+async function initGoogleAuth() {
+  const clientId = document.getElementById('gmail-client-id').value.trim();
+  if (!clientId) { alert('Colle ton Client ID Google.'); return; }
+
+  // Store clientId
+  window._gmailClientId = clientId;
+
+  // Use Google Identity Services token flow
+  try {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => {
+      google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
+        callback: (resp) => {
+          if (resp.access_token) {
+            gmailToken = resp.access_token;
+            onGmailConnected();
+          } else {
+            alert('Connexion échouée. Vérifie ton Client ID.');
+          }
+        }
+      }).requestAccessToken();
+    };
+    document.head.appendChild(script);
+  } catch(e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+function onGmailConnected() {
+  document.getElementById('gmail-not-connected').style.display = 'none';
+  document.getElementById('gmail-connected').style.display = 'flex';
+  document.getElementById('gmail-btn-text').textContent = '✓ Gmail';
+  document.getElementById('gmail-toggle-btn').classList.add('connected');
+  addNovaMessage('✅ **Gmail connecté !** Je peux maintenant lire vos emails et en envoyer. Ouvrez le panneau Gmail à droite pour voir votre boîte de réception.');
+  loadEmails();
+}
+
+async function loadEmails() {
+  if (!gmailToken) return;
+  document.getElementById('gmail-loading').style.display = 'block';
+  try {
+    const listRes = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&labelIds=INBOX',
+      { headers: { Authorization: 'Bearer ' + gmailToken } }
+    );
+    const listData = await listRes.json();
+    const messages = listData.messages || [];
+
+    const emailPromises = messages.slice(0, 15).map(m =>
+      fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+        { headers: { Authorization: 'Bearer ' + gmailToken } }
+      ).then(r => r.json())
+    );
+
+    const emails = await Promise.all(emailPromises);
+    renderEmailList(emails);
+  } catch(e) {
+    document.getElementById('gmail-loading').innerHTML = '<span style="color:var(--danger)">Erreur de chargement</span>';
+  }
+}
+
+function getHeader(email, name) {
+  const h = email.payload?.headers?.find(h => h.name.toLowerCase() === name.toLowerCase());
+  return h ? h.value : '';
+}
+
+function renderEmailList(emails) {
+  const container = document.getElementById('gmail-inbox-view');
+  if (!emails.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun email trouvé</div>';
+    return;
+  }
+
+  let html = '';
+  emails.forEach(email => {
+    const from = getHeader(email, 'From').replace(/<.*?>/, '').trim() || 'Inconnu';
+    const subject = getHeader(email, 'Subject') || '(Sans objet)';
+    const date = new Date(parseInt(email.internalDate)).toLocaleDateString('fr-CA');
+    const isUnread = email.labelIds?.includes('UNREAD');
+    const snippet = email.snippet || '';
+
+    html += `<div class="email-item ${isUnread ? 'unread' : ''}" onclick="openEmail('${email.id}')">
+      <div class="email-sender">
+        <span>${escapeHtml(from.substring(0, 22))}</span>
+        <span>${date}</span>
+        ${isUnread ? '<span class="email-dot"></span>' : ''}
+      </div>
+      <div class="email-subject">${escapeHtml(subject)}</div>
+      <div class="email-preview">${escapeHtml(snippet.substring(0, 60))}</div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+async function openEmail(id) {
+  showTab('detail');
+  document.getElementById('detail-subject').textContent = 'Chargement...';
+  document.getElementById('detail-meta').textContent = '';
+  document.getElementById('detail-body').textContent = '';
+
+  try {
+    const res = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
+      { headers: { Authorization: 'Bearer ' + gmailToken } }
+    );
+    const email = await res.json();
+
+    const subject = getHeader(email, 'Subject') || '(Sans objet)';
+    const from = getHeader(email, 'From') || 'Inconnu';
+    const date = new Date(parseInt(email.internalDate)).toLocaleString('fr-CA');
+
+    document.getElementById('detail-subject').textContent = subject;
+    document.getElementById('detail-meta').innerHTML = `De : ${escapeHtml(from)}<br>Date : ${date}`;
+
+    // Extract body
+    let body = '';
+    const parts = email.payload?.parts || [];
+    const textPart = parts.find(p => p.mimeType === 'text/plain') || email.payload;
+    if (textPart?.body?.data) {
+      body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+    } else {
+      body = email.snippet || '';
+    }
+    document.getElementById('detail-body').textContent = body;
+
+    // Summarize with Nova
+    const summary = await callClaude(`L'utilisateur vient d'ouvrir cet email. Résume-le en 2-3 phrases et suggère une action : Sujet: "${subject}" | De: ${from} | Contenu: ${body.substring(0, 500)}`);
+    addNovaMessage('📧 ' + summary);
+  } catch(e) {
+    document.getElementById('detail-body').textContent = 'Impossible de charger cet email.';
+  }
+}
+
+async function sendGmail() {
+  if (!gmailToken) { alert('Gmail non connecté.'); return; }
+  const to = document.getElementById('compose-to').value.trim();
+  const subject = document.getElementById('compose-subject').value.trim();
+  const body = document.getElementById('compose-body').value.trim();
+
+  if (!to || !subject || !body) {
+    document.getElementById('send-status').textContent = 'Remplis tous les champs.';
+    return;
+  }
+
+  document.getElementById('send-status').textContent = 'Envoi en cours...';
+
+  try {
+    const email = [`To: ${to}`, `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '', body].join('\n');
+    const encoded = btoa(unescape(encodeURIComponent(email))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gmailToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded })
+    });
+
+    if (res.ok) {
+      document.getElementById('send-status').style.color = 'var(--success)';
+      document.getElementById('send-status').textContent = '✓ Email envoyé avec succès !';
+      document.getElementById('compose-to').value = '';
+      document.getElementById('compose-subject').value = '';
+      document.getElementById('compose-body').value = '';
+      addNovaMessage(`✅ Email envoyé à **${to}** avec l'objet "${subject}".`);
+      setTimeout(() => { document.getElementById('send-status').textContent = ''; }, 3000);
+    } else {
+      throw new Error('Erreur API');
+    }
+  } catch(e) {
+    document.getElementById('send-status').style.color = 'var(--danger)';
+    document.getElementById('send-status').textContent = "Erreur lors de l'envoi.";
+  }
+}
+
+function showTab(tab) {
+  document.getElementById('gmail-inbox-view').style.display = tab === 'inbox' ? 'block' : 'none';
+  document.getElementById('gmail-compose-view').style.display = tab === 'compose' ? 'block' : 'none';
+  document.getElementById('gmail-detail-view').style.display = tab === 'detail' ? 'block' : 'none';
+  document.querySelectorAll('.gmail-tab').forEach(t => t.classList.remove('active'));
+  const activeTab = document.getElementById('tab-' + (tab === 'detail' ? 'inbox' : tab));
+  if (activeTab) activeTab.classList.add('active');
+}
+
+// =====================
+// SPLASH SCREEN
+// =====================
+function lancerNova() {
+  const splash = document.getElementById('splash');
+  const app = document.getElementById('app');
+  splash.classList.add('hidden');
+  app.classList.add('visible');
+  setTimeout(() => { splash.style.display = 'none'; }, 900);
+  // Init mémoire si pas déjà fait
+  chargerMemoire();
+}
+
+// Générer particules
+function genererParticules() {
+  const container = document.getElementById('splash-particles');
+  if (!container) return;
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 4 + 1;
+    p.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      left: ${Math.random() * 100}%;
+      bottom: -10px;
+      animation-duration: ${Math.random() * 8 + 6}s;
+      animation-delay: ${Math.random() * 8}s;
+      opacity: 0;
+    `;
+    container.appendChild(p);
+  }
+}
+
+// Init au chargement
+window.addEventListener('load', () => {
+  genererParticules();
+  // Si déjà visité, option d'aller direct à l'app
+  // (on garde le splash pour l'effet visuel)
+});
+
+</script>
+</div><!-- fin #app -->
+</body>
+</html>
