@@ -2302,7 +2302,7 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 300,
         system: systemPrompt,
         messages: voiceConvHistory.slice(-10)
@@ -2739,7 +2739,7 @@ Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 4000,
       system: systemPrompt,
       messages: conversationHistory
@@ -3380,7 +3380,7 @@ async function modifierAvecNova() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 4000,
         messages: [{
           role: 'user',
