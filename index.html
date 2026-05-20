@@ -2330,19 +2330,8 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
     addNovaMessage(reponse);
     document.getElementById('voice-transcript').textContent = reponse;
 
-    // Safari iPhone bloque l'audio automatique - montrer bouton écouter
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isSafari) {
-      setVoiceState('idle');
-      document.getElementById('voice-status').textContent = 'Appuyez ▶ pour entendre Nova';
-      document.getElementById('voice-play-btn').style.display = 'flex';
-      document.getElementById('voice-play-btn').onclick = async () => {
-        document.getElementById('voice-play-btn').style.display = 'none';
-        await parlerNova(reponse);
-      };
-    } else {
-      await parlerNova(reponse);
-    }
+    // Jouer automatiquement - PWA installée a les permissions
+    await parlerNova(reponse);
 
   } catch(e) {
     console.error('Erreur vocale:', e);
