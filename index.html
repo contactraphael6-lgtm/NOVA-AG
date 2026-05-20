@@ -2320,8 +2320,12 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
     await parlerNova(reponse);
 
   } catch(e) {
+    console.error('Erreur vocale:', e);
+    document.getElementById('voice-debug').textContent = 'Erreur: ' + e.message;
+    document.getElementById('voice-transcript').textContent = 'Erreur de connexion — ' + e.message;
     setVoiceState('idle');
-    if (voiceActive) ecouterUtilisateur();
+    await fallbackVoixNavigateur('Désolée, une erreur de connexion est survenue.');
+    if (voiceActive) setTimeout(() => ecouterUtilisateur(), 2000);
   }
 }
 
