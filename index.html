@@ -2298,7 +2298,7 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
 
     voiceConvHistory.push({ role: 'user', content: texte });
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://nova-ai.contact-raphael6.workers.dev", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3376,7 +3376,7 @@ async function modifierAvecNova() {
   const context = JSON.stringify({ headers: sheet.headers, rows: sheet.rows.slice(0,30) });
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://nova-ai.contact-raphael6.workers.dev", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
