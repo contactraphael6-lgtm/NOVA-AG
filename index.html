@@ -2181,6 +2181,7 @@ function demarrerVoice() {
     alert('Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome.');
     return;
   }
+  unlockAudio();
   voiceActive = true;
   voiceMuted = false;
   voiceConvHistory = [...conversationHistory];
@@ -2329,9 +2330,28 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
   }
 }
 
+// Contexte audio débloqué pour mobile
+let audioContext = null;
+let audioUnlocked = false;
+
+function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Jouer un son silencieux pour débloquer
+    const buf = audioContext.createBuffer(1, 1, 22050);
+    const src = audioContext.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioContext.destination);
+    src.start(0);
+    audioUnlocked = true;
+  } catch(e) {}
+}
+
 async function parlerNova(texte) {
   setVoiceState('speaking');
   voiceSkipAudio = false;
+  unlockAudio();
 
   const texteVoix = texte
     .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -2342,20 +2362,15 @@ async function parlerNova(texte) {
     .trim();
 
   try {
-    // Passer par le proxy Cloudflare Worker (évite les restrictions CORS)
     const res = await fetch('https://nova-voice.contact-raphael6.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: texteVoix,
-        voice_id: elVoiceId
-      })
+      body: JSON.stringify({ text: texteVoix, voice_id: elVoiceId })
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error('Worker error:', res.status, errText);
-      throw new Error('Worker: ' + res.status);
+      throw new Error('Worker: ' + res.status + ' ' + errText);
     }
 
     const audioBlob = await res.blob();
@@ -2364,23 +2379,30 @@ async function parlerNova(texte) {
     const audioUrl = URL.createObjectURL(audioBlob);
     currentAudio = new Audio(audioUrl);
     currentAudio.volume = 1.0;
+    currentAudio.setAttribute('playsinline', '');
+    currentAudio.setAttribute('webkit-playsinline', '');
 
     await new Promise((resolve) => {
       currentAudio.onended = resolve;
-      currentAudio.onerror = (e) => { console.error('Audio error:', e); resolve(); };
+      currentAudio.onerror = (e) => { resolve(); };
       if (voiceSkipAudio) { resolve(); return; }
-      currentAudio.play().catch(e => { console.error('Play error:', e); resolve(); });
+      // Sur mobile, il faut resume le contexte audio
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          currentAudio.play().catch(() => fallbackVoixNavigateur(texteVoix).then(resolve));
+        });
+      } else {
+        currentAudio.play().catch(() => fallbackVoixNavigateur(texteVoix).then(resolve));
+      }
     });
 
     URL.revokeObjectURL(audioUrl);
-    // Effacer le message d'erreur si succès
     const dbg = document.getElementById('voice-debug');
     if (dbg) dbg.textContent = '';
 
   } catch(e) {
-    console.warn('Worker échoué:', e.message, '→ fallback navigateur');
     const dbg = document.getElementById('voice-debug');
-    if (dbg) dbg.textContent = 'Erreur: ' + e.message + ' → voix navigateur';
+    if (dbg) dbg.textContent = 'Erreur: ' + e.message;
     await fallbackVoixNavigateur(texteVoix);
   }
 
