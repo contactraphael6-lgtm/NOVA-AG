@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Nova — Votre Assistant IA Personnel</title>
+<title>Nexus AI — Votre Assistant Personnel</title>
 
 <!-- PWA Support iPhone/Android -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nova IA">
+<meta name="apple-mobile-web-app-title" content="Nexus AI">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#020610">
 <link rel="manifest" href="manifest.json">
@@ -18,7 +18,99 @@
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+
+/* ===== PAGE CONNEXION ===== */
+#auth-page {
+  position: fixed; inset: 0; z-index: 8000;
+  background: #020610;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+}
+#auth-page.hidden { display: none; }
+
+.auth-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,80,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,80,255,0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.auth-box {
+  background: rgba(24,24,28,0.95);
+  border: 1px solid rgba(0,120,255,0.3);
+  border-radius: 20px;
+  padding: 40px;
+  width: 400px;
+  max-width: 92vw;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 60px rgba(0,80,255,0.15);
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-logo-n {
+  font-family: 'Orbitron', monospace;
+  font-size: 48px; font-weight: 900;
+  background: linear-gradient(135deg, #4488ff, #88ccff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(100,180,255,0.6));
+}
+
+.auth-logo-sub {
+  font-size: 12px; color: rgba(100,150,255,0.7);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.auth-tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border: 1px solid rgba(0,120,255,0.2); border-radius: 10px; overflow: hidden;
+}
+
+.auth-tab {
+  flex: 1; padding: 10px;
+  background: transparent; border: none;
+  color: rgba(150,200,255,0.5); font-size: 13px;
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-tab.active { background: rgba(0,80,255,0.2); color: #88ccff; }
+
+.auth-field { margin-bottom: 14px; }
+.auth-label { font-size: 11px; color: rgba(150,200,255,0.6); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; display: block; }
+.auth-input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(0,20,60,0.5); border: 1px solid rgba(0,120,255,0.2);
+  border-radius: 9px; color: #e0f0ff; font-size: 14px;
+  font-family: 'DM Sans', sans-serif; outline: none;
+  transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: rgba(0,150,255,0.6); }
+.auth-input::placeholder { color: rgba(100,150,200,0.4); }
+
+.auth-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, #1a3a8a, #2255cc);
+  border: 1px solid rgba(0,120,255,0.4); border-radius: 10px;
+  color: #88ccff; font-size: 14px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
+  transition: all 0.2s; margin-top: 6px;
+}
+.auth-btn:hover { background: linear-gradient(135deg, #2255cc, #3366dd); box-shadow: 0 0 20px rgba(0,100,255,0.3); }
+
+.auth-error { font-size: 12px; color: #ff6060; text-align: center; margin-top: 10px; min-height: 16px; }
+.auth-success { font-size: 12px; color: #60cc90; text-align: center; margin-top: 10px; min-height: 16px; }
+
+.auth-divider { text-align: center; color: rgba(100,150,200,0.3); font-size: 11px; margin: 16px 0; }
+</style>
 
 /* ===== PAGE D'ACCUEIL ===== */
 #splash {
@@ -1322,6 +1414,55 @@
 </head>
 <body>
 
+<!-- ===== PAGE CONNEXION ===== -->
+<div id="auth-page">
+  <div class="auth-grid"></div>
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-n">N</div>
+      <div class="auth-logo-sub">Nexus AI</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Se connecter</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Créer un compte</button>
+    </div>
+
+    <!-- Connexion -->
+    <div id="form-login">
+      <div class="auth-field">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="login-email" type="email" placeholder="votre@email.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Mot de passe</label>
+        <input class="auth-input" id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')connexion()" />
+      </div>
+      <button class="auth-btn" onclick="connexion()">Se connecter →</button>
+      <div class="auth-error" id="login-error"></div>
+    </div>
+
+    <!-- Inscription -->
+    <div id="form-signup" style="display:none">
+      <div class="auth-field">
+        <label class="auth-label">Prénom</label>
+        <input class="auth-input" id="signup-nom" placeholder="Votre prénom" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="signup-email" type="email" placeholder="votre@email.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Mot de passe</label>
+        <input class="auth-input" id="signup-password" type="password" placeholder="Minimum 6 caractères" onkeydown="if(event.key==='Enter')inscription()" />
+      </div>
+      <button class="auth-btn" onclick="inscription()">Créer mon compte →</button>
+      <div class="auth-error" id="signup-error"></div>
+      <div class="auth-success" id="signup-success"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== PAGE D'ACCUEIL SPLASH ===== -->
 <div id="splash">
   <div class="splash-grid"></div>
@@ -1352,7 +1493,7 @@
       <div class="ring ring-3"></div>
       <div class="ring-core">
         <div class="nova-logo-n">N</div>
-        <div class="nova-logo-text">NOVA</div>
+        <div class="nova-logo-text">NEXUS AI</div>
         <div class="nova-logo-sub">Votre Assistant IA Personnel</div>
       </div>
     </div>
@@ -1369,7 +1510,7 @@
     <div class="splash-slogan">ORGANISEZ. <span>AUTOMATISEZ.</span> DÉVELOPPEZ.</div>
   </div>
 
-  <button class="splash-arrow-btn" onclick="lancerNova()" title="Accéder à Nova">
+  <button class="splash-arrow-btn" onclick="lancerNova()" title="Accéder à Nexus AI">
     <svg viewBox="0 0 24 24" fill="none" stroke="#88ccff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="7,4 15,12 7,20"/>
       <polyline points="13,4 21,12 13,20"/>
@@ -1415,15 +1556,15 @@
 <!-- Setup ElevenLabs -->
 <div class="voice-elevenlabs-setup" id="el-setup">
   <div class="voice-setup-modal">
-    <h2>🎙 Configurer la voix de Nova</h2>
-    <p>Nova utilise <strong>ElevenLabs</strong> pour une voix ultra-réaliste. Crée un compte gratuit sur <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent)">elevenlabs.io</a> et copie ta clé API.</p>
+    <h2>🎙 Configurer la voix de Nexus AI</h2>
+    <p>Nexus AI utilise <strong>ElevenLabs</strong> pour une voix ultra-réaliste. Crée un compte gratuit sur <a href="https://elevenlabs.io" target="_blank" style="color:var(--accent)">elevenlabs.io</a> et copie ta clé API.</p>
     <div class="gmail-setup-steps">
       <p>Étapes :</p>
       <ol>
         <li>Crée un compte gratuit sur <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a></li>
         <li>Va dans <strong>Profile → API Key</strong></li>
         <li>Copie ta clé API et colle-la ci-dessous</li>
-        <li>Choisis la voix de Nova (français recommandé)</li>
+        <li>Choisis la voix de Nexus AI (français recommandé)</li>
       </ol>
     </div>
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
@@ -1447,7 +1588,7 @@
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn-ghost" onclick="fermerSetupVoix()">Annuler</button>
-      <button class="btn-primary" onclick="sauvegarderVoix()">🎙 Démarrer Nova Vocal</button>
+      <button class="btn-primary" onclick="sauvegarderVoix()">🎙 Démarrer Nexus AI Vocal</button>
     </div>
   </div>
 </div>
@@ -1506,7 +1647,7 @@
 
     <div class="excel-ai-bar">
       <span style="font-size:13px">✨</span>
-      <input class="excel-ai-input" id="xl-ai-input" placeholder="Demandez à Nova de modifier ce tableau... ex: 'Ajoute une ligne totaux', 'Trie par montant', 'Ajoute une colonne TVQ'" onkeydown="if(event.key==='Enter')modifierAvecNova()" />
+      <input class="excel-ai-input" id="xl-ai-input" placeholder="Demandez à Nexus AI de modifier ce tableau... ex: 'Ajoute une ligne totaux', 'Trie par montant', 'Ajoute une colonne TVQ'" onkeydown="if(event.key==='Enter')modifierAvecNova()" />
       <button class="tb-btn primary" onclick="modifierAvecNova()">Modifier</button>
     </div>
 
@@ -1521,7 +1662,7 @@
 <div class="facture-overlay" id="profil-modal">
   <div class="facture-modal" style="width:520px">
     <div class="facture-header">
-      <h2>🧠 Mémoire de Nova</h2>
+      <h2>🧠 Mémoire de Nexus AI</h2>
       <button class="back-btn" onclick="toggleProfilPanel()" style="margin:0">✕</button>
     </div>
     <div class="facture-body">
@@ -1542,7 +1683,7 @@
         <input class="facture-input" id="p-style" placeholder="Ex: Direct et efficace, formel, décontracté..." />
       </div>
       <div class="facture-field">
-        <label class="facture-label">Infos importantes pour Nova</label>
+        <label class="facture-label">Infos importantes pour Nexus AI</label>
         <textarea class="facture-input" id="p-infos" rows="3" placeholder="Ex: Je vends des parfums d'auto, j'ai 3 dépanneurs à Québec, mes clients sont surtout des grossistes..."></textarea>
       </div>
 
@@ -1683,7 +1824,7 @@
 <div class="modal-overlay" id="shopify-modal">
   <div class="modal">
     <h2>Connecter Shopify</h2>
-    <p>Entre les informations de ton store Shopify. Nova pourra ensuite consulter tes commandes, produits et statistiques.</p>
+    <p>Entre les informations de ton store Shopify. Nexus AI pourra ensuite consulter tes commandes, produits et statistiques.</p>
     <input class="modal-input" id="shop-url" placeholder="ton-store.myshopify.com" />
     <input class="modal-input" id="shop-token" type="password" placeholder="Token d'accès Admin API" />
     <p style="font-size:11px; color:var(--muted); margin-top:-4px;">
@@ -1701,13 +1842,13 @@
   <div class="logo">
     <div class="nova-avatar">N</div>
     <div>
-      <div class="nova-name">Nova</div>
+      <div class="nova-name">Nexus AI</div>
       <div class="nova-status" id="nova-status-text">En ligne · Prête à vous aider</div>
     </div>
   </div>
   <div class="header-actions">
     <button class="shopify-btn" id="voice-launch-btn" onclick="lancerConversationVocale()" style="background:rgba(0,80,180,0.2);border-color:rgba(0,120,255,0.4);color:#88ccff">
-      <span>🎙</span> <span>Parler à Nova</span>
+      <span>🎙</span> <span>Parler à Nexus AI</span>
     </button>
     <button class="shopify-btn" id="cal-toggle-btn" onclick="toggleCalPanel()">
       <span>📅</span> <span id="cal-btn-text">Calendrier</span>
@@ -1723,6 +1864,9 @@
     </button>
     <button class="shopify-btn" onclick="toggleProfilPanel()" title="Mémoire & Profil">
       <span>🧠</span> <span>Profil</span>
+    </button>
+    <button class="shopify-btn" onclick="deconnexion()" style="border-color:rgba(255,80,80,0.3);color:rgba(255,120,120,0.8)">
+      <span>🚪</span>
     </button>
   </div>
 </header>
@@ -1878,7 +2022,7 @@
         <div class="msg-avatar">N</div>
         <div>
           <div class="msg-bubble">
-            Bonjour ! Je suis <strong>Nova</strong>, votre secrétaire IA personnelle. Je suis ici pour vous faciliter la vie au quotidien.<br><br>
+            Bonjour ! Je suis <strong>Nexus AI</strong>, votre secrétaire IA personnelle. Je suis ici pour vous faciliter la vie au quotidien.<br><br>
             Je peux vous aider à :<br>
             • 📅 Gérer votre <strong>Google Calendar</strong> — RDV, rappels, semaine<br>
             • 🧾 Créer des <strong>factures avec TPS/TVQ</strong> québécoise<br>
@@ -1895,7 +2039,7 @@
 
     <div class="input-area">
       <div class="input-row">
-        <textarea id="user-input" placeholder="Écrivez à Nova..." rows="1"
+        <textarea id="user-input" placeholder="Écrivez à Nexus AI..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
       </div>
@@ -2127,7 +2271,7 @@ function remplirClient(nom, entreprise, adresse, email) {
 }
 
 function effacerMemoire() {
-  if (!confirm('Effacer toute la mémoire de Nova ? Cette action est irréversible.')) return;
+  if (!confirm('Effacer toute la mémoire de Nexus AI ? Cette action est irréversible.')) return;
   ['shopify','historique','entreprise','prefs','clients','factures'].forEach(k => MEM.del(k));
   conversationHistory = [];
   location.reload();
@@ -2203,7 +2347,7 @@ function demarrerVoice() {
   // Message de bienvenue
   const prefs = MEM.load('prefs', {});
   const nom = prefs.nom ? `, ${prefs.nom}` : '';
-  parlerNova(`Bonjour${nom} ! Je suis Nova, votre assistante IA. Comment puis-je vous aider ?`);
+  parlerNova(`Bonjour${nom} ! Je suis Nexus AI, votre assistante IA. Comment puis-je vous aider ?`);
 }
 
 function terminerConversation() {
@@ -2238,7 +2382,7 @@ function setVoiceState(state) {
   waves.className = 'voice-waves ' + (state !== 'idle' ? state : '');
   rings.forEach(r => { r.className = 'voice-ring ' + (state !== 'idle' ? state : ''); });
 
-  const labels = { idle: 'En attente...', listening: 'Je vous écoute...', speaking: 'Nova parle...', thinking: 'Nova réfléchit...' };
+  const labels = { idle: 'En attente...', listening: 'Je vous écoute...', speaking: 'Nexus AI parle...', thinking: 'Nexus AI réfléchit...' };
   status.textContent = labels[state] || state;
 }
 
@@ -2249,35 +2393,49 @@ function ecouterUtilisateur() {
   document.getElementById('voice-transcript').textContent = '';
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('voice-status').textContent = 'Micro non supporté sur ce navigateur';
+    return;
+  }
   recognition = new SR();
-  recognition.lang = 'fr-CA';
+  // Safari iPhone fonctionne mieux avec fr-FR ou en-US
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  recognition.lang = isIOS ? 'fr-FR' : 'fr-CA';
   recognition.continuous = false;
-  recognition.interimResults = true;
+  recognition.interimResults = !isIOS; // iOS ne supporte pas bien interimResults
   recognition.maxAlternatives = 1;
 
+  let hasResult = false;
+
   recognition.onresult = (e) => {
+    hasResult = true;
     const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
     document.getElementById('voice-transcript').textContent = '« ' + transcript + ' »';
-    if (e.results[e.results.length - 1].isFinal) {
+    if (e.results[e.results.length - 1].isFinal || isIOS) {
       traiterMessageVocal(transcript);
     }
   };
 
   recognition.onerror = (e) => {
-    if (e.error === 'no-speech' && voiceActive) {
-      setTimeout(() => ecouterUtilisateur(), 500);
+    console.log('Erreur micro:', e.error);
+    document.getElementById('voice-debug').textContent = 'Micro: ' + e.error;
+    if ((e.error === 'no-speech' || e.error === 'aborted') && voiceActive) {
+      setTimeout(() => ecouterUtilisateur(), 800);
     }
   };
 
   recognition.onend = () => {
-    // Si rien capté et toujours actif, réécouuter
-    if (voiceActive && !voiceMuted) {
-      const transcript = document.getElementById('voice-transcript').textContent;
-      if (!transcript) setTimeout(() => ecouterUtilisateur(), 300);
+    if (!hasResult && voiceActive && !voiceMuted) {
+      setTimeout(() => ecouterUtilisateur(), 500);
     }
   };
 
-  recognition.start();
+  try {
+    recognition.start();
+  } catch(e) {
+    console.log('Erreur start micro:', e);
+    setTimeout(() => ecouterUtilisateur(), 1000);
+  }
 }
 
 function stopRecognition() {
@@ -2298,7 +2456,7 @@ async function traiterMessageVocal(texte) {
     const ent = MEM.load('entreprise', {});
     const clients = MEM.load('clients', []);
 
-    const systemPrompt = `Tu es Nova, une secrétaire IA professionnelle qui parle en français. Tu es en mode conversation vocale — donc tes réponses doivent être COURTES (2-4 phrases max), naturelles et conversationnelles. Pas de listes à puces, pas de markdown, pas de caractères spéciaux. Parle comme dans une vraie conversation.
+    const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle qui parle en français. Tu es en mode conversation vocale — donc tes réponses doivent être COURTES (2-4 phrases max), naturelles et conversationnelles. Pas de listes à puces, pas de markdown, pas de caractères spéciaux. Parle comme dans une vraie conversation.
 
 Utilisateur: ${prefs.nom || 'patron'}
 Entreprise: ${ent.nom || 'non renseigné'}
@@ -2334,7 +2492,7 @@ IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureu
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     if (isSafari) {
       setVoiceState('idle');
-      document.getElementById('voice-status').textContent = 'Appuyez ▶ pour entendre Nova';
+      document.getElementById('voice-status').textContent = 'Appuyez ▶ pour entendre Nexus AI';
       document.getElementById('voice-play-btn').style.display = 'flex';
       document.getElementById('voice-play-btn').onclick = async () => {
         document.getElementById('voice-play-btn').style.display = 'none';
@@ -2743,7 +2901,7 @@ async function callClaude(userMessage) {
   const ent = MEM.load('entreprise', {});
   const clients = MEM.load('clients', []);
 
-  const systemPrompt = `Tu es Nova, une secrétaire IA professionnelle et chaleureuse qui parle en français. Tu aides un entrepreneur avec son quotidien : gestion Shopify, emails Gmail, création de fichiers, facturation, réponses aux questions, conseils business.
+  const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle et chaleureuse qui parle en français. Tu aides un entrepreneur avec son quotidien : gestion Shopify, emails Gmail, création de fichiers, facturation, réponses aux questions, conseils business.
 
 PROFIL DE L'UTILISATEUR (mémorisé) :
 - Nom : ${prefs.nom || 'non renseigné'}
@@ -2800,6 +2958,8 @@ Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
   const reply = data.content?.[0]?.text || "Désolée, une erreur s'est produite.";
   conversationHistory.push({ role: 'assistant', content: reply });
   sauvegarderHistorique();
+  // Sauvegarder dans Supabase aussi
+  sauvegarderConversationSupabase();
   return reply;
 }
 
@@ -3066,6 +3226,7 @@ document.getElementById('shopify-modal').addEventListener('click', function(e) {
 // Charger la mémoire au démarrage
 document.addEventListener('DOMContentLoaded', chargerMemoire);
 
+
 // =====================
 // GESTIONNAIRE FICHIERS EXCEL
 // =====================
@@ -3151,7 +3312,7 @@ function telechargerDepuisGestionnaire(i) {
 }
 
 function supprimerFichierGestionnaire(i) {
-  if (!confirm('Supprimer ce fichier de la mémoire de Nova ?')) return;
+  if (!confirm('Supprimer ce fichier de la mémoire de Nexus AI ?')) return;
   const fichiers = MEM.load('excel_fichiers', []);
   fichiers.splice(i, 1);
   MEM.save('excel_fichiers', fichiers);
@@ -3942,6 +4103,139 @@ function showTab(tab) {
 }
 
 // =====================
+// SUPABASE AUTH
+// =====================
+const SUPABASE_URL = 'https://nmqleixkmwqcqrerunjs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rEK1DrV0lQmI0L9Ty96L6Q_3PGvmKKM';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+}
+
+async function connexion() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = 'Connexion en cours...';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = 'Erreur : ' + (error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message);
+  } else {
+    currentUser = data.user;
+    onConnected();
+  }
+}
+
+async function inscription() {
+  const nom = document.getElementById('signup-nom').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  const sucEl = document.getElementById('signup-success');
+
+  if (!nom || !email || !password) { errEl.textContent = 'Remplis tous les champs.'; return; }
+  if (password.length < 6) { errEl.textContent = 'Mot de passe minimum 6 caractères.'; return; }
+
+  errEl.textContent = 'Création du compte...';
+
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) {
+    errEl.textContent = 'Erreur : ' + error.message;
+  } else {
+    // Créer le profil
+    if (data.user) {
+      await supabaseClient.from('profiles').upsert({ id: data.user.id, nom });
+      currentUser = data.user;
+      errEl.textContent = '';
+      sucEl.textContent = '✓ Compte créé ! Connexion en cours...';
+      setTimeout(() => onConnected(), 1500);
+    } else {
+      errEl.textContent = '';
+      sucEl.textContent = '✓ Vérifie ton email pour confirmer ton compte !';
+    }
+  }
+}
+
+async function onConnected() {
+  document.getElementById('auth-page').classList.add('hidden');
+  // Charger le profil depuis Supabase
+  await chargerProfilSupabase();
+  // Lancer Nova
+  lancerNova();
+}
+
+async function chargerProfilSupabase() {
+  if (!currentUser) return;
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (profile) {
+    // Mettre à jour la mémoire locale avec les données Supabase
+    MEM.save('prefs', { nom: profile.nom || '', role: profile.role || '', style: profile.style || '', infos: profile.infos || '' });
+    MEM.save('entreprise', { nom: profile.entreprise_nom || '', adresse: profile.entreprise_adresse || '', contact: profile.entreprise_contact || '', taxesNo: profile.entreprise_taxes || '' });
+  }
+
+  // Charger l'historique des conversations
+  const { data: conv } = await supabaseClient.from('conversations').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false }).limit(1).single();
+  if (conv && conv.messages) {
+    conversationHistory = conv.messages.slice(-30);
+    MEM.save('historique', conversationHistory);
+  }
+}
+
+async function sauvegarderConversationSupabase() {
+  if (!currentUser) return;
+  const msgs = conversationHistory.slice(-30);
+  // Vérifier si une conversation existe
+  const { data: existing } = await supabaseClient.from('conversations').select('id').eq('user_id', currentUser.id).single();
+  if (existing) {
+    await supabaseClient.from('conversations').update({ messages: msgs, updated_at: new Date().toISOString() }).eq('id', existing.id);
+  } else {
+    await supabaseClient.from('conversations').insert({ user_id: currentUser.id, messages: msgs });
+  }
+}
+
+async function sauvegarderProfilSupabase() {
+  if (!currentUser) return;
+  const prefs = MEM.load('prefs', {});
+  const ent = MEM.load('entreprise', {});
+  await supabaseClient.from('profiles').upsert({
+    id: currentUser.id,
+    nom: prefs.nom || '',
+    role: prefs.role || '',
+    style: prefs.style || '',
+    infos: prefs.infos || '',
+    entreprise_nom: ent.nom || '',
+    entreprise_adresse: ent.adresse || '',
+    entreprise_contact: ent.contact || '',
+    entreprise_taxes: ent.taxesNo || ''
+  });
+}
+
+async function deconnexion() {
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  conversationHistory = [];
+  location.reload();
+}
+
+// Vérifier si déjà connecté au chargement
+async function verifierSession() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('auth-page').classList.add('hidden');
+    await chargerProfilSupabase();
+    lancerNova();
+  }
+}
+
+// =====================
 // SPLASH SCREEN
 // =====================
 function lancerNova() {
@@ -3977,8 +4271,7 @@ function genererParticules() {
 // Init au chargement
 window.addEventListener('load', () => {
   genererParticules();
-  // Si déjà visité, option d'aller direct à l'app
-  // (on garde le splash pour l'effet visuel)
+  verifierSession();
 });
 
 </script>
