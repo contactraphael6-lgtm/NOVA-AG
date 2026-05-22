@@ -349,6 +349,19 @@
 }
 #app.visible { opacity: 1; pointer-events: all; }
 
+/* Splash - logo cliquable */
+.ring-container { cursor: pointer; }
+.ring-container:hover .ring-core {
+  box-shadow: 0 0 60px rgba(0,150,255,0.6), inset 0 0 30px rgba(0,80,255,0.3);
+}
+.splash-click-hint {
+  position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; color: rgba(100,150,255,0.5); letter-spacing: 0.15em;
+  text-transform: uppercase; z-index: 10;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+@keyframes fadeInOut { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
+
 </style>
 
 <style>
@@ -628,6 +641,63 @@
     overflow: hidden;
     position: relative;
     z-index: 1;
+  }
+
+  /* Hamburger */
+  .hamburger-btn {
+    width: 36px; height: 36px; background: transparent; border: none;
+    cursor: pointer; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; gap: 5px;
+    padding: 4px; flex-shrink: 0;
+  }
+  .hamburger-btn span {
+    display: block; width: 22px; height: 2px;
+    background: var(--muted2); border-radius: 2px; transition: all 0.25s;
+  }
+  .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+  .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--muted2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Sidebar overlay mobile */
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0; z-index: 90;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed !important; top: 0; left: 0; bottom: 0;
+      z-index: 100; width: 280px !important;
+      transform: translateX(-100%); transition: transform 0.3s ease;
+      padding-top: 60px;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .cal-panel, .gmail-panel {
+      position: fixed !important; top: 0; right: 0; bottom: 0;
+      z-index: 100; width: 100% !important; max-width: 400px;
+      transform: translateX(110%); transition: transform 0.3s ease;
+    }
+    .cal-panel:not(.hidden), .gmail-panel:not(.hidden) {
+      transform: translateX(0);
+    }
+    .messages { padding: 14px 10px; }
+    .msg-bubble { font-size: 15px; max-width: 88vw; }
+    .input-area { padding: 10px 12px; }
+    #user-input { font-size: 16px; }
+    .send-btn { width: 44px; height: 44px; font-size: 18px; }
+    header { padding: 10px 14px; }
+    .nova-name { font-size: 16px; }
   }
 
   /* Sidebar */
@@ -1487,7 +1557,7 @@
   </div>
 
   <div class="splash-center">
-    <div class="ring-container">
+    <div class="ring-container" onclick="lancerDepuisAccueil()" title="Appuyez pour parler">
       <div class="ring ring-1"></div>
       <div class="ring ring-2"></div>
       <div class="ring ring-3"></div>
@@ -1498,6 +1568,8 @@
       </div>
     </div>
   </div>
+
+  <div class="splash-click-hint">Appuyez sur N pour parler</div>
 
   <svg class="splash-waves" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
     <path d="M50,250 Q150,100 250,250 T450,250" fill="none" stroke="rgba(0,120,255,0.4)" stroke-width="1.5"/>
@@ -1837,9 +1909,12 @@
   </div>
 </div>
 
-<!-- Header -->
+<!-- Header Mobile -->
 <header>
   <div class="logo">
+    <button class="hamburger-btn" onclick="toggleSidebar()" title="Menu">
+      <span></span><span></span><span></span>
+    </button>
     <div class="nova-avatar">N</div>
     <div>
       <div class="nova-name">Nexus AI</div>
@@ -1847,33 +1922,24 @@
     </div>
   </div>
   <div class="header-actions">
-    <button class="shopify-btn" id="voice-launch-btn" onclick="lancerConversationVocale()" style="background:rgba(0,80,180,0.2);border-color:rgba(0,120,255,0.4);color:#88ccff">
-      <span>🎙</span> <span>Parler à Nexus AI</span>
+    <button class="icon-btn" onclick="retourAccueil()" title="Accueil">
+      ←
     </button>
-    <button class="shopify-btn" id="cal-toggle-btn" onclick="toggleCalPanel()">
-      <span>📅</span> <span id="cal-btn-text">Calendrier</span>
+    <button class="icon-btn" onclick="lancerConversationVocale()" title="Parler" style="background:rgba(0,80,180,0.3);border-color:rgba(0,120,255,0.5);color:#88ccff;font-size:18px">
+      🎙
     </button>
-    <button class="shopify-btn" id="facture-toggle-btn" onclick="toggleFacturePanel()">
-      <span>🧾</span> <span id="facture-btn-text">Facturation</span>
-    </button>
-    <button class="shopify-btn" id="gmail-toggle-btn" onclick="toggleGmailPanel()">
-      <span>📧</span> <span id="gmail-btn-text">Gmail</span>
-    </button>
-    <button class="shopify-btn" id="shopify-btn" onclick="openShopifyModal()">
-      <span>🛍</span> <span id="shopify-btn-text">Connecter Shopify</span>
-    </button>
-    <button class="shopify-btn" onclick="toggleProfilPanel()" title="Mémoire & Profil">
-      <span>🧠</span> <span>Profil</span>
-    </button>
-    <button class="shopify-btn" onclick="deconnexion()" style="border-color:rgba(255,80,80,0.3);color:rgba(255,120,120,0.8)">
-      <span>🚪</span>
+    <button class="shopify-btn" onclick="deconnexion()" style="border-color:rgba(255,80,80,0.3);color:rgba(255,120,120,0.8);padding:7px 10px">
+      🚪
     </button>
   </div>
 </header>
 
+<!-- Sidebar overlay pour mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <div class="app-body">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="main-sidebar">
     <div class="sidebar-section">Actions rapides</div>
 
     <button class="quick-action" onclick="toggleCalPanel(); showCalTab('nouveau')">
@@ -4236,6 +4302,31 @@ async function verifierSession() {
 }
 
 // =====================
+// NAVIGATION MOBILE
+// =====================
+let sidebarOpen = false;
+
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  const sidebar = document.getElementById('main-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.querySelector('.hamburger-btn');
+  sidebar.classList.toggle('open', sidebarOpen);
+  overlay.classList.toggle('open', sidebarOpen);
+  if (btn) btn.classList.toggle('open', sidebarOpen);
+}
+
+function retourAccueil() {
+  // Retourner au splash et lancer le mode vocal
+  const app = document.getElementById('app');
+  const splash = document.getElementById('splash');
+  app.classList.remove('visible');
+  splash.style.display = 'flex';
+  splash.classList.remove('hidden');
+  setTimeout(() => { app.style.opacity = '0'; app.style.pointerEvents = 'none'; }, 50);
+}
+
+// =====================
 // SPLASH SCREEN
 // =====================
 function lancerNova() {
@@ -4244,8 +4335,13 @@ function lancerNova() {
   splash.classList.add('hidden');
   app.classList.add('visible');
   setTimeout(() => { splash.style.display = 'none'; }, 900);
-  // Init mémoire si pas déjà fait
   chargerMemoire();
+}
+
+function lancerDepuisAccueil() {
+  // Entrer dans l'app ET lancer le vocal directement
+  lancerNova();
+  setTimeout(() => lancerConversationVocale(), 1000);
 }
 
 // Générer particules
