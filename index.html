@@ -4211,30 +4211,39 @@ async function inscription() {
 
   errEl.textContent = 'Création du compte...';
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  const { data, error } = await supabaseClient.auth.signUp({
+    email, password,
+    options: { data: { nom } }
+  });
+
   if (error) {
     errEl.textContent = 'Erreur : ' + error.message;
-  } else {
+  } else if (data.user) {
     // Créer le profil
-    if (data.user) {
-      await supabaseClient.from('profiles').upsert({ id: data.user.id, nom });
-      currentUser = data.user;
-      errEl.textContent = '';
+    await supabaseClient.from('profiles').upsert({ id: data.user.id, nom });
+    currentUser = data.user;
+    errEl.textContent = '';
+
+    if (data.session) {
+      // Connecté directement (pas de confirmation requise)
       sucEl.textContent = '✓ Compte créé ! Connexion en cours...';
-      setTimeout(() => onConnected(), 1500);
+      setTimeout(() => onConnected(), 1000);
     } else {
-      errEl.textContent = '';
-      sucEl.textContent = '✓ Vérifie ton email pour confirmer ton compte !';
+      // Confirmation email requise
+      sucEl.textContent = '✓ Compte créé ! Vérifie ton email et clique sur le lien de confirmation.';
     }
   }
 }
 
 async function onConnected() {
   document.getElementById('auth-page').classList.add('hidden');
-  // Charger le profil depuis Supabase
   await chargerProfilSupabase();
-  // Lancer Nova
-  lancerNova();
+  // S'assurer que le splash est caché et l'app visible
+  const splash = document.getElementById('splash');
+  const app = document.getElementById('app');
+  if (splash) { splash.style.display = 'none'; splash.classList.add('hidden'); }
+  if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
+  chargerMemoire();
 }
 
 async function chargerProfilSupabase() {
