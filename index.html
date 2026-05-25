@@ -688,30 +688,85 @@
   .sidebar-overlay.open { display: block; }
 
   /* Mobile responsive */
-  @media (max-width: 768px) {
-    .sidebar {
-      position: fixed !important; top: 0; left: 0; bottom: 0;
-      z-index: 100; width: 280px !important;
-      transform: translateX(-100%); transition: transform 0.3s ease;
-      padding-top: 60px;
-    }
-    .sidebar.open { transform: translateX(0); }
-    .cal-panel, .gmail-panel {
-      position: fixed !important; top: 0; right: 0; bottom: 0;
-      z-index: 100; width: 100% !important; max-width: 400px;
-      transform: translateX(110%); transition: transform 0.3s ease;
-    }
-    .cal-panel:not(.hidden), .gmail-panel:not(.hidden) {
-      transform: translateX(0);
-    }
-    .messages { padding: 14px 10px; }
-    .msg-bubble { font-size: 15px; max-width: 88vw; }
-    .input-area { padding: 10px 12px; }
-    #user-input { font-size: 16px; }
-    .send-btn { width: 44px; height: 44px; font-size: 18px; }
-    header { padding: 10px 14px; }
-    .nova-name { font-size: 16px; }
+  /* ===== TABLEAU DE BORD ===== */
+  .dashboard-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 300; display: none; align-items: flex-start; justify-content: center;
+    backdrop-filter: blur(8px); overflow-y: auto; padding: 20px;
   }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 18px; width: 100%; max-width: 900px;
+    display: flex; flex-direction: column; overflow: hidden;
+    margin: auto;
+  }
+  .dashboard-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg); position: sticky; top: 0; z-index: 2;
+  }
+  .dashboard-header h2 { font-family: 'DM Serif Display',serif; font-size: 20px; color: var(--accent2); }
+  .dashboard-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Cards stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .stat-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--card-color, var(--accent));
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stat-icon { position: absolute; top: 14px; right: 14px; font-size: 22px; opacity: 0.4; }
+
+  /* Section titre */
+  .dash-section-title {
+    font-size: 12px; color: var(--accent); text-transform: uppercase;
+    letter-spacing: 0.1em; font-weight: 500; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  /* Tableau ventes */
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dash-table th { text-align: left; padding: 7px 10px; color: var(--muted); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  .dash-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .dash-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* RDV */
+  .rdv-item { display: flex; gap: 12px; padding: 10px 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; align-items: center; }
+  .rdv-date { font-size: 11px; color: var(--accent); font-weight: 500; min-width: 80px; }
+  .rdv-title { font-size: 13px; color: var(--text); }
+  .rdv-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Factures récentes */
+  .facture-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .facture-item-info { font-size: 13px; color: var(--text); }
+  .facture-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .facture-item-amount { font-size: 14px; font-weight: 600; color: var(--accent2); }
+
+  /* Graphique simple */
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding: 0 4px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--accent); opacity: 0.7; transition: opacity 0.2s; min-height: 4px; }
+  .bar:hover { opacity: 1; }
+  .bar-label { font-size: 9px; color: var(--muted); white-space: nowrap; }
+
+  .dash-loading { text-align: center; padding: 30px; color: var(--muted); font-size: 13px; }
+  .dash-empty { text-align: center; padding: 20px; color: var(--muted); font-size: 12px; font-style: italic; }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .dashboard-body { padding: 14px; gap: 16px; }
+  }
+
+</style>
 
   /* Sidebar */
   .sidebar {
@@ -1680,6 +1735,22 @@
   </div>
 </div>
 
+<!-- Tableau de Bord -->
+<div class="dashboard-overlay" id="dashboard-overlay">
+  <div class="dashboard-modal">
+    <div class="dashboard-header">
+      <h2>📊 Tableau de bord</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="tb-btn" onclick="actualiserDashboard()" style="font-size:12px">🔄 Actualiser</button>
+        <button class="back-btn" onclick="fermerDashboard()" style="margin:0">✕</button>
+      </div>
+    </div>
+    <div class="dashboard-body" id="dashboard-body">
+      <div class="dash-loading">Chargement du tableau de bord...</div>
+    </div>
+  </div>
+</div>
+
 <!-- Gestionnaire fichiers Excel -->
 <div class="xl-manager-overlay" id="xl-manager-overlay">
   <div class="xl-manager-modal">
@@ -1957,6 +2028,9 @@
   <aside class="sidebar" id="main-sidebar">
     <div class="sidebar-section">Actions rapides</div>
 
+    <button class="quick-action" onclick="ouvrirDashboard(); toggleSidebar()">
+      <span class="qa-icon">📊</span> Tableau de bord
+    </button>
     <button class="quick-action" onclick="toggleCalPanel(); showCalTab('nouveau')">
       <span class="qa-icon">📅</span> Nouveau RDV
     </button>
@@ -2221,6 +2295,230 @@
 const CLAUDE_API = "https://nova-ai.contact-raphael6.workers.dev";
 let shopifyConfig = null;
 let conversationHistory = [];
+
+// =====================
+// TABLEAU DE BORD
+// =====================
+
+function ouvrirDashboard() {
+  document.getElementById('dashboard-overlay').classList.add('open');
+  actualiserDashboard();
+}
+
+function fermerDashboard() {
+  document.getElementById('dashboard-overlay').classList.remove('open');
+}
+
+async function actualiserDashboard() {
+  const body = document.getElementById('dashboard-body');
+  body.innerHTML = '<div class="dash-loading">⏳ Chargement des données...</div>';
+
+  // Récupérer les données en parallèle
+  const [shopifyData, facturesData, calendarData] = await Promise.all([
+    chargerDonnéesShopify(),
+    chargerDonnéesFactures(),
+    chargerDonnéesCalendrier()
+  ]);
+
+  // Construire le HTML du dashboard
+  body.innerHTML = `
+    ${renderStatsCards(shopifyData, facturesData)}
+    ${renderGraphiqueVentes(shopifyData)}
+    ${renderCommandesRecentes(shopifyData)}
+    ${renderFacturesMois(facturesData)}
+    ${renderRDVSemaine(calendarData)}
+  `;
+}
+
+async function chargerDonnéesShopify() {
+  if (!shopifyConfig) return null;
+  try {
+    const [ordersRes, productsRes] = await Promise.all([
+      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?limit=50&status=any&created_at_min=${new Date(Date.now() - 30*24*60*60*1000).toISOString()}`, {
+        headers: { 'X-Shopify-Access-Token': shopifyConfig.token }
+      }),
+      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/products/count.json`, {
+        headers: { 'X-Shopify-Access-Token': shopifyConfig.token }
+      })
+    ]);
+    const ordersData = await ordersRes.json();
+    const productsData = await productsRes.json();
+    return { orders: ordersData.orders || [], productsCount: productsData.count || 0 };
+  } catch { return null; }
+}
+
+function chargerDonnéesFactures() {
+  const factures = MEM.load('factures', []);
+  const maintenant = new Date();
+  const debutMois = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+  const facturesMois = factures.filter(f => new Date(f.createdAt || f.date) >= debutMois);
+  return { toutes: factures, mois: facturesMois };
+}
+
+function chargerDonnéesCalendrier() {
+  if (!window.calEvents) return [];
+  const maintenant = new Date();
+  const finSemaine = new Date(maintenant.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return calEvents.filter(e => {
+    const d = new Date(e.start?.dateTime || e.start?.date);
+    return d >= maintenant && d <= finSemaine;
+  }).sort((a, b) => new Date(a.start?.dateTime || a.start?.date) - new Date(b.start?.dateTime || b.start?.date));
+}
+
+function renderStatsCards(shopify, factures) {
+  const ventesTotales = shopify ? shopify.orders.reduce((t, o) => t + parseFloat(o.total_price || 0), 0) : 0;
+  const nbCommandes = shopify ? shopify.orders.length : 0;
+  const commandesPayees = shopify ? shopify.orders.filter(o => o.financial_status === 'paid').length : 0;
+  const totalFacturesMois = factures.mois.reduce((t, f) => t + (f.total || 0), 0);
+  const nbFacturesMois = factures.mois.length;
+
+  return `
+  <div>
+    <div class="dash-section-title">Vue d'ensemble — 30 derniers jours</div>
+    <div class="stats-grid">
+      <div class="stat-card" style="--card-color:#c8a96e">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Ventes Shopify</div>
+        <div class="stat-value">${shopify ? ventesTotales.toFixed(0) + '$' : '—'}</div>
+        <div class="stat-sub">${nbCommandes} commande${nbCommandes !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card" style="--card-color:#5cb87a">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Commandes payées</div>
+        <div class="stat-value">${shopify ? commandesPayees : '—'}</div>
+        <div class="stat-sub">${shopify ? Math.round(commandesPayees/Math.max(nbCommandes,1)*100) + '% du total' : 'Shopify non connecté'}</div>
+      </div>
+      <div class="stat-card" style="--card-color:#5b9bd5">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-label">Factures ce mois</div>
+        <div class="stat-value">${nbFacturesMois > 0 ? totalFacturesMois.toFixed(0) + '$' : '0$'}</div>
+        <div class="stat-sub">${nbFacturesMois} facture${nbFacturesMois !== 1 ? 's' : ''} créée${nbFacturesMois !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card" style="--card-color:#9b59b6">
+        <div class="stat-icon">📦</div>
+        <div class="stat-label">Produits Shopify</div>
+        <div class="stat-value">${shopify ? shopify.productsCount : '—'}</div>
+        <div class="stat-sub">${shopify ? 'En catalogue' : 'Shopify non connecté'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderGraphiqueVentes(shopify) {
+  if (!shopify || !shopify.orders.length) return `
+  <div>
+    <div class="dash-section-title">Ventes par jour (7 derniers jours)</div>
+    <div class="dash-empty">Connectez Shopify pour voir le graphique des ventes</div>
+  </div>`;
+
+  // Grouper par jour sur 7 jours
+  const jours = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    jours.push({ date: d.toISOString().split('T')[0], label: d.toLocaleDateString('fr-CA', {weekday:'short'}), total: 0 });
+  }
+  shopify.orders.forEach(o => {
+    const date = o.created_at?.split('T')[0];
+    const jour = jours.find(j => j.date === date);
+    if (jour) jour.total += parseFloat(o.total_price || 0);
+  });
+
+  const max = Math.max(...jours.map(j => j.total), 1);
+  const bars = jours.map(j => `
+    <div class="bar-wrap" title="${j.label}: ${j.total.toFixed(0)}$">
+      <div class="bar" style="height:${Math.max(j.total/max*100, 4)}%"></div>
+      <div class="bar-label">${j.label}</div>
+    </div>`).join('');
+
+  return `
+  <div>
+    <div class="dash-section-title">Ventes par jour (7 derniers jours)</div>
+    <div class="bar-chart">${bars}</div>
+  </div>`;
+}
+
+function renderCommandesRecentes(shopify) {
+  if (!shopify || !shopify.orders.length) return `
+  <div>
+    <div class="dash-section-title">Dernières commandes Shopify</div>
+    <div class="dash-empty">Aucune commande ou Shopify non connecté</div>
+  </div>`;
+
+  const rows = shopify.orders.slice(0, 5).map(o => {
+    const date = new Date(o.created_at).toLocaleDateString('fr-CA', {day:'numeric', month:'short'});
+    const nom = o.billing_address ? `${o.billing_address.first_name} ${o.billing_address.last_name}` : (o.email || 'Anonyme');
+    const statut = o.financial_status === 'paid' ? '<span style="color:var(--success)">Payée</span>' : '<span style="color:var(--accent)">En attente</span>';
+    return `<tr>
+      <td>#${o.order_number}</td>
+      <td>${escapeHtml(nom)}</td>
+      <td>${parseFloat(o.total_price).toFixed(2)} ${o.currency}</td>
+      <td>${statut}</td>
+      <td>${date}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div>
+    <div class="dash-section-title">Dernières commandes Shopify</div>
+    <table class="dash-table">
+      <thead><tr><th>#</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderFacturesMois(factures) {
+  if (!factures.mois.length) return `
+  <div>
+    <div class="dash-section-title">Factures ce mois</div>
+    <div class="dash-empty">Aucune facture créée ce mois</div>
+  </div>`;
+
+  const items = factures.mois.slice(0, 5).map(f => `
+    <div class="facture-item">
+      <div>
+        <div class="facture-item-info">${escapeHtml(f.numero || 'FAC')} — ${escapeHtml(f.client || 'Client')}</div>
+        <div class="facture-item-meta">${f.date || ''}</div>
+      </div>
+      <div class="facture-item-amount">${f.total ? f.total.toFixed(2) + ' $' : '—'}</div>
+    </div>`).join('');
+
+  return `
+  <div>
+    <div class="dash-section-title">Factures ce mois</div>
+    ${items}
+  </div>`;
+}
+
+function renderRDVSemaine(events) {
+  if (!events.length) return `
+  <div>
+    <div class="dash-section-title">RDV cette semaine</div>
+    <div class="dash-empty">${calToken ? 'Aucun rendez-vous cette semaine' : 'Connectez Google Calendar pour voir vos RDV'}</div>
+  </div>`;
+
+  const joursNoms = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const moisNoms = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+
+  const items = events.slice(0, 5).map(e => {
+    const d = new Date(e.start?.dateTime || e.start?.date);
+    const heure = e.start?.dateTime ? d.toLocaleTimeString('fr-CA', {hour:'2-digit', minute:'2-digit'}) : 'Toute la journée';
+    const dateStr = `${joursNoms[d.getDay()]} ${d.getDate()} ${moisNoms[d.getMonth()]}`;
+    return `<div class="rdv-item">
+      <div class="rdv-date">${dateStr}</div>
+      <div>
+        <div class="rdv-title">${escapeHtml(e.summary || 'Sans titre')}</div>
+        <div class="rdv-time">🕐 ${heure}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div>
+    <div class="dash-section-title">RDV cette semaine</div>
+    ${items}
+  </div>`;
+}
 
 // =====================
 // MÉMOIRE PERSISTANTE
