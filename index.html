@@ -1986,6 +1986,22 @@
     </button>
 
     <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Connexions</div>
+
+    <button class="quick-action" id="shopify-btn" onclick="openShopifyModal(); toggleSidebar()">
+      <span class="qa-icon">🛍</span> <span id="shopify-btn-text">Connecter Shopify</span>
+    </button>
+    <button class="quick-action" id="gmail-toggle-btn" onclick="toggleGmailPanel(); toggleSidebar()">
+      <span class="qa-icon">📧</span> <span id="gmail-btn-text">Gmail</span>
+    </button>
+    <button class="quick-action" id="cal-toggle-btn" onclick="toggleCalPanel(); toggleSidebar()">
+      <span class="qa-icon">📅</span> <span id="cal-btn-text">Calendrier</span>
+    </button>
+    <button class="quick-action" onclick="toggleProfilPanel(); toggleSidebar()">
+      <span class="qa-icon">🧠</span> Profil & Mémoire
+    </button>
+
+    <div class="sidebar-divider"></div>
     <div class="sidebar-section">Aide</div>
 
     <button class="quick-action" onclick="quickSend('Quelles sont toutes les choses que tu peux faire pour moi ?')">
