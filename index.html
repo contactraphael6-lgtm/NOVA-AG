@@ -23,7 +23,7 @@
 
 /* ===== PAGE CONNEXION ===== */
 #auth-page {
-  position: fixed; inset: 0; z-index: 8000;
+  position: fixed; inset: 0; z-index: 10000;
   background: #020610;
   display: flex; align-items: center; justify-content: center;
   font-family: 'DM Sans', sans-serif;
@@ -121,7 +121,6 @@
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
 #splash.hidden { opacity: 0; pointer-events: none; transform: scale(1.04); }
-
 /* Grille circuit */
 .splash-grid {
   position: absolute; inset: 0;
@@ -340,19 +339,15 @@
   pointer-events: none;
   position: fixed;
   inset: 0;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
   display: flex;
   flex-direction: column;
   font-family: 'DM Sans', sans-serif;
   background: var(--bg, #0e0e10);
   color: var(--text, #f0ede8);
   overflow: hidden;
-  z-index: 1000;
+  z-index: 500;
 }
 #app.visible { opacity: 1; pointer-events: all; }
 
@@ -4318,14 +4313,24 @@ async function deconnexion() {
   location.reload();
 }
 
-// Vérifier si déjà connecté au chargement
 async function verifierSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
     document.getElementById('auth-page').classList.add('hidden');
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('splash').classList.add('hidden');
     await chargerProfilSupabase();
-    lancerNova();
+    const app = document.getElementById('app');
+    app.style.opacity = '1';
+    app.style.pointerEvents = 'all';
+    app.classList.add('visible');
+    chargerMemoire();
+  } else {
+    // Pas de session - montrer la page de connexion
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('splash').classList.add('hidden');
+    document.getElementById('auth-page').style.display = 'flex';
   }
 }
 
@@ -4345,13 +4350,13 @@ function toggleSidebar() {
 }
 
 function retourAccueil() {
-  // Retourner au splash et lancer le mode vocal
   const app = document.getElementById('app');
   const splash = document.getElementById('splash');
   app.classList.remove('visible');
+  app.style.opacity = '0';
+  app.style.pointerEvents = 'none';
   splash.style.display = 'flex';
   splash.classList.remove('hidden');
-  setTimeout(() => { app.style.opacity = '0'; app.style.pointerEvents = 'none'; }, 50);
 }
 
 // =====================
@@ -4360,16 +4365,25 @@ function retourAccueil() {
 function lancerNova() {
   const splash = document.getElementById('splash');
   const app = document.getElementById('app');
-  splash.classList.add('hidden');
-  app.classList.add('visible');
-  setTimeout(() => { splash.style.display = 'none'; }, 900);
-  chargerMemoire();
+  splash.style.display = 'flex';
+  splash.classList.remove('hidden');
+  app.classList.remove('visible');
+  app.style.opacity = '0';
+  app.style.pointerEvents = 'none';
 }
 
 function lancerDepuisAccueil() {
-  // Entrer dans l'app ET lancer le vocal directement
-  lancerNova();
-  setTimeout(() => lancerConversationVocale(), 1000);
+  const splash = document.getElementById('splash');
+  const app = document.getElementById('app');
+  splash.classList.add('hidden');
+  setTimeout(() => {
+    splash.style.display = 'none';
+    app.style.opacity = '1';
+    app.style.pointerEvents = 'all';
+    app.classList.add('visible');
+    chargerMemoire();
+  }, 800);
+  setTimeout(() => lancerConversationVocale(), 1800);
 }
 
 // Générer particules
@@ -4395,6 +4409,8 @@ function genererParticules() {
 // Init au chargement
 window.addEventListener('load', () => {
   genererParticules();
+  // Cacher le splash immédiatement et vérifier la session
+  document.getElementById('splash').style.display = 'none';
   verifierSession();
 });
 
