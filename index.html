@@ -1354,6 +1354,37 @@
   .xl-file-btn.del:hover { border-color: var(--danger); color: var(--danger); }
   .xl-empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
 
+  /* ===== THÈME CLAIR ===== */
+  body.theme-light {
+    --bg: #f4f4f6; --surface: #ffffff; --surface2: #e8e8ec;
+    --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
+    --text: #1a1a22; --muted: #888890; --muted2: #555560;
+    --nova-bubble: #ffffff; --user-bubble: #fff8ee;
+    --accent: #b8861a; --accent2: #d4a020;
+  }
+  body.theme-light #app { background: var(--bg); }
+  body.theme-light header { background: var(--surface); }
+  body.theme-light .sidebar { background: var(--surface); }
+  body.theme-light .input-area { background: var(--surface); }
+
+  /* ===== BARRE DE RECHERCHE ===== */
+  .search-bar {
+    display: flex; gap: 8px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    background: var(--bg);
+  }
+  .search-bar.hidden { display: none; }
+  .search-input {
+    flex: 1; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text); font-size: 13px; font-family: 'DM Sans',sans-serif;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-results-count { font-size: 12px; color: var(--muted); align-self: center; white-space: nowrap; }
+  .msg-bubble.highlight { border: 1px solid var(--accent) !important; background: rgba(200,169,110,0.1) !important; }
+
   /* ===== TABLEAU DE BORD ===== */
   .dash-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.8);
@@ -1363,8 +1394,7 @@
   .dash-overlay.open { display: flex; }
   .dash-modal {
     background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 18px; width: 100%; max-width: 900px;
-    margin: auto; overflow: hidden;
+    border-radius: 18px; width: 100%; max-width: 900px; margin: auto; overflow: hidden;
   }
   .dash-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -1372,20 +1402,10 @@
   }
   .dash-header h2 { font-family: 'DM Serif Display',serif; font-size: 20px; color: var(--accent2); }
   .dash-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-  .dash-section-title {
-    font-size: 11px; color: var(--accent); text-transform: uppercase;
-    letter-spacing: 0.1em; font-weight: 500; margin-bottom: 10px;
-    padding-bottom: 6px; border-bottom: 1px solid var(--border);
-  }
+  .dash-section-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  .stat-card {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px; position: relative; overflow: hidden;
-  }
-  .stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: var(--card-color, var(--accent));
-  }
+  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--card-color, var(--accent)); }
   .stat-icon { position: absolute; top: 12px; right: 12px; font-size: 20px; opacity: 0.35; }
   .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
   .stat-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1; }
@@ -1399,8 +1419,6 @@
   .bar-lbl { font-size: 9px; color: var(--muted); }
   .rdv-row { display: flex; gap: 10px; padding: 8px 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px; align-items: center; }
   .rdv-date-lbl { font-size: 11px; color: var(--accent); min-width: 75px; font-weight: 500; }
-  .rdv-info-title { font-size: 13px; color: var(--text); }
-  .rdv-info-time { font-size: 11px; color: var(--muted); }
   .fact-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px; }
   .fact-amt { font-size: 14px; font-weight: 600; color: var(--accent2); }
   .dash-empty { text-align: center; padding: 16px; color: var(--muted); font-size: 12px; font-style: italic; }
@@ -1742,9 +1760,7 @@
         <button class="back-btn" onclick="fermerDash()" style="margin:0">✕</button>
       </div>
     </div>
-    <div class="dash-body" id="dash-body">
-      <div class="dash-empty">Chargement...</div>
-    </div>
+    <div class="dash-body" id="dash-body"><div class="dash-empty">Chargement...</div></div>
   </div>
 </div>
 
@@ -1970,7 +1986,8 @@
     <div class="facture-actions">
       <button class="btn-ghost" onclick="toggleFacturePanel()">Annuler</button>
       <button class="btn-primary" onclick="genererFactureExcel()" style="flex:0;padding:10px 18px;white-space:nowrap">📊 Excel</button>
-      <button class="btn-primary" onclick="genererFacturePDF()" style="flex:1;background:var(--accent2)">🧾 Générer Facture PDF</button>
+      <button class="btn-primary" onclick="envoyerFactureEmail()" style="flex:0;padding:10px 18px;white-space:nowrap;background:rgba(0,120,255,0.8)">📧 Email</button>
+      <button class="btn-primary" onclick="genererFacturePDF()" style="flex:1;background:var(--accent2)">🧾 PDF</button>
     </div>
   </div>
 </div>
@@ -2005,15 +2022,11 @@
     </div>
   </div>
   <div class="header-actions">
-    <button class="icon-btn" onclick="retourAccueil()" title="Accueil">
-      ←
-    </button>
-    <button class="icon-btn" onclick="lancerConversationVocale()" title="Parler" style="background:rgba(0,80,180,0.3);border-color:rgba(0,120,255,0.5);color:#88ccff;font-size:18px">
-      🎙
-    </button>
-    <button class="shopify-btn" onclick="deconnexion()" style="border-color:rgba(255,80,80,0.3);color:rgba(255,120,120,0.8);padding:7px 10px">
-      🚪
-    </button>
+    <button class="icon-btn" onclick="toggleRecherche()" title="Rechercher" id="search-btn">🔍</button>
+    <button class="icon-btn" onclick="toggleTheme()" title="Thème" id="theme-btn">🌙</button>
+    <button class="icon-btn" onclick="retourAccueil()" title="Accueil">←</button>
+    <button class="icon-btn" onclick="lancerConversationVocale()" title="Parler" style="background:rgba(0,80,180,0.3);border-color:rgba(0,120,255,0.5);color:#88ccff;font-size:18px">🎙</button>
+    <button class="shopify-btn" onclick="deconnexion()" style="border-color:rgba(255,80,80,0.3);color:rgba(255,120,120,0.8);padding:7px 10px">🚪</button>
   </div>
 </header>
 
@@ -2025,7 +2038,7 @@
   <aside class="sidebar" id="main-sidebar">
     <div class="sidebar-section">Actions rapides</div>
 
-    <button class="quick-action" onclick="ouvrirDash(); if(typeof toggleSidebar==='function') toggleSidebar()">
+    <button class="quick-action" onclick="ouvrirDash(); toggleSidebar()">
       <span class="qa-icon">📊</span> Tableau de bord
     </button>
     <button class="quick-action" onclick="toggleCalPanel(); showCalTab('nouveau')">
@@ -2184,6 +2197,13 @@
 
   <!-- Main chat -->
   <main class="main">
+    <!-- Barre de recherche -->
+    <div class="search-bar hidden" id="search-bar">
+      <input class="search-input" id="search-input" placeholder="Rechercher dans les conversations..." oninput="rechercherMessages(this.value)" />
+      <span class="search-results-count" id="search-count"></span>
+      <button class="icon-btn" onclick="toggleRecherche()" style="width:32px;height:32px;font-size:14px">✕</button>
+    </div>
+
     <div class="messages" id="messages">
       <!-- Welcome message -->
       <div class="msg nova">
@@ -2294,26 +2314,190 @@ let shopifyConfig = null;
 let conversationHistory = [];
 
 // =====================
+// THÈME CLAIR/SOMBRE
+// =====================
+let themeClair = false;
+function toggleTheme() {
+  themeClair = !themeClair;
+  document.body.classList.toggle('theme-light', themeClair);
+  document.getElementById('theme-btn').textContent = themeClair ? '🌞' : '🌙';
+  MEM.save('theme', themeClair ? 'light' : 'dark');
+}
+function chargerTheme() {
+  const t = MEM.load('theme', 'dark');
+  if (t === 'light') { themeClair = true; document.body.classList.add('theme-light'); document.getElementById('theme-btn').textContent = '🌞'; }
+}
+
+// =====================
+// RECHERCHE CONVERSATIONS
+// =====================
+let searchVisible = false;
+let searchHighlights = [];
+
+function toggleRecherche() {
+  searchVisible = !searchVisible;
+  const bar = document.getElementById('search-bar');
+  bar.classList.toggle('hidden', !searchVisible);
+  if (searchVisible) {
+    document.getElementById('search-input').focus();
+  } else {
+    // Enlever les highlights
+    document.querySelectorAll('.msg-bubble.highlight').forEach(el => el.classList.remove('highlight'));
+    document.getElementById('search-count').textContent = '';
+    document.getElementById('search-input').value = '';
+  }
+}
+
+function rechercherMessages(query) {
+  // Enlever anciens highlights
+  document.querySelectorAll('.msg-bubble.highlight').forEach(el => el.classList.remove('highlight'));
+  if (!query.trim()) { document.getElementById('search-count').textContent = ''; return; }
+
+  const bubbles = document.querySelectorAll('.msg-bubble');
+  let count = 0;
+  let first = null;
+  bubbles.forEach(bubble => {
+    if (bubble.textContent.toLowerCase().includes(query.toLowerCase())) {
+      bubble.classList.add('highlight');
+      count++;
+      if (!first) first = bubble;
+    }
+  });
+  document.getElementById('search-count').textContent = count > 0 ? `${count} résultat${count > 1 ? 's' : ''}` : 'Aucun résultat';
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// =====================
+// NOTIFICATIONS PUSH
+// =====================
+let notifInterval = null;
+let dernierNbCommandes = 0;
+
+async function activerNotifications() {
+  if (!('Notification' in window)) { return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    MEM.save('notifs', true);
+    demarrerSurveillanceShopify();
+    addNovaMessage('🔔 Notifications activées ! Je vous avertirai quand une nouvelle commande Shopify arrive.');
+  }
+}
+
+function demarrerSurveillanceShopify() {
+  if (notifInterval) clearInterval(notifInterval);
+  notifInterval = setInterval(async () => {
+    if (!shopifyConfig || !MEM.load('notifs')) return;
+    try {
+      const res = await fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders/count.json?status=any`, {
+        headers: { 'X-Shopify-Access-Token': shopifyConfig.token }
+      });
+      const data = await res.json();
+      const nb = data.count || 0;
+      if (dernierNbCommandes > 0 && nb > dernierNbCommandes) {
+        const nouvelles = nb - dernierNbCommandes;
+        // Notification push
+        new Notification('Nexus AI — Nouvelle commande ! 🛍', {
+          body: `Vous avez ${nouvelles} nouvelle${nouvelles > 1 ? 's' : ''} commande${nouvelles > 1 ? 's' : ''} Shopify`,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23020610" rx="20"/><text y="70" x="50" text-anchor="middle" font-size="60" font-family="serif" fill="%234488ff">N</text></svg>'
+        });
+        // Message dans le chat aussi
+        addNovaMessage(`🛍 **Nouvelle commande !** Vous avez reçu ${nouvelles} nouvelle${nouvelles > 1 ? 's' : ''} commande${nouvelles > 1 ? 's' : ''} sur Shopify.`);
+      }
+      dernierNbCommandes = nb;
+    } catch {}
+  }, 60000); // Vérifier chaque minute
+}
+
+// =====================
+// ENVOI FACTURE PAR EMAIL
+// =====================
+async function envoyerFactureEmail() {
+  if (!gmailToken) {
+    alert('Connectez Gmail d\'abord via le menu hamburger → Gmail');
+    return;
+  }
+  const client = document.getElementById('f-client').value.trim();
+  const clientEmail = document.getElementById('f-client-email').value.trim();
+  if (!client || !clientEmail) {
+    alert('Remplissez le nom et l\'email du client.');
+    return;
+  }
+
+  const d = getFactureData();
+  if (d.items.length === 0) { alert('Ajoutez au moins un article.'); return; }
+
+  // Générer le contenu email
+  const TPS_RATE = 5, TVQ_RATE = 9.975;
+  const sujet = `Facture ${d.numero} — ${d.entreprise || 'Nexus AI'}`;
+  const corps = `Bonjour ${client},
+
+Veuillez trouver ci-joint les détails de votre facture :
+
+Numéro de facture : ${d.numero}
+Date : ${d.date}
+Échéance : ${d.echeance}
+
+ARTICLES :
+${d.items.map(i => `- ${i.desc} : ${i.qty} x ${fmtNum(i.prix)}$ = ${fmtNum(i.st)}$`).join('\n')}
+
+Sous-total : ${fmtNum(d.subtotal)}$
+TPS (${TPS_RATE}%) : ${fmtNum(d.totalTPS)}$
+TVQ (${TVQ_RATE}%) : ${fmtNum(d.totalTVQ)}$
+TOTAL DÛ : ${fmtNum(d.total)}$
+
+${d.notes ? 'Notes : ' + d.notes : ''}
+
+Merci pour votre confiance !
+${d.entreprise || ''}
+${d.contact || ''}`;
+
+  // Encoder et envoyer via Gmail API
+  const email = [
+    `To: ${clientEmail}`,
+    `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(sujet)))}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    corps
+  ].join('\n');
+
+  const encoded = btoa(unescape(encodeURIComponent(email))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+  try {
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gmailToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded })
+    });
+    if (res.ok) {
+      sauvegarderEntreprise();
+      sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
+      sauvegarderFacture(d);
+      toggleFacturePanel();
+      addNovaMessage(`✅ Facture **${d.numero}** envoyée par email à **${clientEmail}** — Total : **${fmtNum(d.total)} $**`);
+    } else {
+      alert('Erreur lors de l\'envoi. Vérifiez votre connexion Gmail.');
+    }
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+  }
+}
+
+// =====================
 // TABLEAU DE BORD
 // =====================
 function ouvrirDash() {
   document.getElementById('dash-overlay').classList.add('open');
   actualiserDash();
 }
-function fermerDash() {
-  document.getElementById('dash-overlay').classList.remove('open');
-}
+function fermerDash() { document.getElementById('dash-overlay').classList.remove('open'); }
 async function actualiserDash() {
   const body = document.getElementById('dash-body');
-  body.innerHTML = '<div class="dash-empty">⏳ Chargement des données...</div>';
-  const shopify = await getDashShopify();
-  const factures = getDashFactures();
-  const rdvs = getDashRDV();
-  body.innerHTML = renderDashStats(shopify, factures)
-    + renderDashGraph(shopify)
-    + renderDashCommandes(shopify)
-    + renderDashFactures(factures)
-    + renderDashRDV(rdvs);
+  body.innerHTML = '<div class="dash-empty">⏳ Chargement...</div>';
+  const sh = await getDashShopify();
+  const fa = getDashFactures();
+  const rv = getDashRDV();
+  body.innerHTML = renderDashStats(sh,fa) + renderDashGraph(sh) + renderDashCommandes(sh) + renderDashFactures(fa) + renderDashRDV(rv);
 }
 async function getDashShopify() {
   if (!shopifyConfig) return null;
@@ -2323,31 +2507,28 @@ async function getDashShopify() {
       fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?limit=50&status=any&created_at_min=${since}`,{headers:{'X-Shopify-Access-Token':shopifyConfig.token}}),
       fetch(`https://${shopifyConfig.url}/admin/api/2024-01/products/count.json`,{headers:{'X-Shopify-Access-Token':shopifyConfig.token}})
     ]);
-    const d1=await r1.json(), d2=await r2.json();
-    return {orders:d1.orders||[], productsCount:d2.count||0};
+    const d1=await r1.json(),d2=await r2.json();
+    return {orders:d1.orders||[],productsCount:d2.count||0};
   } catch{return null;}
 }
 function getDashFactures() {
-  const all = MEM.load('factures',[]);
-  const debut = new Date(); debut.setDate(1); debut.setHours(0,0,0,0);
-  return {mois: all.filter(f=>new Date(f.createdAt||f.date)>=debut), all};
+  const all=MEM.load('factures',[]);
+  const debut=new Date(); debut.setDate(1); debut.setHours(0,0,0,0);
+  return {mois:all.filter(f=>new Date(f.createdAt||f.date)>=debut),all};
 }
 function getDashRDV() {
   if (!window.calEvents) return [];
-  const now=new Date(), fin=new Date(now.getTime()+7*24*60*60*1000);
-  return calEvents.filter(e=>{const d=new Date(e.start?.dateTime||e.start?.date);return d>=now&&d<=fin;})
-    .sort((a,b)=>new Date(a.start?.dateTime||a.start?.date)-new Date(b.start?.dateTime||b.start?.date));
+  const now=new Date(),fin=new Date(now.getTime()+7*24*60*60*1000);
+  return calEvents.filter(e=>{const d=new Date(e.start?.dateTime||e.start?.date);return d>=now&&d<=fin;}).sort((a,b)=>new Date(a.start?.dateTime||a.start?.date)-new Date(b.start?.dateTime||b.start?.date));
 }
 function renderDashStats(sh,fa) {
-  const ventes=sh?sh.orders.reduce((t,o)=>t+parseFloat(o.total_price||0),0):0;
-  const nb=sh?sh.orders.length:0;
-  const payes=sh?sh.orders.filter(o=>o.financial_status==='paid').length:0;
-  const totFact=fa.mois.reduce((t,f)=>t+(f.total||0),0);
-  return `<div><div class="dash-section-title">Vue d'ensemble — 30 derniers jours</div>
-  <div class="stats-grid">
-    <div class="stat-card" style="--card-color:#c8a96e"><div class="stat-icon">💰</div><div class="stat-label">Ventes Shopify</div><div class="stat-value">${sh?ventes.toFixed(0)+'$':'—'}</div><div class="stat-sub">${nb} commande${nb!==1?'s':''}</div></div>
-    <div class="stat-card" style="--card-color:#5cb87a"><div class="stat-icon">✅</div><div class="stat-label">Payées</div><div class="stat-value">${sh?payes:'—'}</div><div class="stat-sub">${sh?Math.round(payes/Math.max(nb,1)*100)+'%':'Shopify non connecté'}</div></div>
-    <div class="stat-card" style="--card-color:#5b9bd5"><div class="stat-icon">🧾</div><div class="stat-label">Factures mois</div><div class="stat-value">${totFact>0?totFact.toFixed(0)+'$':'0$'}</div><div class="stat-sub">${fa.mois.length} créée${fa.mois.length!==1?'s':''}</div></div>
+  const v=sh?sh.orders.reduce((t,o)=>t+parseFloat(o.total_price||0),0):0;
+  const nb=sh?sh.orders.length:0,p=sh?sh.orders.filter(o=>o.financial_status==='paid').length:0;
+  const tf=fa.mois.reduce((t,f)=>t+(f.total||0),0);
+  return `<div><div class="dash-section-title">Vue d'ensemble — 30 derniers jours</div><div class="stats-grid">
+    <div class="stat-card" style="--card-color:#c8a96e"><div class="stat-icon">💰</div><div class="stat-label">Ventes Shopify</div><div class="stat-value">${sh?v.toFixed(0)+'$':'—'}</div><div class="stat-sub">${nb} commande${nb!==1?'s':''}</div></div>
+    <div class="stat-card" style="--card-color:#5cb87a"><div class="stat-icon">✅</div><div class="stat-label">Payées</div><div class="stat-value">${sh?p:'—'}</div><div class="stat-sub">${sh?Math.round(p/Math.max(nb,1)*100)+'%':'Non connecté'}</div></div>
+    <div class="stat-card" style="--card-color:#5b9bd5"><div class="stat-icon">🧾</div><div class="stat-label">Factures mois</div><div class="stat-value">${tf>0?tf.toFixed(0)+'$':'0$'}</div><div class="stat-sub">${fa.mois.length} créée${fa.mois.length!==1?'s':''}</div></div>
     <div class="stat-card" style="--card-color:#9b59b6"><div class="stat-icon">📦</div><div class="stat-label">Produits</div><div class="stat-value">${sh?sh.productsCount:'—'}</div><div class="stat-sub">${sh?'En catalogue':'Non connecté'}</div></div>
   </div></div>`;
 }
@@ -2367,17 +2548,16 @@ function renderDashCommandes(sh) {
     const s=o.financial_status==='paid'?'<span style="color:var(--success)">Payée</span>':'<span style="color:var(--accent)">En attente</span>';
     return `<tr><td>#${o.order_number}</td><td>${escapeHtml(nom)}</td><td>${parseFloat(o.total_price).toFixed(2)}$</td><td>${s}</td><td>${d}</td></tr>`;
   }).join('');
-  return `<div><div class="dash-section-title">Dernières commandes Shopify</div><table class="dash-table"><thead><tr><th>#</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div><div class="dash-section-title">Dernières commandes</div><table class="dash-table"><thead><tr><th>#</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function renderDashFactures(fa) {
   if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
-  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map(f=>`<div class="fact-row"><div><div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'Client')}</div><div style="font-size:11px;color:var(--muted)">${f.date||''}</div></div><div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div></div>`).join('')}</div>`;
+  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map(f=>`<div class="fact-row"><div><div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div><div style="font-size:11px;color:var(--muted)">${f.date||''}</div></div><div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div></div>`).join('')}</div>`;
 }
 function renderDashRDV(rdvs) {
-  const joursN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  const moisN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  const jN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],mN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
   if (!rdvs.length) return `<div><div class="dash-section-title">RDV cette semaine</div><div class="dash-empty">${window.calToken?'Aucun RDV cette semaine':'Connectez Google Calendar'}</div></div>`;
-  return `<div><div class="dash-section-title">RDV cette semaine</div>${rdvs.slice(0,5).map(e=>{const d=new Date(e.start?.dateTime||e.start?.date);const h=e.start?.dateTime?d.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Toute la journée';return `<div class="rdv-row"><div class="rdv-date-lbl">${joursN[d.getDay()]} ${d.getDate()} ${moisN[d.getMonth()]}</div><div><div class="rdv-info-title">${escapeHtml(e.summary||'Sans titre')}</div><div class="rdv-info-time">🕐 ${h}</div></div></div>`;}).join('')}</div>`;
+  return `<div><div class="dash-section-title">RDV cette semaine</div>${rdvs.slice(0,5).map(e=>{const d=new Date(e.start?.dateTime||e.start?.date);const h=e.start?.dateTime?d.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Toute la journée';return `<div class="rdv-row"><div class="rdv-date-lbl">${jN[d.getDay()]} ${d.getDate()} ${mN[d.getMonth()]}</div><div><div style="font-size:13px;color:var(--text)">${escapeHtml(e.summary||'Sans titre')}</div><div style="font-size:11px;color:var(--muted)">🕐 ${h}</div></div></div>`;}).join('')}</div>`;
 }
 
 // =====================
@@ -2546,6 +2726,9 @@ function connectShopify() {
   document.getElementById('shopify-btn-text').textContent = '✓ Shopify';
   closeShopifyModal();
   addNovaMessage(`✅ Parfait ! J'ai bien connecté votre store **${shopifyConfig.url}** et je m'en souviendrai pour vos prochaines visites.`);
+  // Activer les notifications si permission accordée
+  if (Notification.permission === 'granted') demarrerSurveillanceShopify();
+  else activerNotifications();
 }
 
 // =====================
@@ -3488,7 +3671,7 @@ document.getElementById('shopify-modal').addEventListener('click', function(e) {
 });
 
 // Charger la mémoire au démarrage
-document.addEventListener('DOMContentLoaded', chargerMemoire);
+document.addEventListener('DOMContentLoaded', () => { chargerMemoire(); chargerTheme(); });
 
 
 // =====================
