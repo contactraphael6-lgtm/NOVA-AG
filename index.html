@@ -1740,6 +1740,11 @@
         <input class="auth-input" id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')connexion()" />
       </div>
       <button class="auth-btn" onclick="connexion()">Se connecter →</button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="switchAuthTab('reset')" style="background:none;border:none;color:rgba(100,150,255,0.6);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">
+          Mot de passe oublié ?
+        </button>
+      </div>
       <div class="auth-error" id="login-error"></div>
     </div>
 
@@ -1761,8 +1766,123 @@
       <div class="auth-error" id="signup-error"></div>
       <div class="auth-success" id="signup-success"></div>
     </div>
+
+    <!-- Réinitialisation mot de passe -->
+    <div id="form-reset" style="display:none">
+      <p style="font-size:13px;color:rgba(150,180,255,0.7);margin-bottom:16px;line-height:1.6">
+        Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+      </p>
+      <div class="auth-field">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="reset-email" type="email" placeholder="votre@email.com" onkeydown="if(event.key==='Enter')envoyerReset()" />
+      </div>
+      <button class="auth-btn" onclick="envoyerReset()">Envoyer le lien →</button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="switchAuthTab('login')" style="background:none;border:none;color:rgba(100,150,255,0.6);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
+          ← Retour à la connexion
+        </button>
+      </div>
+      <div class="auth-error" id="reset-error"></div>
+      <div class="auth-success" id="reset-success"></div>
+    </div>
   </div>
 </div>
+
+<!-- ===== ONBOARDING ===== -->
+<div id="onboarding" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(4,4,12,0.97);backdrop-filter:blur(20px);align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;">
+  <div style="width:480px;max-width:94vw;padding:40px;position:relative">
+
+    <!-- Étapes indicateurs -->
+    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:36px" id="ob-steps-dots">
+      <div class="ob-dot active" id="ob-dot-0"></div>
+      <div class="ob-dot" id="ob-dot-1"></div>
+      <div class="ob-dot" id="ob-dot-2"></div>
+    </div>
+
+    <!-- Étape 1 : Bienvenue -->
+    <div id="ob-step-0" class="ob-step">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:60px;margin-bottom:16px">✨</div>
+        <h2 style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;background:linear-gradient(135deg,#e8c98a,#fff8e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px">Bienvenue dans Nexus AI</h2>
+        <p style="font-size:14px;color:rgba(150,180,255,0.8);line-height:1.7">Votre assistant IA personnel est prêt. En 3 étapes rapides, vous allez tout configurer.</p>
+      </div>
+      <div style="display:grid;gap:12px;margin-bottom:28px">
+        <div style="display:flex;gap:14px;align-items:center;padding:14px;background:rgba(68,136,255,0.06);border:1px solid rgba(68,136,255,0.12);border-radius:12px">
+          <span style="font-size:24px">🎙</span>
+          <div><div style="font-size:13px;color:#e8e6f0;font-weight:500">Conversation vocale</div><div style="font-size:12px;color:rgba(150,180,255,0.6)">Parlez à Nexus AI naturellement</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center;padding:14px;background:rgba(68,136,255,0.06);border:1px solid rgba(68,136,255,0.12);border-radius:12px">
+          <span style="font-size:24px">📊</span>
+          <div><div style="font-size:13px;color:#e8e6f0;font-weight:500">Tableau de bord</div><div style="font-size:12px;color:rgba(150,180,255,0.6)">Ventes, factures, RDV en un coup d'œil</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center;padding:14px;background:rgba(68,136,255,0.06);border:1px solid rgba(68,136,255,0.12);border-radius:12px">
+          <span style="font-size:24px">🧠</span>
+          <div><div style="font-size:13px;color:#e8e6f0;font-weight:500">Mémoire personnalisée</div><div style="font-size:12px;color:rgba(150,180,255,0.6)">Se souvient de vous à chaque visite</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 2 : Profil -->
+    <div id="ob-step-1" class="ob-step" style="display:none">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:50px;margin-bottom:12px">👤</div>
+        <h2 style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:#e8c98a;margin-bottom:8px">Votre profil</h2>
+        <p style="font-size:13px;color:rgba(150,180,255,0.7)">Nexus AI va personnaliser ses réponses selon vos informations.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+        <div>
+          <label style="font-size:10px;color:rgba(68,136,255,0.7);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px">Votre prénom</label>
+          <input id="ob-nom" class="auth-input" placeholder="Ex: Raphaël" style="width:100%" />
+        </div>
+        <div>
+          <label style="font-size:10px;color:rgba(68,136,255,0.7);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px">Votre rôle</label>
+          <input id="ob-role" class="auth-input" placeholder="Ex: Propriétaire, Directeur, Entrepreneur..." style="width:100%" />
+        </div>
+        <div>
+          <label style="font-size:10px;color:rgba(68,136,255,0.7);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px">Décrivez votre business</label>
+          <textarea id="ob-infos" class="auth-input" rows="3" placeholder="Ex: Je vends des parfums d'auto, j'ai 3 dépanneurs à Québec..." style="width:100%;resize:none"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 3 : Connexions -->
+    <div id="ob-step-2" class="ob-step" style="display:none">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:50px;margin-bottom:12px">🔗</div>
+        <h2 style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:#e8c98a;margin-bottom:8px">Connectez vos outils</h2>
+        <p style="font-size:13px;color:rgba(150,180,255,0.7)">Optionnel — vous pouvez connecter ça plus tard dans le menu.</p>
+      </div>
+      <div style="display:grid;gap:10px;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(68,136,255,0.04);border:1px solid rgba(68,136,255,0.1);border-radius:12px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="font-size:22px">🛍</span><div><div style="font-size:13px;color:#e8e6f0">Shopify</div><div style="font-size:11px;color:rgba(150,180,255,0.5)">Commandes et ventes</div></div></div>
+          <button onclick="fermerOnboarding();openShopifyModal()" style="padding:5px 14px;border-radius:7px;border:1px solid rgba(68,136,255,0.3);background:rgba(68,136,255,0.1);color:rgba(150,200,255,0.8);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Connecter</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(68,136,255,0.04);border:1px solid rgba(68,136,255,0.1);border-radius:12px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="font-size:22px">📧</span><div><div style="font-size:13px;color:#e8e6f0">Gmail</div><div style="font-size:11px;color:rgba(150,180,255,0.5)">Emails et envois</div></div></div>
+          <button onclick="fermerOnboarding();toggleGmailPanel()" style="padding:5px 14px;border-radius:7px;border:1px solid rgba(68,136,255,0.3);background:rgba(68,136,255,0.1);color:rgba(150,200,255,0.8);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Connecter</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(68,136,255,0.04);border:1px solid rgba(68,136,255,0.1);border-radius:12px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="font-size:22px">📅</span><div><div style="font-size:13px;color:#e8e6f0">Google Calendar</div><div style="font-size:11px;color:rgba(150,180,255,0.5)">RDV et rappels</div></div></div>
+          <button onclick="fermerOnboarding();toggleCalPanel()" style="padding:5px 14px;border-radius:7px;border:1px solid rgba(68,136,255,0.3);background:rgba(68,136,255,0.1);color:rgba(150,200,255,0.8);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Connecter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boutons navigation -->
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button id="ob-back-btn" onclick="obNaviguer(-1)" style="display:none;padding:10px 20px;border-radius:9px;border:1px solid rgba(68,136,255,0.2);background:transparent;color:rgba(150,180,255,0.7);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">← Retour</button>
+      <div style="flex:1"></div>
+      <button id="ob-next-btn" onclick="obNaviguer(1)" style="padding:12px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(68,136,255,0.3)">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.ob-dot { width:8px;height:8px;border-radius:50%;background:rgba(68,136,255,0.2);transition:all 0.3s; }
+.ob-dot.active { background:rgba(68,136,255,0.9);box-shadow:0 0 10px rgba(68,136,255,0.5);width:24px;border-radius:4px; }
+.ob-step { animation: obFadeIn 0.3s ease; }
+@keyframes obFadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+</style>
 
 <!-- ===== PAGE D'ACCUEIL SPLASH ===== -->
 <div id="splash">
@@ -4709,6 +4829,27 @@ function switchAuthTab(tab) {
   document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
   document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('form-reset').style.display = tab === 'reset' ? 'block' : 'none';
+  // Cacher les tabs si on est sur reset
+  document.querySelector('.auth-tabs').style.display = tab === 'reset' ? 'none' : 'flex';
+}
+
+async function envoyerReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const errEl = document.getElementById('reset-error');
+  const sucEl = document.getElementById('reset-success');
+  if (!email) { errEl.textContent = 'Entrez votre email.'; return; }
+  errEl.textContent = 'Envoi en cours...';
+  try {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://contactraphael6-lgtm.github.io/NOVA-AG'
+    });
+    if (error) { errEl.textContent = 'Erreur : ' + error.message; }
+    else {
+      errEl.textContent = '';
+      sucEl.textContent = '✓ Email envoyé ! Vérifiez votre boîte de réception.';
+    }
+  } catch(e) { errEl.textContent = 'Erreur : ' + e.message; }
 }
 
 async function connexion() {
@@ -4765,12 +4906,61 @@ async function inscription() {
 async function onConnected() {
   document.getElementById('auth-page').classList.add('hidden');
   await chargerProfilSupabase();
-  // S'assurer que le splash est caché et l'app visible
-  const splash = document.getElementById('splash');
   const app = document.getElementById('app');
+  const splash = document.getElementById('splash');
   if (splash) { splash.style.display = 'none'; splash.classList.add('hidden'); }
   if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
   chargerMemoire();
+  // Montrer onboarding si première visite
+  const dejavu = MEM.load('onboarding_done', false);
+  if (!dejavu) setTimeout(() => demarrerOnboarding(), 800);
+}
+
+// =====================
+// ONBOARDING
+// =====================
+let obEtape = 0;
+const obTotal = 3;
+
+function demarrerOnboarding() {
+  obEtape = 0;
+  document.getElementById('onboarding').style.display = 'flex';
+  obAfficherEtape(0);
+}
+
+function fermerOnboarding() {
+  document.getElementById('onboarding').style.display = 'none';
+  MEM.save('onboarding_done', true);
+  // Sauvegarder le profil si rempli
+  const nom = document.getElementById('ob-nom')?.value?.trim();
+  const role = document.getElementById('ob-role')?.value?.trim();
+  const infos = document.getElementById('ob-infos')?.value?.trim();
+  if (nom || role || infos) {
+    MEM.save('prefs', { nom: nom||'', role: role||'', style:'', infos: infos||'' });
+    if (currentUser) sauvegarderProfilSupabase();
+    const prefs = MEM.load('prefs',{});
+    addNovaMessage(`✨ Bienvenue **${nom || 'dans Nexus AI'}** ! Je suis prêt à vous aider. Posez-moi une question ou utilisez le menu pour commencer !`);
+  } else {
+    addNovaMessage('✨ Bienvenue dans **Nexus AI** ! Comment puis-je vous aider ?');
+  }
+}
+
+function obAfficherEtape(n) {
+  for(let i=0;i<obTotal;i++){
+    document.getElementById(`ob-step-${i}`).style.display = i===n ? 'block' : 'none';
+    document.getElementById(`ob-dot-${i}`).className = 'ob-dot' + (i===n ? ' active' : '');
+  }
+  document.getElementById('ob-back-btn').style.display = n > 0 ? 'block' : 'none';
+  const nextBtn = document.getElementById('ob-next-btn');
+  nextBtn.textContent = n === obTotal-1 ? '✓ Commencer' : 'Suivant →';
+}
+
+function obNaviguer(dir) {
+  if (dir === 1 && obEtape === obTotal-1) {
+    fermerOnboarding(); return;
+  }
+  obEtape = Math.max(0, Math.min(obTotal-1, obEtape + dir));
+  obAfficherEtape(obEtape);
 }
 
 async function chargerProfilSupabase() {
