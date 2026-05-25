@@ -2830,9 +2830,19 @@ function renderDashRDV(rdvs) {
 // MÉMOIRE PERSISTANTE
 // =====================
 const MEM = {
-  save(key, val) { try { localStorage.setItem('nova_' + key, JSON.stringify(val)); } catch(e) {} },
-  load(key, def = null) { try { const v = localStorage.getItem('nova_' + key); return v ? JSON.parse(v) : def; } catch(e) { return def; } },
-  del(key) { try { localStorage.removeItem('nova_' + key); } catch(e) {} }
+  _prefix() {
+    // Clé unique par utilisateur — isolation totale entre comptes
+    const uid = currentUser?.id || 'guest';
+    return `nexus_${uid}_`;
+  },
+  save(key, val) { try { localStorage.setItem(this._prefix() + key, JSON.stringify(val)); } catch(e) {} },
+  load(key, def = null) { try { const v = localStorage.getItem(this._prefix() + key); return v ? JSON.parse(v) : def; } catch(e) { return def; } },
+  del(key) { try { localStorage.removeItem(this._prefix() + key); } catch(e) {} },
+  // Effacer toute la mémoire de l'utilisateur courant uniquement
+  clearAll() {
+    const prefix = this._prefix();
+    Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => localStorage.removeItem(k));
+  }
 };
 
 // Charger tout au démarrage
@@ -2973,7 +2983,7 @@ function remplirClient(nom, entreprise, adresse, email) {
 
 function effacerMemoire() {
   if (!confirm('Effacer toute la mémoire de Nexus AI ? Cette action est irréversible.')) return;
-  ['shopify','historique','entreprise','prefs','clients','factures'].forEach(k => MEM.del(k));
+  MEM.clearAll();
   conversationHistory = [];
   location.reload();
 }
