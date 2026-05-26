@@ -3495,45 +3495,72 @@ async function traiterMessageVocal(texte) {
   setVoiceState('thinking');
   document.getElementById('voice-transcript').textContent = '« ' + texte + ' »';
 
-  // Ajouter dans le chat aussi
+  // Ajouter dans le chat
   addUserMessage(texte);
 
   try {
+    // Utiliser le MÊME système que le chat texte — accès à toutes les fonctions
+    // Mais avec instruction de répondre court pour la voix
     const prefs = MEM.load('prefs', {});
     const ent = MEM.load('entreprise', {});
-    const clients = MEM.load('clients', []);
 
-    const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle qui parle en français. Tu es en mode conversation vocale — donc tes réponses doivent être COURTES (2-4 phrases max), naturelles et conversationnelles. Pas de listes à puces, pas de markdown, pas de caractères spéciaux. Parle comme dans une vraie conversation.
+    // Ajouter une note vocale au message
+    const messageVocal = texte + '\n\n[MODE VOCAL: réponds en 1-3 phrases courtes et naturelles, sans markdown ni listes. Tu peux quand même utiliser les actions comme [CRÉER_EXCEL], [CRÉER_ÉVÉNEMENT], etc. si demandé.]';
 
-Utilisateur: ${prefs.nom || 'patron'}
-Entreprise: ${ent.nom || 'non renseigné'}
-Shopify: ${shopifyConfig ? 'connecté' : 'non connecté'}
-Gmail: ${gmailToken ? 'connecté' : 'non connecté'}
-Calendar: ${calToken ? 'connecté' : 'non connecté'}
+    // Passer par la même fonction que le chat texte — même historique, mêmes fonctions
+    const reponse = await envoyerMessageIA(messageVocal);
 
-Contexte additionnel: ${prefs.infos || ''}
-
-IMPORTANT: Réponds en 1 à 3 phrases courtes maximum. Voix naturelle, chaleureuse.`;
-
-    voiceConvHistory.push({ role: 'user', content: texte });
-
-    const res = await fetch("https://nova-ai.contact-raphael6.workers.dev", {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 300,
-        system: systemPrompt,
-        messages: voiceConvHistory.slice(-10)
-      })
-    });
-    const data = await res.json();
-    const reponse = data.content?.[0]?.text || 'Désolée, je n\'ai pas compris.';
-    voiceConvHistory.push({ role: 'assistant', content: reponse });
-
-    // Afficher dans le chat
+    // Afficher dans le chat et dans la fenêtre vocale
     addNovaMessage(reponse);
-    document.getElementById('voice-transcript').textContent = reponse;
+    document.getElementById('voice-transcript').textContent = reponse.replace(/\[.*?\]/g, '').substring(0, 120) + (reponse.length > 120 ? '...' : '');
+
+    // Traiter les actions (fichiers, calendrier, etc.)
+    await traiterActionsReponse(reponse);
+
+    // Version courte pour la voix (sans les balises d'action)
+    const reponseVocale = reponse
+      .replace(/\[CRÉER_EXCEL\][\s\S]*?\[\/CRÉER_EXCEL\]/g, 'Le fichier Excel a été créé.')
+      .replace(/\[CRÉER_WORD\][\s\S]*?\[\/CRÉER_WORD\]/g, 'Le document Word a été créé.')
+      .replace(/\[CRÉER_PPT\][\s\S]*?\[\/CRÉER_PPT\]/g, 'La présentation a été créée.')
+      .replace(/\[CRÉER_ÉVÉNEMENT\][\s\S]*?\[\/CRÉER_ÉVÉNEMENT\]/g, 'L\'événement a été ajouté au calendrier.')
+      .replace(/\[SHOPIFY_DATA\]/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/[📅📧📊🧾✅❌⚠️📦💡🎙📵⏭🎤🔇]/gu, '')
+      .trim();
+
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIOS) {
+      setVoiceState('idle');
+      document.getElementById('voice-status').textContent = '👆 Touchez l\'écran pour écouter';
+      const overlay = document.getElementById('voice-overlay');
+      const playBtn = document.getElementById('voice-play-btn');
+      playBtn.style.display = 'flex';
+      const doPlay = async () => {
+        overlay.removeEventListener('touchstart', tapHandler);
+        playBtn.style.display = 'none';
+        await parlerNova(reponseVocale);
+      };
+      const tapHandler = (e) => {
+        if (e.target.closest('.voice-controls')) return;
+        doPlay();
+      };
+      overlay.addEventListener('touchstart', tapHandler, { once: true });
+      playBtn.onclick = doPlay;
+    } else {
+      await parlerNova(reponseVocale);
+    }
+
+  } catch(e) {
+    console.error('Erreur vocale:', e);
+    document.getElementById('voice-debug').textContent = 'Erreur: ' + e.message;
+    document.getElementById('voice-transcript').textContent = 'Erreur de connexion — ' + e.message;
+    setVoiceState('idle');
+    await fallbackVoixNavigateur('Désolée, une erreur de connexion est survenue.');
+    if (voiceActive) setTimeout(() => ecouterUtilisateur(), 2000);
+  }
+}
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isIOS) {
@@ -3952,6 +3979,39 @@ function renderOrders(orders) {
 }
 
 // --- Claude API ---
+// Alias pour utiliser dans le mode vocal
+async function envoyerMessageIA(texte) {
+  return await callClaude(texte);
+}
+
+// Traiter les actions d'une réponse (pour le mode vocal)
+async function traiterActionsReponse(reply) {
+  if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
+    const orders = await fetchShopifyOrders();
+    if (orders) {
+      const msgs = document.getElementById('messages');
+      const lastMsg = msgs.lastElementChild;
+      if (lastMsg) {
+        const extra = document.createElement('div');
+        extra.innerHTML = renderOrders(orders);
+        lastMsg.querySelector('.msg-bubble')?.appendChild(extra);
+      }
+    }
+  } else if (reply.includes('[CRÉER_EXCEL]')) {
+    const jsonMatch = reply.match(/\[CRÉER_EXCEL\]([\s\S]*?)\[\/CRÉER_EXCEL\]/);
+    if (jsonMatch) { try { createExcelFile(JSON.parse(jsonMatch[1])); } catch(e) {} }
+  } else if (reply.includes('[CRÉER_WORD]')) {
+    const jsonMatch = reply.match(/\[CRÉER_WORD\]([\s\S]*?)\[\/CRÉER_WORD\]/);
+    if (jsonMatch) { try { const dlHtml = createWordFile(JSON.parse(jsonMatch[1])); addNovaMessage('', dlHtml); } catch(e) {} }
+  } else if (reply.includes('[CRÉER_PPT]')) {
+    const jsonMatch = reply.match(/\[CRÉER_PPT\]([\s\S]*?)\[\/CRÉER_PPT\]/);
+    if (jsonMatch) { try { const dlHtml = createPptFile(JSON.parse(jsonMatch[1])); addNovaMessage('', dlHtml); } catch(e) {} }
+  } else if (reply.includes('[CRÉER_ÉVÉNEMENT]')) {
+    const jsonMatch = reply.match(/\[CRÉER_ÉVÉNEMENT\]([\s\S]*?)\[\/CRÉER_ÉVÉNEMENT\]/);
+    if (jsonMatch) { try { await creerEvenementDepuisNova(JSON.parse(jsonMatch[1])); } catch(e) {} }
+  }
+}
+
 async function callClaude(userMessage) {
   const prefs = MEM.load('prefs', {});
   const ent = MEM.load('entreprise', {});
