@@ -3581,39 +3581,6 @@ async function traiterMessageVocal(texte) {
   }
 }
 
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isIOS) {
-      setVoiceState('idle');
-      document.getElementById('voice-status').textContent = '👆 Touchez l\'écran pour écouter';
-      const overlay = document.getElementById('voice-overlay');
-      const playBtn = document.getElementById('voice-play-btn');
-      playBtn.style.display = 'flex';
-
-      const doPlay = async () => {
-        overlay.removeEventListener('touchstart', tapHandler);
-        playBtn.style.display = 'none';
-        await parlerNova(reponse);
-      };
-      const tapHandler = (e) => {
-        if (e.target.closest('.voice-controls')) return;
-        doPlay();
-      };
-      overlay.addEventListener('touchstart', tapHandler, { once: true });
-      playBtn.onclick = doPlay;
-    } else {
-      await parlerNova(reponse);
-    }
-
-  } catch(e) {
-    console.error('Erreur vocale:', e);
-    document.getElementById('voice-debug').textContent = 'Erreur: ' + e.message;
-    document.getElementById('voice-transcript').textContent = 'Erreur de connexion — ' + e.message;
-    setVoiceState('idle');
-    await fallbackVoixNavigateur('Désolée, une erreur de connexion est survenue.');
-    if (voiceActive) setTimeout(() => ecouterUtilisateur(), 2000);
-  }
-}
-
 // Contexte audio débloqué pour mobile
 let audioContext = null;
 let audioUnlocked = false;
