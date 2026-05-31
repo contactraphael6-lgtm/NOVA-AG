@@ -2605,32 +2605,11 @@
   <!-- Calendar Panel -->
   <aside class="cal-panel hidden" id="cal-panel">
     <div class="cal-header">
-      <div class="cal-title">📅 Calendrier</div>
+      <div class="cal-title">📅 Mon Calendrier</div>
       <button class="back-btn" onclick="toggleCalPanel()" style="margin:0">✕</button>
     </div>
 
-    <!-- Not connected -->
-    <div id="cal-not-connected">
-      <div class="cal-connect-prompt">
-        <div style="font-size:32px">📅</div>
-        <p>Utilise le même Client ID Google que Gmail pour connecter ton Google Calendar.</p>
-        <div class="gmail-setup-steps" style="text-align:left;width:100%">
-          <p>Si Gmail est déjà connecté :</p>
-          <ol>
-            <li>Va sur <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
-            <li>API et services → Bibliothèque → <strong>Google Calendar API</strong> → Activer</li>
-            <li>Reviens ici et colle ton Client ID</li>
-          </ol>
-        </div>
-        <div class="clientid-input-row">
-          <input class="clientid-input" id="cal-client-id" placeholder="Client ID Google..." />
-          <button class="btn-primary" style="white-space:nowrap;padding:8px 14px;flex:0" onclick="initCalAuth()">Connecter</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Connected -->
-    <div id="cal-connected" style="display:none;flex-direction:column;height:100%;overflow:hidden">
+    <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
       <div class="cal-tabs">
         <button class="cal-tab active" id="ctab-agenda" onclick="showCalTab('agenda')">Agenda</button>
         <button class="cal-tab" id="ctab-nouveau" onclick="showCalTab('nouveau')">+ Nouveau</button>
@@ -2641,7 +2620,7 @@
       <div class="cal-body" id="cal-agenda-view">
         <div class="mini-cal" id="mini-cal-container"></div>
         <div class="events-list" id="events-list">
-          <div style="padding:10px;text-align:center;color:var(--muted);font-size:13px">Chargement...</div>
+          <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Chargement...</div>
         </div>
       </div>
 
@@ -2649,7 +2628,7 @@
       <div class="cal-body" id="cal-nouveau-view" style="display:none">
         <div class="new-event-form">
           <div class="compose-field">
-            <label class="compose-label">Titre</label>
+            <label class="compose-label">Titre du RDV</label>
             <input class="compose-input" id="ev-titre" placeholder="Réunion, RDV client..." />
           </div>
           <div class="compose-field">
@@ -2658,34 +2637,38 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div class="compose-field">
-              <label class="compose-label">Début</label>
+              <label class="compose-label">Heure début</label>
               <input class="compose-input" id="ev-debut" type="time" value="09:00" />
             </div>
             <div class="compose-field">
-              <label class="compose-label">Fin</label>
-              <input class="compose-input" id="ev-fin" type="time" value="10:00" />
+              <label class="compose-label">Durée (min)</label>
+              <select class="compose-input" id="ev-duree">
+                <option value="30">30 min</option>
+                <option value="60" selected>1 heure</option>
+                <option value="90">1h30</option>
+                <option value="120">2 heures</option>
+                <option value="180">3 heures</option>
+                <option value="480">Toute la journée</option>
+              </select>
             </div>
           </div>
           <div class="compose-field">
-            <label class="compose-label">Description (optionnel)</label>
-            <textarea class="compose-input" id="ev-desc" rows="2" placeholder="Notes, adresse, lien..."></textarea>
+            <label class="compose-label">Notes (optionnel)</label>
+            <textarea class="compose-input" id="ev-desc" rows="2" placeholder="Adresse, lien, notes..."></textarea>
           </div>
           <div class="compose-field">
-            <label class="compose-label">Invités (emails séparés par virgule)</label>
-            <input class="compose-input" id="ev-invites" placeholder="email1@gmail.com, email2@gmail.com" />
+            <label class="compose-label">Couleur</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <div onclick="selectCouleurRdv('#4488ff',this)" style="width:24px;height:24px;border-radius:50%;background:#4488ff;cursor:pointer;border:2px solid white"></div>
+              <div onclick="selectCouleurRdv('#4ec87a',this)" style="width:24px;height:24px;border-radius:50%;background:#4ec87a;cursor:pointer"></div>
+              <div onclick="selectCouleurRdv('#e05c5c',this)" style="width:24px;height:24px;border-radius:50%;background:#e05c5c;cursor:pointer"></div>
+              <div onclick="selectCouleurRdv('#c8a96e',this)" style="width:24px;height:24px;border-radius:50%;background:#c8a96e;cursor:pointer"></div>
+              <div onclick="selectCouleurRdv('#9b59b6',this)" style="width:24px;height:24px;border-radius:50%;background:#9b59b6;cursor:pointer"></div>
+            </div>
+            <input type="hidden" id="ev-couleur" value="#4488ff" />
           </div>
-          <div class="compose-field">
-            <label class="compose-label">Rappel</label>
-            <select class="compose-input" id="ev-rappel">
-              <option value="0">Aucun rappel</option>
-              <option value="10" selected>10 minutes avant</option>
-              <option value="30">30 minutes avant</option>
-              <option value="60">1 heure avant</option>
-              <option value="1440">1 jour avant</option>
-            </select>
-          </div>
-          <button class="btn-primary" onclick="creerEvenement()">✅ Créer l'événement</button>
-          <div id="ev-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px"></div>
+          <button class="btn-primary" onclick="creerRdvNexus()">✅ Créer le RDV</button>
+          <div id="ev-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:8px"></div>
         </div>
       </div>
 
@@ -3176,7 +3159,7 @@ function renderDashFactures(fa) {
 }
 function renderDashRDV(rdvs) {
   const jN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],mN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-  if (!rdvs.length) return `<div><div class="dash-section-title">RDV cette semaine</div><div class="dash-empty">${window.calToken?'Aucun RDV cette semaine':'Connectez Google Calendar'}</div></div>`;
+  if (!rdvs.length) return `<div><div class="dash-section-title">RDV cette semaine</div><div class="dash-empty">${calEvents.length?'Aucun RDV cette semaine':'Aucun RDV à venir'}</div></div>`;
   return `<div><div class="dash-section-title">RDV cette semaine</div>${rdvs.slice(0,5).map(e=>{const d=new Date(e.start?.dateTime||e.start?.date);const h=e.start?.dateTime?d.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Toute la journée';return `<div class="rdv-row"><div class="rdv-date-lbl">${jN[d.getDay()]} ${d.getDate()} ${mN[d.getMonth()]}</div><div><div style="font-size:13px;color:var(--text)">${escapeHtml(e.summary||'Sans titre')}</div><div style="font-size:11px;color:var(--muted)">🕐 ${h}</div></div></div>`;}).join('')}</div>`;
 }
 
@@ -3239,6 +3222,29 @@ function chargerMemoire() {
 
   // Factures
   window.facturesHistorique = MEM.load('factures', []);
+
+  // Charger token Gmail si encore valide
+  const gmailTokenSaved = MEM.load('gmail_token');
+  const gmailTokenExpiry = MEM.load('gmail_token_expiry', 0);
+  if (gmailTokenSaved && Date.now() < gmailTokenExpiry) {
+    gmailToken = gmailTokenSaved;
+    setTimeout(() => {
+      const notConnected = document.getElementById('gmail-not-connected');
+      const connected = document.getElementById('gmail-connected');
+      const btnText = document.getElementById('gmail-btn-text');
+      const toggleBtn = document.getElementById('gmail-toggle-btn');
+      if (notConnected) notConnected.style.display = 'none';
+      if (connected) connected.style.display = 'flex';
+      if (btnText) btnText.textContent = '✓ Gmail';
+      if (toggleBtn) toggleBtn.classList.add('connected');
+    }, 800);
+  }
+
+  // Charger token Calendar si encore valide
+  // Calendrier Nexus — charger les RDV au démarrage
+  if (currentUser) {
+    setTimeout(() => chargerRdvNexus(), 1000);
+  }
 }
 
 // Sauvegarder infos entreprise automatiquement
@@ -3698,248 +3704,214 @@ async function fallbackVoixNavigateur(texte) {
 // =====================
 // GOOGLE CALENDAR
 // =====================
-let calToken = null;
+// =====================
+// CALENDRIER NEXUS AI (Supabase)
+// =====================
 let calPanelOpen = false;
-let calCurrentDate = new Date();
-let calSelectedDate = new Date();
 let calEvents = [];
+let calMoisAffiche = new Date();
+let couleurRdvSelectionnee = '#4488ff';
 
 function toggleCalPanel() {
   if (!verifierPro('calendrier')) return;
   calPanelOpen = !calPanelOpen;
   document.getElementById('cal-panel').classList.toggle('hidden', !calPanelOpen);
-  const saved = MEM.load('cal_client_id');
-  if (saved && document.getElementById('cal-client-id')) document.getElementById('cal-client-id').value = saved;
-  const gmailId = document.getElementById('gmail-client-id')?.value;
-  if (gmailId && document.getElementById('cal-client-id') && !document.getElementById('cal-client-id').value)
-    document.getElementById('cal-client-id').value = gmailId;
-  if (calToken && calPanelOpen) { renderMiniCal(); chargerEvenements(); }
-}
-
-async function initCalAuth() {
-  const clientId = document.getElementById('cal-client-id').value.trim();
-  if (!clientId) { alert('Colle ton Client ID Google.'); return; }
-  MEM.save('cal_client_id', clientId);
-  const loadGSI = () => new Promise(res => {
-    if (window.google?.accounts) return res();
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.onload = res; document.head.appendChild(s);
-  });
-  await loadGSI();
-  google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/calendar',
-    callback: (resp) => {
-      if (resp.access_token) { calToken = resp.access_token; onCalConnected(); }
-      else alert('Connexion échouée. Vérifie ton Client ID.');
-    }
-  }).requestAccessToken();
-}
-
-function onCalConnected() {
-  document.getElementById('cal-not-connected').style.display = 'none';
-  document.getElementById('cal-connected').style.display = 'flex';
-  document.getElementById('cal-btn-text').textContent = '✓ Calendrier';
-  document.getElementById('cal-toggle-btn').classList.add('connected');
-  document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
-  renderMiniCal(); chargerEvenements(); demarrerRappels();
-  addNovaMessage('✅ **Google Calendar connecté !** Je peux voir vos rendez-vous, en créer et vous envoyer des rappels automatiques. Essayez de me dire *"Crée un RDV demain à 14h"* !');
-}
-
-async function chargerEvenements(dateDebut, dateFin) {
-  if (!calToken) return;
-  const now = dateDebut || new Date();
-  const end = dateFin || new Date(now.getFullYear(), now.getMonth() + 2, 1);
-  try {
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`,
-      { headers: { Authorization: 'Bearer ' + calToken } }
-    );
-    const data = await res.json();
-    calEvents = data.items || [];
-    renderEventsList(calSelectedDate); renderMiniCal();
-    if (document.getElementById('cal-semaine-view')?.style.display !== 'none') renderSemaine();
-  } catch(e) {
-    const el = document.getElementById('events-list');
-    if (el) el.innerHTML = '<div style="padding:10px;color:var(--danger);font-size:13px">Erreur de chargement</div>';
+  if (calPanelOpen) {
+    chargerRdvNexus();
+    renderMiniCalNexus();
+    document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
   }
-}
-
-function renderMiniCal() {
-  const container = document.getElementById('mini-cal-container');
-  if (!container) return;
-  const year = calCurrentDate.getFullYear(), month = calCurrentDate.getMonth();
-  const today = new Date();
-  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const dayNames = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
-  const eventDays = new Set(calEvents.map(e => {
-    const d = new Date(e.start?.dateTime || e.start?.date);
-    return d.getFullYear()===year && d.getMonth()===month ? d.getDate() : null;
-  }).filter(Boolean));
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const prevDays = new Date(year, month, 0).getDate();
-  let html = `<div class="mini-cal-nav"><button onclick="navMiniCal(-1)">‹</button><span>${monthNames[month]} ${year}</span><button onclick="navMiniCal(1)">›</button></div><div class="cal-grid">`;
-  dayNames.forEach(d => html += `<div class="cal-day-name">${d}</div>`);
-  for (let i=firstDay-1;i>=0;i--) html += `<div class="cal-day other-month">${prevDays-i}</div>`;
-  for (let d=1;d<=daysInMonth;d++) {
-    const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-    const isSel = d===calSelectedDate.getDate()&&month===calSelectedDate.getMonth()&&year===calSelectedDate.getFullYear();
-    html += `<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''} ${eventDays.has(d)?'has-event':''}" onclick="selectDay(${year},${month},${d})">${d}</div>`;
-  }
-  const rem = 42-firstDay-daysInMonth;
-  for (let d=1;d<=Math.min(rem,14);d++) html += `<div class="cal-day other-month">${d}</div>`;
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function navMiniCal(dir) { calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth()+dir, 1); renderMiniCal(); }
-
-function selectDay(y,m,d) {
-  calSelectedDate = new Date(y,m,d);
-  renderMiniCal(); renderEventsList(calSelectedDate);
-  document.getElementById('ev-date').value = calSelectedDate.toISOString().split('T')[0];
-}
-
-function renderEventsList(date) {
-  const container = document.getElementById('events-list');
-  if (!container) return;
-  const joursNoms = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-  const moisNoms = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-  const debut = new Date(date); debut.setHours(0,0,0,0);
-  const fin = new Date(debut); fin.setDate(fin.getDate()+7);
-  const evs = calEvents.filter(e => { const d=new Date(e.start?.dateTime||e.start?.date); return d>=debut&&d<fin; });
-  if (!evs.length) { container.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Aucun événement cette semaine.<br><span style="color:var(--accent);cursor:pointer" onclick="showCalTab('nouveau')">+ Créer un événement</span></div>`; return; }
-  const groups = {};
-  evs.forEach(e => { const d=new Date(e.start?.dateTime||e.start?.date); const k=d.toDateString(); if(!groups[k])groups[k]=[]; groups[k].push(e); });
-  const colors = ['#c8a96e','#5cb87a','#5b9bd5','#e07b39','#9b59b6'];
-  let html = '';
-  Object.entries(groups).forEach(([k,evs]) => {
-    const d=new Date(k);
-    html += `<div class="events-date-header">${joursNoms[d.getDay()]} ${d.getDate()} ${moisNoms[d.getMonth()]}</div>`;
-    evs.forEach((e,i) => {
-      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}) : 'Toute la journée';
-      const end = e.end?.dateTime ? new Date(e.end.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}) : '';
-      html += `<div class="event-item" onclick="voirEvenement('${e.id}')"><div class="event-color-bar" style="background:${colors[i%colors.length]}"></div><div class="event-info"><div class="event-title">${escapeHtml(e.summary||'Sans titre')}</div><div class="event-time">${start}${end?' → '+end:''}</div></div><button class="event-del" onclick="event.stopPropagation();supprimerEvenement('${e.id}')">✕</button></div>`;
-    });
-  });
-  container.innerHTML = html;
-}
-
-function renderSemaine() {
-  const container = document.getElementById('semaine-container');
-  if (!container) return;
-  const lundi = new Date(calSelectedDate);
-  const day = lundi.getDay();
-  lundi.setDate(lundi.getDate()-(day===0?6:day-1));
-  const joursNoms=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  const moisNoms=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">';
-  for (let i=0;i<7;i++) {
-    const d=new Date(lundi); d.setDate(d.getDate()+i);
-    const isToday=d.toDateString()===new Date().toDateString();
-    const evCount=calEvents.filter(e=>{const ed=new Date(e.start?.dateTime||e.start?.date);return ed.toDateString()===d.toDateString();}).length;
-    html+=`<div onclick="selectDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})" style="text-align:center;padding:6px 2px;border-radius:7px;cursor:pointer;background:${isToday?'var(--accent)':'var(--surface)'};border:1px solid var(--border)"><div style="font-size:9px;color:${isToday?'#1a1208':'var(--muted)'}">${joursNoms[i]}</div><div style="font-size:13px;font-weight:600;color:${isToday?'#1a1208':'var(--text)'}">${d.getDate()}</div><div style="font-size:9px;color:${isToday?'#1a1208':'var(--muted)'}">${moisNoms[d.getMonth()]}</div>${evCount?`<div style="width:5px;height:5px;background:${isToday?'#1a1208':'var(--accent)'};border-radius:50%;margin:2px auto 0"></div>`:''}</div>`;
-  }
-  html += '</div>';
-  for (let i=0;i<7;i++) {
-    const d=new Date(lundi); d.setDate(d.getDate()+i);
-    calEvents.filter(e=>{const ed=new Date(e.start?.dateTime||e.start?.date);return ed.toDateString()===d.toDateString();}).forEach(e=>{
-      const start=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Tj.';
-      html+=`<div style="display:flex;gap:8px;padding:5px 8px;margin-bottom:3px;background:var(--surface);border-radius:7px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--accent);width:32px;flex-shrink:0">${start}</div><div style="font-size:12px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtml(e.summary||'Sans titre')}</div></div>`;
-    });
-  }
-  container.innerHTML = html;
-}
-
-async function creerEvenement() {
-  if (!calToken) { alert('Calendrier non connecté.'); return; }
-  const titre = document.getElementById('ev-titre').value.trim();
-  const date = document.getElementById('ev-date').value;
-  const debut = document.getElementById('ev-debut').value;
-  const fin = document.getElementById('ev-fin').value;
-  const desc = document.getElementById('ev-desc').value;
-  const invites = document.getElementById('ev-invites').value;
-  const rappelMin = parseInt(document.getElementById('ev-rappel').value);
-  if (!titre||!date) { document.getElementById('ev-status').textContent='Titre et date requis.'; return; }
-  document.getElementById('ev-status').textContent='Création en cours...';
-  const event = {
-    summary: titre, description: desc,
-    start: { dateTime:`${date}T${debut}:00`, timeZone:'America/Toronto' },
-    end:   { dateTime:`${date}T${fin}:00`,   timeZone:'America/Toronto' },
-    reminders: rappelMin ? {useDefault:false,overrides:[{method:'popup',minutes:rappelMin}]} : {useDefault:true}
-  };
-  if (invites.trim()) event.attendees = invites.split(',').map(e=>({email:e.trim()})).filter(e=>e.email);
-  try {
-    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-      method:'POST', headers:{Authorization:'Bearer '+calToken,'Content-Type':'application/json'}, body:JSON.stringify(event)
-    });
-    if (res.ok) {
-      document.getElementById('ev-status').style.color='var(--success)';
-      document.getElementById('ev-status').textContent='✓ Événement créé !';
-      document.getElementById('ev-titre').value=''; document.getElementById('ev-desc').value=''; document.getElementById('ev-invites').value='';
-      await chargerEvenements(); showCalTab('agenda');
-      addNovaMessage(`✅ **"${titre}"** ajouté à votre calendrier le **${new Date(date).toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'})}** de ${debut} à ${fin}.${invites?' Invitations envoyées.':''}`);
-      setTimeout(()=>{document.getElementById('ev-status').textContent='';},3000);
-    } else throw new Error();
-  } catch { document.getElementById('ev-status').style.color='var(--danger)'; document.getElementById('ev-status').textContent="Erreur lors de la création."; }
-}
-
-async function creerEvenementDepuisNova(data) {
-  if (!calToken) { addNovaMessage("⚠️ Connectez d'abord votre Google Calendar avec le bouton **Calendrier** en haut."); return; }
-  const event = {
-    summary: data.titre, description: data.description||'',
-    start: { dateTime: data.debut, timeZone:'America/Toronto' },
-    end:   { dateTime: data.fin,   timeZone:'America/Toronto' },
-    reminders: { useDefault:true }
-  };
-  try {
-    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
-      method:'POST', headers:{Authorization:'Bearer '+calToken,'Content-Type':'application/json'}, body:JSON.stringify(event)
-    });
-    if (res.ok) { await chargerEvenements(); return true; }
-  } catch{}
-  return false;
-}
-
-async function supprimerEvenement(id) {
-  if (!calToken||!confirm('Supprimer cet événement ?')) return;
-  try {
-    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`,{method:'DELETE',headers:{Authorization:'Bearer '+calToken}});
-    calEvents = calEvents.filter(e=>e.id!==id);
-    renderEventsList(calSelectedDate); renderMiniCal();
-    addNovaMessage('🗑 Événement supprimé de votre calendrier.');
-  } catch { alert('Erreur lors de la suppression.'); }
-}
-
-function voirEvenement(id) {
-  const ev = calEvents.find(e=>e.id===id);
-  if (!ev) return;
-  const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString('fr-CA',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}) : ev.start?.date;
-  addNovaMessage(`📅 **${ev.summary||'Sans titre'}**\n🕐 ${start}${ev.description?'\n📝 '+ev.description:''}`);
 }
 
 function showCalTab(tab) {
-  ['agenda','nouveau','semaine'].forEach(t=>{
-    const el=document.getElementById('cal-'+t+'-view'); if(el) el.style.display=t===tab?'block':'none';
-    const btn=document.getElementById('ctab-'+t); if(btn) btn.classList.toggle('active',t===tab);
+  ['agenda','nouveau','semaine'].forEach(t => {
+    const el = document.getElementById('cal-'+t+'-view');
+    if(el) el.style.display = t === tab ? 'flex' : 'none';
+    const btn = document.getElementById('ctab-'+t);
+    if(btn) btn.classList.toggle('active', t === tab);
   });
-  if (tab==='semaine') renderSemaine();
+  if (tab === 'semaine') renderSemaineNexus();
 }
 
-function demarrerRappels() {
-  setInterval(async()=>{
-    if(!calToken) return;
+function selectCouleurRdv(couleur, el) {
+  couleurRdvSelectionnee = couleur;
+  document.getElementById('ev-couleur').value = couleur;
+  document.querySelectorAll('[onclick^="selectCouleurRdv"]').forEach(e => e.style.border = 'none');
+  el.style.border = '2px solid white';
+}
+
+async function chargerRdvNexus() {
+  if (!currentUser) return;
+  const container = document.getElementById('events-list');
+  if(container) container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">⏳ Chargement...</div>';
+  try {
+    const { data } = await supabaseClient
+      .from('rdv').select('*').eq('user_id', currentUser.id)
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true }).order('heure', { ascending: true }).limit(100);
+    calEvents = data || [];
+    renderAgendaNexus();
+    renderMiniCalNexus();
+    demarrerRappelsNexus();
+  } catch(e) {
+    if(container) container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Erreur de chargement</div>';
+  }
+}
+
+function renderAgendaNexus() {
+  const container = document.getElementById('events-list');
+  if(!container) return;
+  if (!calEvents.length) {
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Aucun RDV à venir.<br>Cliquez sur <strong>+ Nouveau</strong> pour en créer un !</div>';
+    return;
+  }
+  const joursN = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const moisN = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  let html = '', dernierDate = '';
+  const aujourdhui = new Date().toISOString().split('T')[0];
+  const demain = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  calEvents.forEach(rdv => {
+    if (rdv.date !== dernierDate) {
+      const d = new Date(rdv.date+'T12:00:00');
+      let label = joursN[d.getDay()]+' '+d.getDate()+' '+moisN[d.getMonth()];
+      if(rdv.date===aujourdhui) label = "📅 Aujourd\'hui";
+      if(rdv.date===demain) label = "📅 Demain";
+      html += `<div style="padding:8px 14px 4px;font-size:11px;color:rgba(68,136,255,0.7);text-transform:uppercase;letter-spacing:0.1em;font-weight:600">${label}</div>`;
+      dernierDate = rdv.date;
+    }
+    const dureeStr = rdv.duree ? (rdv.duree>=60?Math.floor(rdv.duree/60)+'h'+(rdv.duree%60?rdv.duree%60+'min':''):rdv.duree+'min') : '';
+    html += `<div style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center">
+      <div style="width:4px;height:40px;border-radius:2px;background:${rdv.couleur||'#4488ff'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${escapeHtml(rdv.titre)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${rdv.heure?'🕐 '+rdv.heure:'Toute la journée'}${dureeStr?' · '+dureeStr:''}</div>
+        ${rdv.notes?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(rdv.notes)}</div>`:''}
+      </div>
+      <button onclick="supprimerRdvNexus('${rdv.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px" title="Supprimer">🗑</button>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderMiniCalNexus() {
+  const container = document.getElementById('mini-cal-container');
+  if(!container) return;
+  const maintenant = new Date();
+  const annee = calMoisAffiche.getFullYear();
+  const mois = calMoisAffiche.getMonth();
+  const moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const joursN = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+  const premierJour = new Date(annee,mois,1).getDay();
+  const nbJours = new Date(annee,mois+1,0).getDate();
+  const joursRdv = new Set(calEvents.filter(e=>{const d=new Date(e.date+'T12:00:00');return d.getFullYear()===annee&&d.getMonth()===mois;}).map(e=>parseInt(e.date.split('-')[2])));
+  let html = `<div style="padding:12px 14px 8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <button onclick="changerMoisNexus(-1)" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:18px">‹</button>
+    <div style="font-size:13px;font-weight:500;color:var(--text)">${moisNoms[mois]} ${annee}</div>
+    <button onclick="changerMoisNexus(1)" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:18px">›</button>
+  </div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">`;
+  joursN.forEach(j=>html+=`<div style="font-size:10px;color:var(--muted);padding:2px">${j}</div>`);
+  for(let i=0;i<premierJour;i++) html+='<div></div>';
+  for(let j=1;j<=nbJours;j++){
+    const estAuj=j===maintenant.getDate()&&mois===maintenant.getMonth()&&annee===maintenant.getFullYear();
+    const aRdv=joursRdv.has(j);
+    html+=`<div style="padding:3px;border-radius:50%;cursor:pointer;font-size:12px;color:${estAuj?'#fff':'var(--text)'};background:${estAuj?'var(--accent-blue)':'transparent'};text-align:center">${j}${aRdv?`<div style="width:4px;height:4px;border-radius:50%;background:${estAuj?'white':'var(--accent-blue)'};margin:0 auto"></div>`:''}</div>`;
+  }
+  html+='</div></div>';
+  container.innerHTML = html;
+}
+
+function changerMoisNexus(dir) {
+  calMoisAffiche.setMonth(calMoisAffiche.getMonth()+dir);
+  renderMiniCalNexus();
+}
+
+function renderSemaineNexus() {
+  const container = document.getElementById('semaine-container');
+  if(!container) return;
+  const joursN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const moisN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  const maintenant=new Date();
+  const debutSem=new Date(maintenant); debutSem.setDate(maintenant.getDate()-maintenant.getDay());
+  let html='';
+  for(let i=0;i<7;i++){
+    const jour=new Date(debutSem); jour.setDate(debutSem.getDate()+i);
+    const dateStr=jour.toISOString().split('T')[0];
+    const estAuj=dateStr===maintenant.toISOString().split('T')[0];
+    const rdvJour=calEvents.filter(e=>e.date===dateStr);
+    html+=`<div style="margin-bottom:10px"><div style="font-size:11px;color:${estAuj?'var(--accent-blue)':'var(--muted)'};font-weight:${estAuj?'600':'400'};margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">${joursN[jour.getDay()]} ${jour.getDate()} ${moisN[jour.getMonth()]}</div>`;
+    if(!rdvJour.length) html+=`<div style="padding:6px 10px;border-left:2px solid var(--border);color:var(--muted);font-size:12px;font-style:italic">Libre</div>`;
+    else rdvJour.forEach(rdv=>{html+=`<div style="padding:6px 10px;border-left:3px solid ${rdv.couleur||'#4488ff'};margin-bottom:4px;background:rgba(68,136,255,0.04);border-radius:0 6px 6px 0"><div style="font-size:13px;color:var(--text)">${escapeHtml(rdv.titre)}</div><div style="font-size:11px;color:var(--muted)">${rdv.heure||'Toute la journée'}</div></div>`;});
+    html+='</div>';
+  }
+  container.innerHTML = html;
+}
+
+async function creerRdvNexus() {
+  if (!currentUser) return;
+  const titre=document.getElementById('ev-titre').value.trim();
+  const date=document.getElementById('ev-date').value;
+  const heure=document.getElementById('ev-debut').value;
+  const duree=parseInt(document.getElementById('ev-duree').value);
+  const notes=document.getElementById('ev-desc').value.trim();
+  const couleur=document.getElementById('ev-couleur').value||'#4488ff';
+  const status=document.getElementById('ev-status');
+  if(!titre||!date){status.textContent='⚠️ Titre et date obligatoires.';return;}
+  status.textContent='⏳ Création...';
+  try {
+    const {data,error}=await supabaseClient.from('rdv').insert({user_id:currentUser.id,titre,date,heure,duree,notes,couleur}).select().single();
+    if(error) throw error;
+    calEvents.push(data);
+    calEvents.sort((a,b)=>a.date.localeCompare(b.date)||(a.heure||'').localeCompare(b.heure||''));
+    status.textContent='✅ RDV créé !';
+    document.getElementById('ev-titre').value='';
+    document.getElementById('ev-desc').value='';
+    renderMiniCalNexus();
+    setTimeout(()=>{showCalTab('agenda');renderAgendaNexus();status.textContent='';},1000);
+    addNovaMessage(`✅ RDV **"${titre}"** ajouté le **${date}**${heure?' à **'+heure+'**':''}!`);
+  } catch(e){status.textContent='Erreur: '+e.message;}
+}
+
+async function supprimerRdvNexus(id) {
+  if(!confirm('Supprimer ce RDV ?')) return;
+  try {
+    await supabaseClient.from('rdv').delete().eq('id',id);
+    calEvents=calEvents.filter(e=>e.id!==id);
+    renderAgendaNexus(); renderMiniCalNexus();
+  } catch(e){alert('Erreur: '+e.message);}
+}
+
+async function creerEvenementDepuisNova(data) {
+  if(!currentUser) return;
+  try {
+    const {data:rdv}=await supabaseClient.from('rdv').insert({
+      user_id:currentUser.id,
+      titre:data.titre||data.summary||'Nouveau RDV',
+      date:data.date||new Date().toISOString().split('T')[0],
+      heure:data.heure||data.debut||'',
+      duree:data.duree||60,
+      notes:data.notes||data.description||'',
+      couleur:'#4488ff'
+    }).select().single();
+    if(rdv){calEvents.push(rdv);calEvents.sort((a,b)=>a.date.localeCompare(b.date));}
+  } catch(e){console.log('Erreur RDV:',e);}
+}
+
+function demarrerRappelsNexus() {
+  setInterval(()=>{
+    if(!calEvents.length) return;
     const maintenant=new Date();
-    calEvents.forEach(e=>{
-      if(!e.start?.dateTime) return;
-      const debut=new Date(e.start.dateTime);
+    const dateAuj=maintenant.toISOString().split('T')[0];
+    calEvents.filter(e=>e.date===dateAuj&&e.heure).forEach(rdv=>{
+      const [h,m]=rdv.heure.split(':').map(Number);
+      const debut=new Date(); debut.setHours(h,m,0);
       const diff=(debut-maintenant)/60000;
-      if(diff>9&&diff<11) addNovaMessage(`⏰ **Rappel !** Vous avez **"${e.summary}"** dans 10 minutes (${debut.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'})}).`);
+      if(diff>9&&diff<11) addNovaMessage(`⏰ **Rappel !** Vous avez **"${rdv.titre}"** dans 10 minutes (${rdv.heure}).`);
     });
   },60000);
 }
+
+function creerEvenement(){creerRdvNexus();}
+
 
 // --- Shopify API ---
 async function fetchShopifyOrders() {
@@ -4027,7 +3999,7 @@ ${clients.slice(0,5).map(c => `- ${c.nom}${c.entreprise ? ' ('+c.entreprise+')' 
 CONNEXIONS ACTIVES :
 - Shopify : ${shopifyConfig ? 'connecté (' + shopifyConfig.url + ')' : 'non connecté'}
 - Gmail : ${gmailToken ? 'connecté' : 'non connecté'}
-- Google Calendar : ${calToken ? 'connecté' : 'non connecté'}
+- Calendrier Nexus : ${calEvents.length ? calEvents.length+' RDV' : 'vide'}
 
 INSTRUCTIONS :
 - Tu connais l'utilisateur par son nom (${prefs.nom || 'patron'}) et utilise-le naturellement
@@ -5060,6 +5032,10 @@ function onGmailConnected() {
   document.getElementById('gmail-connected').style.display = 'flex';
   document.getElementById('gmail-btn-text').textContent = '✓ Gmail';
   document.getElementById('gmail-toggle-btn').classList.add('connected');
+  // Sauvegarder le token et l'expiry
+  const expiry = Date.now() + 55 * 60 * 1000; // 55 minutes
+  MEM.save('gmail_token', gmailToken);
+  MEM.save('gmail_token_expiry', expiry);
   addNovaMessage('✅ **Gmail connecté !** Je peux maintenant lire vos emails et en envoyer. Ouvrez le panneau Gmail à droite pour voir votre boîte de réception.');
   loadEmails();
 }
