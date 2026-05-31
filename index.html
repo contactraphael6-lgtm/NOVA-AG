@@ -5782,6 +5782,7 @@ async function verifierSession() {
     app.classList.add('visible');
     chargerMemoire();
     afficherBoutonAdmin();
+    await verifierAbonnement();
   } else {
     document.getElementById('splash').style.display = 'none';
     document.getElementById('splash').classList.add('hidden');
