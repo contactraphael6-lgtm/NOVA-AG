@@ -5603,14 +5603,20 @@ async function verifierAbonnement() {
     if (upgradeBtn) upgradeBtn.style.display = abonnementActif ? 'none' : 'flex';
     if (portalBtn) portalBtn.style.display = abonnementActif ? 'flex' : 'none';
 
-    // Si pas d'abonnement actif → montrer la page de paiement après 2 secondes
+    // Si pas d'abonnement actif → montrer la page de paiement après 4 secondes
     if (!abonnementActif) {
       const params = new URLSearchParams(window.location.search);
       if (params.get('payment') === 'success') {
         addNovaMessage('🎉 **Paiement réussi !** Bienvenue dans Nexus AI Pro. Toutes les fonctionnalités sont maintenant disponibles !');
         abonnementActif = true;
       } else {
-        setTimeout(() => afficherPagePaiement(), 1500);
+        // Attendre 4 secondes pour être sûr que Stripe a répondu
+        setTimeout(async () => {
+          // Revérifier une dernière fois avant d'afficher le paywall
+          if (!abonnementActif) {
+            afficherPagePaiement();
+          }
+        }, 4000);
       }
     }
   } catch(e) {
