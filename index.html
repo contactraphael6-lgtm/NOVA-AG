@@ -2722,44 +2722,48 @@
   <!-- Gmail Panel -->
   <aside class="gmail-panel hidden" id="gmail-panel">
     <div class="gmail-header">
-      <div class="gmail-title">📧 Gmail</div>
+      <div class="gmail-title">📧 Email</div>
       <button class="back-btn" onclick="toggleGmailPanel()" style="margin:0">✕</button>
     </div>
 
-    <!-- Not connected state -->
+    <!-- Configuration email -->
     <div id="gmail-not-connected">
       <div class="gmail-connect-prompt">
         <div style="font-size:32px">📧</div>
-        <p>Pour connecter Gmail, tu dois créer un Client ID Google gratuit en 5 minutes.</p>
+        <p style="margin-bottom:14px">Configurez votre Gmail pour envoyer des emails directement depuis Nexus AI.</p>
         <div class="gmail-setup-steps">
-          <p>Étapes :</p>
+          <p>Comment obtenir votre mot de passe d'application :</p>
           <ol>
-            <li>Va sur <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
-            <li>Crée un projet → Active l'API Gmail</li>
-            <li>Identifiants → OAuth 2.0 → Type : Application Web</li>
-            <li>Origine JS autorisée : <code style="color:var(--accent);font-size:10px">http://localhost</code> et l'URL de ce fichier</li>
-            <li>Copie ton <strong>Client ID</strong> ci-dessous</li>
+            <li>Va sur <a href="https://myaccount.google.com/security" target="_blank" style="color:var(--accent-blue)">myaccount.google.com/security</a></li>
+            <li>Active la <strong>validation en 2 étapes</strong></li>
+            <li>Cherche <strong>"Mots de passe des applications"</strong></li>
+            <li>Crée un mot de passe pour <strong>"Nexus AI"</strong></li>
+            <li>Copie le code de 16 caractères ci-dessous</li>
           </ol>
         </div>
-        <div class="clientid-input-row">
-          <input class="clientid-input" id="gmail-client-id" placeholder="Colle ton Client ID Google ici..." />
-          <button class="btn-primary" style="white-space:nowrap;padding:8px 14px;flex:0" onclick="initGoogleAuth()">Connecter</button>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;width:100%">
+          <input class="clientid-input" id="smtp-email" type="email" placeholder="votre@gmail.com" />
+          <input class="clientid-input" id="smtp-password" type="password" placeholder="Mot de passe d'application (16 caractères)" />
+          <button class="btn-primary" style="padding:10px" onclick="configurerSMTP()">✅ Configurer</button>
         </div>
+        <div id="smtp-status" style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px"></div>
       </div>
     </div>
 
     <!-- Connected state -->
-    <div id="gmail-connected" style="display:none; flex-direction:column; height:100%; overflow:hidden;">
+    <div id="gmail-connected" style="display:none;flex-direction:column;height:100%;overflow:hidden">
+      <div style="padding:10px 14px;background:rgba(78,200,122,0.06);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:var(--success)">✅ <span id="smtp-email-display"></span></div>
+        <button onclick="deconnecterSMTP()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline">Changer</button>
+      </div>
+
       <div class="gmail-tabs">
-        <button class="gmail-tab active" id="tab-inbox" onclick="showTab('inbox')">Boîte de réception</button>
-        <button class="gmail-tab" id="tab-compose" onclick="showTab('compose')">Composer</button>
+        <button class="gmail-tab active" id="tab-compose" onclick="showTab('compose')">✉️ Composer</button>
+        <button class="gmail-tab" id="tab-envoyes" onclick="showTab('envoyes')">📤 Envoyés</button>
       </div>
 
-      <div class="gmail-body" id="gmail-inbox-view">
-        <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px" id="gmail-loading">Chargement des emails...</div>
-      </div>
-
-      <div class="gmail-body" id="gmail-compose-view" style="display:none">
+      <!-- Composer -->
+      <div class="gmail-body" id="gmail-compose-view">
         <div class="compose-form">
           <div class="compose-field">
             <label class="compose-label">À</label>
@@ -2773,20 +2777,14 @@
             <label class="compose-label">Message</label>
             <textarea class="compose-input compose-textarea" id="compose-body" placeholder="Écrivez votre message..."></textarea>
           </div>
-          <button class="btn-primary" onclick="sendGmail()" style="margin-top:4px">Envoyer ✉️</button>
-          <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px"></div>
+          <button class="btn-primary" onclick="envoyerEmailSMTP()" style="margin-top:4px">📤 Envoyer</button>
+          <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:6px"></div>
         </div>
       </div>
 
-      <div class="gmail-body" id="gmail-detail-view" style="display:none">
-        <div class="email-detail">
-          <button class="back-btn" onclick="showTab('inbox')">← Retour</button>
-          <div class="email-detail-header">
-            <div class="email-detail-subject" id="detail-subject"></div>
-            <div class="email-detail-meta" id="detail-meta"></div>
-          </div>
-          <div class="email-detail-body" id="detail-body"></div>
-        </div>
+      <!-- Envoyés -->
+      <div class="gmail-body" id="gmail-envoyes-view" style="display:none">
+        <div id="emails-envoyes-list" style="padding:10px"></div>
       </div>
     </div>
   </aside>
@@ -2896,8 +2894,9 @@ function demarrerSurveillanceShopify() {
 // ENVOI FACTURE PAR EMAIL
 // =====================
 async function envoyerFactureEmail() {
-  if (!gmailToken) {
-    alert('Connectez Gmail d\'abord via le menu hamburger → Gmail');
+  const config = MEM.load('smtp_config');
+  if (!config) {
+    alert('Configurez d\'abord votre email via le menu ☰ → Email');
     return;
   }
   const client = document.getElementById('f-client').value.trim();
@@ -2935,32 +2934,16 @@ Merci pour votre confiance !
 ${d.entreprise || ''}
 ${d.contact || ''}`;
 
-  // Encoder et envoyer via Gmail API
-  const email = [
-    `To: ${clientEmail}`,
-    `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(sujet)))}?=`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=utf-8',
-    '',
-    corps
-  ].join('\n');
-
-  const encoded = btoa(unescape(encodeURIComponent(email))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-
   try {
-    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + gmailToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw: encoded })
-    });
-    if (res.ok) {
+    const success = await envoyerEmailDepuisNova(clientEmail, sujet, corps);
+    if (success) {
       sauvegarderEntreprise();
       sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
       sauvegarderFacture(d);
       toggleFacturePanel();
       addNovaMessage(`✅ Facture **${d.numero}** envoyée par email à **${clientEmail}** — Total : **${fmtNum(d.total)} $**`);
     } else {
-      alert('Erreur lors de l\'envoi. Vérifiez votre connexion Gmail.');
+      alert('Erreur lors de l\'envoi. Vérifiez votre configuration email dans le menu ☰ → Email.');
     }
   } catch(e) {
     alert('Erreur : ' + e.message);
@@ -3223,21 +3206,16 @@ function chargerMemoire() {
   // Factures
   window.facturesHistorique = MEM.load('factures', []);
 
-  // Charger token Gmail si encore valide
-  const gmailTokenSaved = MEM.load('gmail_token');
-  const gmailTokenExpiry = MEM.load('gmail_token_expiry', 0);
-  if (gmailTokenSaved && Date.now() < gmailTokenExpiry) {
-    gmailToken = gmailTokenSaved;
+  // Email SMTP — vérifier si configuré
+  const smtpConfig = MEM.load('smtp_config');
+  if (smtpConfig && smtpConfig.email) {
+    gmailToken = 'smtp_configured';
     setTimeout(() => {
-      const notConnected = document.getElementById('gmail-not-connected');
-      const connected = document.getElementById('gmail-connected');
+      const btn = document.getElementById('gmail-toggle-btn');
       const btnText = document.getElementById('gmail-btn-text');
-      const toggleBtn = document.getElementById('gmail-toggle-btn');
-      if (notConnected) notConnected.style.display = 'none';
-      if (connected) connected.style.display = 'flex';
-      if (btnText) btnText.textContent = '✓ Gmail';
-      if (toggleBtn) toggleBtn.classList.add('connected');
-    }, 800);
+      if (btn) btn.classList.add('connected');
+      if (btnText) btnText.textContent = '✓ Email';
+    }, 500);
   }
 
   // Charger token Calendar si encore valide
@@ -5052,205 +5030,151 @@ document.getElementById('facture-overlay').addEventListener('click', function(e)
 // =====================
 // GMAIL
 // =====================
-let gmailToken = null;
+let gmailToken = null; // Gardé pour compatibilité
 let gmailPanelOpen = false;
+let emailsEnvoyes = [];
+
+// =====================
+// GMAIL SMTP (Mot de passe d'application)
+// =====================
+const SMTP_WORKER = 'https://nova-email.contact-raphael6.workers.dev';
 
 function toggleGmailPanel() {
   if (!verifierPro('gmail')) return;
   gmailPanelOpen = !gmailPanelOpen;
   const panel = document.getElementById('gmail-panel');
   panel.classList.toggle('hidden', !gmailPanelOpen);
+  if (gmailPanelOpen) verifierConfigSMTP();
 }
 
-async function initGoogleAuth() {
-  const clientId = document.getElementById('gmail-client-id').value.trim();
-  if (!clientId) { alert('Colle ton Client ID Google.'); return; }
-
-  // Store clientId
-  window._gmailClientId = clientId;
-
-  // Use Google Identity Services token flow
-  try {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.onload = () => {
-      google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
-        callback: (resp) => {
-          if (resp.access_token) {
-            gmailToken = resp.access_token;
-            onGmailConnected();
-          } else {
-            alert('Connexion échouée. Vérifie ton Client ID.');
-          }
-        }
-      }).requestAccessToken();
-    };
-    document.head.appendChild(script);
-  } catch(e) {
-    alert('Erreur: ' + e.message);
+function verifierConfigSMTP() {
+  const config = MEM.load('smtp_config');
+  if (config && config.email) {
+    document.getElementById('gmail-not-connected').style.display = 'none';
+    document.getElementById('gmail-connected').style.display = 'flex';
+    document.getElementById('smtp-email-display').textContent = config.email;
+    document.getElementById('gmail-toggle-btn').classList.add('connected');
+    document.getElementById('gmail-btn-text').textContent = '✓ Email';
+    gmailToken = 'smtp_configured'; // Pour compatibilité
+    afficherEmailsEnvoyes();
+  } else {
+    document.getElementById('gmail-not-connected').style.display = 'block';
+    document.getElementById('gmail-connected').style.display = 'none';
   }
 }
 
-function onGmailConnected() {
-  document.getElementById('gmail-not-connected').style.display = 'none';
-  document.getElementById('gmail-connected').style.display = 'flex';
-  document.getElementById('gmail-btn-text').textContent = '✓ Gmail';
-  document.getElementById('gmail-toggle-btn').classList.add('connected');
-  // Sauvegarder le token et l'expiry
-  const expiry = Date.now() + 55 * 60 * 1000; // 55 minutes
-  MEM.save('gmail_token', gmailToken);
-  MEM.save('gmail_token_expiry', expiry);
-  addNovaMessage('✅ **Gmail connecté !** Je peux maintenant lire vos emails et en envoyer. Ouvrez le panneau Gmail à droite pour voir votre boîte de réception.');
-  loadEmails();
+function configurerSMTP() {
+  const email = document.getElementById('smtp-email').value.trim();
+  const password = document.getElementById('smtp-password').value.trim();
+  const status = document.getElementById('smtp-status');
+
+  if (!email || !password) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
+  if (!email.includes('@')) { status.textContent = '⚠️ Email invalide.'; return; }
+  if (password.length < 16) { status.textContent = '⚠️ Le mot de passe d'application fait 16 caractères.'; return; }
+
+  MEM.save('smtp_config', { email, password });
+  status.textContent = '✅ Configuré !';
+  gmailToken = 'smtp_configured';
+  setTimeout(() => verifierConfigSMTP(), 800);
 }
 
-async function loadEmails() {
-  if (!gmailToken) return;
-  document.getElementById('gmail-loading').style.display = 'block';
-  try {
-    const listRes = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&labelIds=INBOX',
-      { headers: { Authorization: 'Bearer ' + gmailToken } }
-    );
-    const listData = await listRes.json();
-    const messages = listData.messages || [];
-
-    const emailPromises = messages.slice(0, 15).map(m =>
-      fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-        { headers: { Authorization: 'Bearer ' + gmailToken } }
-      ).then(r => r.json())
-    );
-
-    const emails = await Promise.all(emailPromises);
-    renderEmailList(emails);
-  } catch(e) {
-    document.getElementById('gmail-loading').innerHTML = '<span style="color:var(--danger)">Erreur de chargement</span>';
-  }
+function deconnecterSMTP() {
+  MEM.del('smtp_config');
+  gmailToken = null;
+  document.getElementById('gmail-not-connected').style.display = 'block';
+  document.getElementById('gmail-connected').style.display = 'none';
+  document.getElementById('gmail-toggle-btn').classList.remove('connected');
+  document.getElementById('gmail-btn-text').textContent = 'Email';
+  document.getElementById('smtp-email').value = '';
+  document.getElementById('smtp-password').value = '';
 }
 
-function getHeader(email, name) {
-  const h = email.payload?.headers?.find(h => h.name.toLowerCase() === name.toLowerCase());
-  return h ? h.value : '';
-}
+async function envoyerEmailSMTP() {
+  const config = MEM.load('smtp_config');
+  if (!config) { alert('Configurez d'abord votre email.'); return; }
 
-function renderEmailList(emails) {
-  const container = document.getElementById('gmail-inbox-view');
-  if (!emails.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun email trouvé</div>';
-    return;
-  }
-
-  let html = '';
-  emails.forEach(email => {
-    const from = getHeader(email, 'From').replace(/<.*?>/, '').trim() || 'Inconnu';
-    const subject = getHeader(email, 'Subject') || '(Sans objet)';
-    const date = new Date(parseInt(email.internalDate)).toLocaleDateString('fr-CA');
-    const isUnread = email.labelIds?.includes('UNREAD');
-    const snippet = email.snippet || '';
-
-    html += `<div class="email-item ${isUnread ? 'unread' : ''}" onclick="openEmail('${email.id}')">
-      <div class="email-sender">
-        <span>${escapeHtml(from.substring(0, 22))}</span>
-        <span>${date}</span>
-        ${isUnread ? '<span class="email-dot"></span>' : ''}
-      </div>
-      <div class="email-subject">${escapeHtml(subject)}</div>
-      <div class="email-preview">${escapeHtml(snippet.substring(0, 60))}</div>
-    </div>`;
-  });
-
-  container.innerHTML = html;
-}
-
-async function openEmail(id) {
-  showTab('detail');
-  document.getElementById('detail-subject').textContent = 'Chargement...';
-  document.getElementById('detail-meta').textContent = '';
-  document.getElementById('detail-body').textContent = '';
-
-  try {
-    const res = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
-      { headers: { Authorization: 'Bearer ' + gmailToken } }
-    );
-    const email = await res.json();
-
-    const subject = getHeader(email, 'Subject') || '(Sans objet)';
-    const from = getHeader(email, 'From') || 'Inconnu';
-    const date = new Date(parseInt(email.internalDate)).toLocaleString('fr-CA');
-
-    document.getElementById('detail-subject').textContent = subject;
-    document.getElementById('detail-meta').innerHTML = `De : ${escapeHtml(from)}<br>Date : ${date}`;
-
-    // Extract body
-    let body = '';
-    const parts = email.payload?.parts || [];
-    const textPart = parts.find(p => p.mimeType === 'text/plain') || email.payload;
-    if (textPart?.body?.data) {
-      body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-    } else {
-      body = email.snippet || '';
-    }
-    document.getElementById('detail-body').textContent = body;
-
-    // Summarize with Nova
-    const summary = await callClaude(`L'utilisateur vient d'ouvrir cet email. Résume-le en 2-3 phrases et suggère une action : Sujet: "${subject}" | De: ${from} | Contenu: ${body.substring(0, 500)}`);
-    addNovaMessage('📧 ' + summary);
-  } catch(e) {
-    document.getElementById('detail-body').textContent = 'Impossible de charger cet email.';
-  }
-}
-
-async function sendGmail() {
-  if (!gmailToken) { alert('Gmail non connecté.'); return; }
   const to = document.getElementById('compose-to').value.trim();
   const subject = document.getElementById('compose-subject').value.trim();
   const body = document.getElementById('compose-body').value.trim();
+  const status = document.getElementById('send-status');
 
-  if (!to || !subject || !body) {
-    document.getElementById('send-status').textContent = 'Remplis tous les champs.';
-    return;
-  }
-
-  document.getElementById('send-status').textContent = 'Envoi en cours...';
+  if (!to || !subject || !body) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
+  status.textContent = '⏳ Envoi en cours...';
 
   try {
-    const email = [`To: ${to}`, `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '', body].join('\n');
-    const encoded = btoa(unescape(encodeURIComponent(email))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    const res = await fetch(SMTP_WORKER, {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + gmailToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw: encoded })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from_email: config.email,
+        from_password: config.password,
+        to, subject, body
+      })
     });
-
-    if (res.ok) {
-      document.getElementById('send-status').style.color = 'var(--success)';
-      document.getElementById('send-status').textContent = '✓ Email envoyé avec succès !';
+    const data = await res.json();
+    if (data.success) {
+      status.textContent = '✅ Email envoyé !';
+      // Sauvegarder dans l'historique des envois
+      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString() });
+      MEM.save('emails_envoyes', emailsEnvoyes.slice(0, 50));
       document.getElementById('compose-to').value = '';
       document.getElementById('compose-subject').value = '';
       document.getElementById('compose-body').value = '';
-      addNovaMessage(`✅ Email envoyé à **${to}** avec l'objet "${subject}".`);
-      setTimeout(() => { document.getElementById('send-status').textContent = ''; }, 3000);
+      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**`);
+      setTimeout(() => status.textContent = '', 3000);
     } else {
-      throw new Error('Erreur API');
+      status.textContent = '❌ ' + (data.error || 'Erreur d'envoi');
     }
   } catch(e) {
-    document.getElementById('send-status').style.color = 'var(--danger)';
-    document.getElementById('send-status').textContent = "Erreur lors de l'envoi.";
+    status.textContent = '❌ Erreur: ' + e.message;
   }
 }
 
-function showTab(tab) {
-  document.getElementById('gmail-inbox-view').style.display = tab === 'inbox' ? 'block' : 'none';
-  document.getElementById('gmail-compose-view').style.display = tab === 'compose' ? 'block' : 'none';
-  document.getElementById('gmail-detail-view').style.display = tab === 'detail' ? 'block' : 'none';
-  document.querySelectorAll('.gmail-tab').forEach(t => t.classList.remove('active'));
-  const activeTab = document.getElementById('tab-' + (tab === 'detail' ? 'inbox' : tab));
-  if (activeTab) activeTab.classList.add('active');
+// Envoyer un email depuis le code (factures etc.)
+async function envoyerEmailDepuisNova(to, subject, body) {
+  const config = MEM.load('smtp_config');
+  if (!config) return false;
+  try {
+    const res = await fetch(SMTP_WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from_email: config.email, from_password: config.password, to, subject, body })
+    });
+    const data = await res.json();
+    return data.success;
+  } catch { return false; }
 }
+
+function afficherEmailsEnvoyes() {
+  emailsEnvoyes = MEM.load('emails_envoyes', []);
+  const container = document.getElementById('emails-envoyes-list');
+  if (!container) return;
+  if (!emailsEnvoyes.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun email envoyé pour l'instant</div>';
+    return;
+  }
+  container.innerHTML = emailsEnvoyes.slice(0,20).map(e => {
+    const d = new Date(e.date).toLocaleDateString('fr-CA', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;color:var(--text)">${escapeHtml(e.subject)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">À: ${escapeHtml(e.to)} · ${d}</div>
+    </div>`;
+  }).join('');
+}
+
+function showTab(tab) {
+  const views = ['compose','envoyes'];
+  views.forEach(v => {
+    const el = document.getElementById('gmail-'+v+'-view');
+    if(el) el.style.display = v === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.gmail-tab').forEach(t => t.classList.remove('active'));
+  const activeTab = document.getElementById('tab-' + tab);
+  if (activeTab) activeTab.classList.add('active');
+  if (tab === 'envoyes') afficherEmailsEnvoyes();
+}
+
+
 
 // =====================
 // SUPABASE AUTH
