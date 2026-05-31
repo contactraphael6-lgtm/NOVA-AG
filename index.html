@@ -5070,7 +5070,7 @@ function configurerSMTP() {
 
   if (!email || !password) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
   if (!email.includes('@')) { status.textContent = '⚠️ Email invalide.'; return; }
-  if (password.length < 16) { status.textContent = '⚠️ Le mot de passe d'application fait 16 caractères.'; return; }
+  if (password.length < 16) { status.textContent = '⚠️ Le mot de passe application fait 16 caractères.'; return; }
 
   MEM.save('smtp_config', { email, password });
   status.textContent = '✅ Configuré !';
@@ -5091,7 +5091,7 @@ function deconnecterSMTP() {
 
 async function envoyerEmailSMTP() {
   const config = MEM.load('smtp_config');
-  if (!config) { alert('Configurez d'abord votre email.'); return; }
+  if (!config) { alert('Configurez votre email dans le menu.'); return; }
 
   const to = document.getElementById('compose-to').value.trim();
   const subject = document.getElementById('compose-subject').value.trim();
@@ -5123,7 +5123,7 @@ async function envoyerEmailSMTP() {
       addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**`);
       setTimeout(() => status.textContent = '', 3000);
     } else {
-      status.textContent = '❌ ' + (data.error || 'Erreur d'envoi');
+      status.textContent = '❌ ' + (data.error || 'Erreur envoi');
     }
   } catch(e) {
     status.textContent = '❌ Erreur: ' + e.message;
@@ -5150,7 +5150,7 @@ function afficherEmailsEnvoyes() {
   const container = document.getElementById('emails-envoyes-list');
   if (!container) return;
   if (!emailsEnvoyes.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun email envoyé pour l'instant</div>';
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun email envoyé pour linstant</div>';
     return;
   }
   container.innerHTML = emailsEnvoyes.slice(0,20).map(e => {
