@@ -5562,6 +5562,7 @@ let stripeCustomerId = null;
 async function verifierAbonnement() {
   if (!currentUser?.email) return;
   try {
+    // 1. Vérifier Stripe d'abord
     const res = await fetch(STRIPE_WORKER, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5570,6 +5571,23 @@ async function verifierAbonnement() {
     const data = await res.json();
     abonnementActif = data.active || false;
     stripeCustomerId = data.customer_id || null;
+
+    // 2. Si pas Stripe, vérifier accès gratuit dans Supabase
+    if (!abonnementActif) {
+      try {
+        const { data: acces } = await supabaseClient
+          .from('acces_gratuits')
+          .select('*')
+          .eq('email', currentUser.email)
+          .gte('expires_at', new Date().toISOString())
+          .single();
+        if (acces) {
+          abonnementActif = true;
+          MEM.save('abonnement', { actif: true, plan: 'pro_gratuit', expiry: acces.expires_at });
+        }
+      } catch(e) { /* Pas d'accès gratuit — normal */ }
+    }
+
     MEM.save('abonnement', { actif: abonnementActif, plan: data.plan, expiry: data.current_period_end });
 
     // Afficher badge plan dans le header
@@ -5587,7 +5605,6 @@ async function verifierAbonnement() {
 
     // Si pas d'abonnement actif → montrer la page de paiement après 2 secondes
     if (!abonnementActif) {
-      // Vérifier si retour de Stripe
       const params = new URLSearchParams(window.location.search);
       if (params.get('payment') === 'success') {
         addNovaMessage('🎉 **Paiement réussi !** Bienvenue dans Nexus AI Pro. Toutes les fonctionnalités sont maintenant disponibles !');
