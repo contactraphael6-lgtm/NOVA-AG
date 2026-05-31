@@ -6193,11 +6193,14 @@ function retourAccueil() {
 function lancerNova() {
   const splash = document.getElementById('splash');
   const app = document.getElementById('app');
-  splash.style.display = 'flex';
-  splash.classList.remove('hidden');
-  app.classList.remove('visible');
-  app.style.opacity = '0';
-  app.style.pointerEvents = 'none';
+  splash.classList.add('hidden');
+  setTimeout(() => {
+    splash.style.display = 'none';
+    app.style.opacity = '1';
+    app.style.pointerEvents = 'all';
+    app.classList.add('visible');
+    chargerMemoire();
+  }, 800);
 }
 
 function lancerDepuisAccueil() {
