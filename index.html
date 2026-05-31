@@ -2058,6 +2058,7 @@
     <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#0a1020,#121830);border:2px solid rgba(68,136,255,0.4);box-shadow:0 0 40px rgba(68,136,255,0.2);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:#4488ff;margin:0 auto 24px">N</div>
 
     <div style="font-size:11px;color:rgba(68,136,255,0.7);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px">Nexus AI Pro</div>
+    <div id="paywall-feature-msg" style="display:none;font-size:13px;color:rgba(255,180,100,0.9);background:rgba(255,150,50,0.08);border:1px solid rgba(255,150,50,0.2);border-radius:8px;padding:8px 14px;margin-bottom:14px"></div>
     <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#e8e6f0;margin-bottom:10px">Débloquez toutes les fonctionnalités</h2>
     <p style="font-size:14px;color:rgba(150,180,255,0.7);line-height:1.7;margin-bottom:28px">7 jours d'essai gratuit, puis 44,99$/mois.<br>Annulez à tout moment.</p>
 
@@ -2082,7 +2083,7 @@
     </button>
 
     <button onclick="fermerPaywall()" style="background:none;border:none;color:rgba(100,150,255,0.5);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">
-      Continuer avec le plan gratuit (fonctions limitées)
+      Continuer avec le plan gratuit (chat uniquement)
     </button>
   </div>
 </div>
@@ -3105,6 +3106,7 @@ async function supprimerSession(sessionId) {
 }
 
 function ouvrirDash() {
+  if (!verifierPro('dashboard')) return;
   document.getElementById('dash-overlay').classList.add('open');
   actualiserDash();
 }
@@ -3341,7 +3343,7 @@ function effacerMemoire() {
 }
 
 // --- Shopify Modal ---
-function openShopifyModal() { document.getElementById('shopify-modal').classList.add('open'); }
+function openShopifyModal() { if (!verifierPro('shopify')) return; document.getElementById('shopify-modal').classList.add('open'); }
 function closeShopifyModal() { document.getElementById('shopify-modal').classList.remove('open'); }
 
 function connectShopify() {
@@ -3372,6 +3374,7 @@ let currentAudio = null;
 let voiceConvHistory = [];
 
 function lancerConversationVocale() {
+  if (!verifierPro('voix')) return;
   // Vérifier si déjà configuré
   const savedKey = MEM.load('el_api_key') || 'e2e837f2e668aff6a85923faf04d7bdf75f821d32ac859585f987b1f6e67a91d';
   const savedVoice = MEM.load('el_voice_id') || 'YxrwjAKoUKULGd0g8K9Y';
@@ -3702,6 +3705,7 @@ let calSelectedDate = new Date();
 let calEvents = [];
 
 function toggleCalPanel() {
+  if (!verifierPro('calendrier')) return;
   calPanelOpen = !calPanelOpen;
   document.getElementById('cal-panel').classList.toggle('hidden', !calPanelOpen);
   const saved = MEM.load('cal_client_id');
@@ -4736,6 +4740,7 @@ let facturePanelOpen = false;
 let itemCount = 0;
 
 function toggleFacturePanel() {
+  if (!verifierPro('facturation')) return;
   facturePanelOpen = !facturePanelOpen;
   document.getElementById('facture-overlay').classList.toggle('open', facturePanelOpen);
   if (facturePanelOpen && itemCount === 0) {
@@ -5013,6 +5018,7 @@ let gmailToken = null;
 let gmailPanelOpen = false;
 
 function toggleGmailPanel() {
+  if (!verifierPro('gmail')) return;
   gmailPanelOpen = !gmailPanelOpen;
   const panel = document.getElementById('gmail-panel');
   panel.classList.toggle('hidden', !gmailPanelOpen);
@@ -5333,6 +5339,37 @@ async function onConnected() {
 const STRIPE_WORKER = 'https://nova-stripe.contact-raphael6.workers.dev';
 const STRIPE_PK = 'pk_live_51SYyQlQP78U4hesriJoOOf6aY1o13rP4SWoArtxW0x5xTcrdyYhFTJl3CqcuLXtRYOOxviy6C1EEyw9yee0rsJr600QSUTSUVU';
 let abonnementActif = false;
+
+// =====================
+// VÉRIFICATION PRO
+// =====================
+function verifierPro(nomFonction) {
+  if (abonnementActif) return true;
+  // Montrer le paywall avec message personnalisé
+  afficherPagePaiement(nomFonction);
+  return false;
+}
+
+function afficherPagePaiement(fonctionBloquee) {
+  const paywall = document.getElementById('paywall');
+  // Mettre à jour le message selon la fonction bloquée
+  const messages = {
+    'voix': '🎙 La conversation vocale est réservée au plan Pro',
+    'gmail': '📧 Gmail est réservé au plan Pro',
+    'shopify': '🛍 Shopify est réservé au plan Pro',
+    'calendrier': '📅 Google Calendar est réservé au plan Pro',
+    'facturation': '🧾 La facturation TPS/TVQ est réservée au plan Pro',
+    'dashboard': '📊 Le tableau de bord est réservé au plan Pro',
+  };
+  const msgEl = document.getElementById('paywall-feature-msg');
+  if (msgEl && fonctionBloquee && messages[fonctionBloquee]) {
+    msgEl.textContent = messages[fonctionBloquee];
+    msgEl.style.display = 'block';
+  } else if (msgEl) {
+    msgEl.style.display = 'none';
+  }
+  paywall.style.display = 'flex';
+}
 
 // =====================
 // PANNEAU ADMIN
