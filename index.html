@@ -3538,7 +3538,22 @@ function renderDashCommandes(sh) {
 }
 function renderDashFactures(fa) {
   if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
-  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map(f=>`<div class="fact-row"><div><div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div><div style="font-size:11px;color:var(--muted)">${f.date||''}</div></div><div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div></div>`).join('')}</div>`;
+  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f,i) => {
+    const estPayee = f.statut === 'payee';
+    const idxGlobal = MEM.load('factures',[]).findIndex(x => x.numero === f.numero);
+    return `<div class="fact-row">
+      <div>
+        <div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.date||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div>
+        <button onclick="toggleStatutFacture(${idxGlobal});actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
+          ${estPayee?'✅':'⏳'}
+        </button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 function renderDashRDV(rdvs) {
   const jN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],mN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
@@ -3622,6 +3637,8 @@ function chargerMemoire() {
   // Calendrier Nexus — charger les RDV au démarrage
   if (currentUser) {
     setTimeout(() => chargerRdvNexus(), 1000);
+    // Vérifier les factures non payées depuis 30 jours
+    setTimeout(() => verifierRelancesFactures(), 3000);
   }
 }
 
@@ -3650,10 +3667,38 @@ function sauvegarderClient(client, entreprise, adresse, email) {
 // Sauvegarder facture dans l'historique
 function sauvegarderFacture(data) {
   const factures = MEM.load('factures', []);
-  factures.unshift({ ...data, items: data.items, createdAt: new Date().toISOString() });
+  factures.unshift({ ...data, items: data.items, createdAt: new Date().toISOString(), statut: 'non_payee' });
   if (factures.length > 200) factures.pop();
   MEM.save('factures', factures);
   window.facturesHistorique = factures;
+}
+
+function toggleStatutFacture(index) {
+  const factures = MEM.load('factures', []);
+  if (!factures[index]) return;
+  factures[index].statut = factures[index].statut === 'payee' ? 'non_payee' : 'payee';
+  factures[index].datePaiement = factures[index].statut === 'payee' ? new Date().toISOString() : null;
+  MEM.save('factures', factures);
+  window.facturesHistorique = factures;
+  chargerProfilUI();
+  // Vérifier relances
+  verifierRelancesFactures();
+}
+
+function verifierRelancesFactures() {
+  const factures = MEM.load('factures', []);
+  const maintenant = new Date();
+  factures.forEach(f => {
+    if (f.statut === 'non_payee' && f.createdAt) {
+      const jours = Math.floor((maintenant - new Date(f.createdAt)) / (1000 * 60 * 60 * 24));
+      if (jours >= 30 && !f.relanceEnvoyee) {
+        addNovaMessage(`⚠️ **Facture non payée !** La facture **${f.numero}** de **${f.client}** (**${f.total ? f.total.toFixed(2) + ' $' : ''}**) n'est pas payée depuis **${jours} jours**. Voulez-vous que je rédige un email de relance ?`);
+        // Marquer comme relancée pour pas répéter
+        f.relanceEnvoyee = true;
+      }
+    }
+  });
+  MEM.save('factures', factures);
 }
 
 // Sauvegarder historique conversation (max 30 messages)
@@ -3689,12 +3734,18 @@ function chargerProfilUI() {
 
   // Afficher factures
   const factures = MEM.load('factures', []);
-  const facturesHtml = factures.length ? factures.slice(0, 8).map(f =>
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:13px;color:var(--text)">${f.numero} — ${f.client}</div>
-      <div style="font-size:11px;color:var(--muted)">${f.date} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div></div>
-    </div>`
-  ).join('') : '<div style="font-size:12px;color:var(--muted)">Aucune facture encore créée.</div>';
+  const facturesHtml = factures.length ? factures.slice(0, 8).map((f, i) => {
+    const estPayee = f.statut === 'payee';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--text)">${f.numero} — ${escapeHtml(f.client||'')}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.date || ''} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div>
+      </div>
+      <button onclick="toggleStatutFacture(${i})" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
+        ${estPayee ? '✅ Payée' : '⏳ Non payée'}
+      </button>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted)">Aucune facture encore créée.</div>';
   document.getElementById('factures-liste').innerHTML = facturesHtml;
 }
 
