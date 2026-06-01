@@ -4465,26 +4465,25 @@ async function traiterActionsReponse(reply) {
 }
 
 async function callClaudeAvecImage(texte, imageBase64, imageType) {
-  const prefs = MEM.load('prefs', {});
-  const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle. Tu analyses les images et réponds en français. Tu peux lire des documents, factures, photos de produits, captures d'écran, et tout autre contenu visuel. Sois précis et utile dans ton analyse.`;
+  const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle avec vision avancée. Tu PEUX voir et analyser les images — c'est une de tes capacités principales. Tu analyses les documents, factures, photos de produits, captures d'écran, textes dans les images, et tout contenu visuel. Ne dis JAMAIS que tu ne peux pas voir les images. Réponds toujours en français avec précision.`;
 
-  conversationHistory.push({
+  const messageAvecImage = {
     role: 'user',
     content: [
       {
         type: 'image',
         source: {
           type: 'base64',
-          media_type: imageType,
+          media_type: imageType || 'image/jpeg',
           data: imageBase64
         }
       },
       {
         type: 'text',
-        text: texte
+        text: texte || 'Analyse cette image et dis-moi ce que tu vois.'
       }
     ]
-  });
+  };
 
   const res = await fetch(CLAUDE_API, {
     method: 'POST',
@@ -4493,12 +4492,15 @@ async function callClaudeAvecImage(texte, imageBase64, imageType) {
       model: 'claude-sonnet-4-5',
       max_tokens: 1500,
       system: systemPrompt,
-      messages: conversationHistory.slice(-6)
+      messages: [messageAvecImage]
     })
   });
 
   const data = await res.json();
   const reply = data.content?.[0]?.text || 'Désolée, je ne peux pas analyser cette image.';
+
+  // Ajouter dans l'historique comme texte pour la continuité
+  conversationHistory.push({ role: 'user', content: `[Image envoyée] ${texte}` });
   conversationHistory.push({ role: 'assistant', content: reply });
   sauvegarderHistorique();
   return reply;
