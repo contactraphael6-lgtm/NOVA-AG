@@ -4578,14 +4578,14 @@ function getTime() {
   return new Date().toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
 }
 
-function addUserMessage(text) {
+function addUserMessage(text, extraHtml = '') {
   const msgs = document.getElementById('messages');
   const div = document.createElement('div');
   div.className = 'msg user';
   div.innerHTML = `
     <div class="msg-avatar">V</div>
     <div>
-      <div class="msg-bubble">${escapeHtml(text)}</div>
+      <div class="msg-bubble">${escapeHtml(text)}${extraHtml ? '<br>'+extraHtml : ''}</div>
       <div class="msg-time">${getTime()}</div>
     </div>`;
   msgs.appendChild(div);
@@ -4683,8 +4683,21 @@ async function sendMessage() {
   // Afficher le message avec la photo si applicable
   if (hasPhoto) {
     const previewSrc = document.getElementById('photo-preview-img').src;
+    const imageData = photoBase64;
+    const imageTypeData = photoType || 'image/jpeg';
     addUserMessage(msgText, `<img src="${previewSrc}" style="max-height:150px;max-width:100%;border-radius:8px;margin-top:6px" />`);
     annulerPhoto();
+    addTypingIndicator();
+    try {
+      const reply = await callClaudeAvecImage(msgText, imageData, imageTypeData);
+      removeTypingIndicator();
+      addNovaMessage(reply);
+    } catch(e) {
+      removeTypingIndicator();
+      addNovaMessage('Désolée, erreur lors de l\'analyse de l\'image.');
+    }
+    document.getElementById('send-btn').disabled = false;
+    return;
   } else {
     addUserMessage(msgText);
   }
@@ -4692,13 +4705,7 @@ async function sendMessage() {
   addTypingIndicator();
 
   try {
-    let reply;
-    if (hasPhoto && photoBase64) {
-      // Appel avec image
-      reply = await callClaudeAvecImage(msgText, photoBase64, photoType || 'image/jpeg');
-    } else {
-      reply = await callClaude(msgText);
-    }
+    const reply = await callClaude(msgText);
     removeTypingIndicator();
 
     if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
