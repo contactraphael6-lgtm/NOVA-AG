@@ -3725,6 +3725,7 @@ function renderDashFactures(fa) {
   if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
   return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f) => {
     const estPayee = f.statut === 'payee';
+    const uid = f.uid || (f.numero + '_' + f.createdAt);
     return `<div class="fact-row">
       <div>
         <div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div>
@@ -3732,7 +3733,7 @@ function renderDashFactures(fa) {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div>
-        <button onclick="toggleStatutFacture('${f.numero}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
+        <button onclick="toggleStatutFacture('${uid}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
           ${estPayee?'✅':'⏳'}
         </button>
       </div>
@@ -3854,15 +3855,17 @@ function sauvegarderClient(client, entreprise, adresse, email) {
 // Sauvegarder facture dans l'historique
 function sauvegarderFacture(data) {
   const factures = MEM.load('factures', []);
-  factures.unshift({ ...data, items: data.items, createdAt: new Date().toISOString(), statut: 'non_payee' });
+  factures.unshift({ ...data, items: data.items, uid: Date.now().toString() + Math.random().toString(36).substr(2,5), createdAt: new Date().toISOString(), statut: 'non_payee' });
   if (factures.length > 200) factures.pop();
   MEM.save('factures', factures);
   window.facturesHistorique = factures;
 }
 
-function toggleStatutFacture(numero) {
+function toggleStatutFacture(identifiant) {
   const factures = MEM.load('factures', []);
-  const index = factures.findIndex(f => f.numero === numero);
+  // Chercher par uid d'abord, puis par numéro+index comme fallback
+  let index = factures.findIndex(f => f.uid === identifiant);
+  if (index === -1) index = factures.findIndex(f => f.numero === identifiant);
   if (index === -1) return;
   factures[index].statut = factures[index].statut === 'payee' ? 'non_payee' : 'payee';
   factures[index].datePaiement = factures[index].statut === 'payee' ? new Date().toISOString() : null;
@@ -3923,12 +3926,13 @@ function chargerProfilUI() {
   const factures = MEM.load('factures', []);
   const facturesHtml = factures.length ? factures.slice(0, 8).map((f) => {
     const estPayee = f.statut === 'payee';
+    const uid = f.uid || f.numero;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--text)">${f.numero} — ${escapeHtml(f.client||'')}</div>
         <div style="font-size:11px;color:var(--muted)">${f.date || ''} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div>
       </div>
-      <button onclick="toggleStatutFacture('${f.numero}')" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
+      <button onclick="toggleStatutFacture('${uid}')" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
         ${estPayee ? '✅ Payée' : '⏳ Non payée'}
       </button>
     </div>`;
