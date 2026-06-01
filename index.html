@@ -2858,7 +2858,13 @@
     </div>
 
     <div class="input-area">
+      <div id="photo-preview" style="display:none;padding:6px 0 4px;position:relative">
+        <img id="photo-preview-img" style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border2)" />
+        <button onclick="annulerPhoto()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px">✕</button>
+      </div>
       <div class="input-row">
+        <button onclick="document.getElementById('photo-input').click()" title="Envoyer une photo" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">📷</button>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="chargerPhoto(this)" />
         <textarea id="user-input" placeholder="Écrivez à Nexus AI..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
@@ -3528,9 +3534,8 @@ function renderDashCommandes(sh) {
 }
 function renderDashFactures(fa) {
   if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
-  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f,i) => {
+  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f) => {
     const estPayee = f.statut === 'payee';
-    const idxGlobal = MEM.load('factures',[]).findIndex(x => x.numero === f.numero);
     return `<div class="fact-row">
       <div>
         <div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div>
@@ -3538,7 +3543,7 @@ function renderDashFactures(fa) {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div>
-        <button onclick="toggleStatutFacture(${idxGlobal});actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
+        <button onclick="toggleStatutFacture('${f.numero}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
           ${estPayee?'✅':'⏳'}
         </button>
       </div>
@@ -3663,15 +3668,15 @@ function sauvegarderFacture(data) {
   window.facturesHistorique = factures;
 }
 
-function toggleStatutFacture(index) {
+function toggleStatutFacture(numero) {
   const factures = MEM.load('factures', []);
-  if (!factures[index]) return;
+  const index = factures.findIndex(f => f.numero === numero);
+  if (index === -1) return;
   factures[index].statut = factures[index].statut === 'payee' ? 'non_payee' : 'payee';
   factures[index].datePaiement = factures[index].statut === 'payee' ? new Date().toISOString() : null;
   MEM.save('factures', factures);
   window.facturesHistorique = factures;
   chargerProfilUI();
-  // Vérifier relances
   verifierRelancesFactures();
 }
 
@@ -3724,14 +3729,14 @@ function chargerProfilUI() {
 
   // Afficher factures
   const factures = MEM.load('factures', []);
-  const facturesHtml = factures.length ? factures.slice(0, 8).map((f, i) => {
+  const facturesHtml = factures.length ? factures.slice(0, 8).map((f) => {
     const estPayee = f.statut === 'payee';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--text)">${f.numero} — ${escapeHtml(f.client||'')}</div>
         <div style="font-size:11px;color:var(--muted)">${f.date || ''} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div>
       </div>
-      <button onclick="toggleStatutFacture(${i})" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
+      <button onclick="toggleStatutFacture('${f.numero}')" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
         ${estPayee ? '✅ Payée' : '⏳ Non payée'}
       </button>
     </div>`;
@@ -4459,6 +4464,46 @@ async function traiterActionsReponse(reply) {
   }
 }
 
+async function callClaudeAvecImage(texte, imageBase64, imageType) {
+  const prefs = MEM.load('prefs', {});
+  const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle. Tu analyses les images et réponds en français. Tu peux lire des documents, factures, photos de produits, captures d'écran, et tout autre contenu visuel. Sois précis et utile dans ton analyse.`;
+
+  conversationHistory.push({
+    role: 'user',
+    content: [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: imageType,
+          data: imageBase64
+        }
+      },
+      {
+        type: 'text',
+        text: texte
+      }
+    ]
+  });
+
+  const res = await fetch(CLAUDE_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: conversationHistory.slice(-6)
+    })
+  });
+
+  const data = await res.json();
+  const reply = data.content?.[0]?.text || 'Désolée, je ne peux pas analyser cette image.';
+  conversationHistory.push({ role: 'assistant', content: reply });
+  sauvegarderHistorique();
+  return reply;
+}
+
 async function callClaude(userMessage) {
   const prefs = MEM.load('prefs', {});
   const ent = MEM.load('entreprise', {});
@@ -4590,20 +4635,68 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// =====================
+// LECTURE DE PHOTOS
+// =====================
+let photoBase64 = null;
+let photoType = null;
+
+function chargerPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const result = e.target.result;
+    photoBase64 = result.split(',')[1];
+    photoType = file.type;
+    document.getElementById('photo-preview-img').src = result;
+    document.getElementById('photo-preview').style.display = 'block';
+    document.getElementById('user-input').placeholder = 'Posez une question sur cette photo...';
+    document.getElementById('user-input').focus();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function annulerPhoto() {
+  photoBase64 = null;
+  photoType = null;
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-preview-img').src = '';
+  document.getElementById('user-input').placeholder = 'Écrivez à Nexus AI...';
+}
+
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const text = input.value.trim();
-  if (!text) return;
+  const hasPhoto = photoBase64 !== null;
 
+  if (!text && !hasPhoto) return;
+
+  const msgText = text || 'Analyse cette image';
   input.value = '';
   input.style.height = 'auto';
   document.getElementById('send-btn').disabled = true;
 
-  addUserMessage(text);
+  // Afficher le message avec la photo si applicable
+  if (hasPhoto) {
+    const previewSrc = document.getElementById('photo-preview-img').src;
+    addUserMessage(msgText, `<img src="${previewSrc}" style="max-height:150px;max-width:100%;border-radius:8px;margin-top:6px" />`);
+    annulerPhoto();
+  } else {
+    addUserMessage(msgText);
+  }
+
   addTypingIndicator();
 
   try {
-    const reply = await callClaude(text);
+    let reply;
+    if (hasPhoto && photoBase64) {
+      // Appel avec image
+      reply = await callClaudeAvecImage(msgText, photoBase64, photoType || 'image/jpeg');
+    } else {
+      reply = await callClaude(msgText);
+    }
     removeTypingIndicator();
 
     if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
