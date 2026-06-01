@@ -2878,20 +2878,10 @@
     <div id="gmail-not-connected">
       <div class="gmail-connect-prompt">
         <div style="font-size:32px">📧</div>
-        <p style="margin-bottom:14px">Configurez votre Gmail pour envoyer des emails directement depuis Nexus AI.</p>
-        <div class="gmail-setup-steps">
-          <p>Comment obtenir votre mot de passe d'application :</p>
-          <ol>
-            <li>Va sur <a href="https://myaccount.google.com/security" target="_blank" style="color:var(--accent-blue)">myaccount.google.com/security</a></li>
-            <li>Active la <strong>validation en 2 étapes</strong></li>
-            <li>Cherche <strong>"Mots de passe des applications"</strong></li>
-            <li>Crée un mot de passe pour <strong>"Nexus AI"</strong></li>
-            <li>Copie le code de 16 caractères ci-dessous</li>
-          </ol>
-        </div>
+        <p style="margin-bottom:14px">Configurez votre email pour envoyer des emails directement depuis Nexus AI.</p>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;width:100%">
-          <input class="clientid-input" id="smtp-email" type="email" placeholder="votre@gmail.com" />
-          <input class="clientid-input" id="smtp-password" type="password" placeholder="Mot de passe d'application (16 caractères)" />
+          <input class="clientid-input" id="smtp-nom" placeholder="Votre nom (ex: Raphaël Pomerleau)" />
+          <input class="clientid-input" id="smtp-email" type="email" placeholder="votre@email.com" />
           <button class="btn-primary" style="padding:10px" onclick="configurerSMTP()">✅ Configurer</button>
         </div>
         <div id="smtp-status" style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px"></div>
@@ -5515,15 +5505,14 @@ function verifierConfigSMTP() {
 }
 
 function configurerSMTP() {
+  const nom = document.getElementById('smtp-nom').value.trim();
   const email = document.getElementById('smtp-email').value.trim();
-  const password = document.getElementById('smtp-password').value.trim();
   const status = document.getElementById('smtp-status');
 
-  if (!email || !password) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
+  if (!nom || !email) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
   if (!email.includes('@')) { status.textContent = '⚠️ Email invalide.'; return; }
-  if (password.length < 16) { status.textContent = '⚠️ Le mot de passe application fait 16 caractères.'; return; }
 
-  MEM.save('smtp_config', { email, password });
+  MEM.save('smtp_config', { nom, email });
   status.textContent = '✅ Configuré !';
   gmailToken = 'smtp_configured';
   setTimeout(() => verifierConfigSMTP(), 800);
@@ -5558,7 +5547,7 @@ async function envoyerEmailSMTP() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from_email: config.email,
-        from_password: config.password,
+        from_name: config.nom,
         to, subject, body
       })
     });
@@ -5589,7 +5578,7 @@ async function envoyerEmailDepuisNova(to, subject, body) {
     const res = await fetch(SMTP_WORKER, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from_email: config.email, from_password: config.password, to, subject, body })
+      body: JSON.stringify({ from_email: config.email, from_name: config.nom, to, subject, body })
     });
     const data = await res.json();
     return data.success;
