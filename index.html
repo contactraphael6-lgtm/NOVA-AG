@@ -2961,6 +2961,15 @@
             <label class="compose-label">Message</label>
             <textarea class="compose-input compose-textarea" id="compose-body" placeholder="Écrivez votre message..."></textarea>
           </div>
+          <div class="compose-field">
+            <label class="compose-label">Pièces jointes</label>
+            <label id="attach-label" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;border:1px dashed var(--border2);background:var(--surface);cursor:pointer;font-size:12px;color:var(--muted2);transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(68,136,255,0.5)'" onmouseout="this.style.borderColor='var(--border2)'">
+              <span style="font-size:16px">📎</span>
+              <span id="attach-label-text">Cliquer pour ajouter des fichiers…</span>
+              <input type="file" id="compose-attachments" multiple style="display:none" onchange="afficherFichiersJoints(this)" />
+            </label>
+            <div id="attachments-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+          </div>
           <button class="btn-primary" onclick="envoyerEmailSMTP()" style="margin-top:4px">📤 Envoyer</button>
           <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:6px"></div>
         </div>
@@ -5823,6 +5832,44 @@ function deconnecterSMTP() {
   document.getElementById('smtp-password').value = '';
 }
 
+// Afficher l'aperçu des pièces jointes sélectionnées
+function afficherFichiersJoints(input) {
+  const preview = document.getElementById('attachments-preview');
+  const label = document.getElementById('attach-label-text');
+  preview.innerHTML = '';
+  const files = Array.from(input.files);
+  if (!files.length) { label.textContent = 'Cliquer pour ajouter des fichiers…'; return; }
+  label.textContent = 'Ajouter d\'autres fichiers…';
+  files.forEach((f, i) => {
+    const size = f.size < 1024 * 1024
+      ? (f.size / 1024).toFixed(0) + ' Ko'
+      : (f.size / 1024 / 1024).toFixed(1) + ' Mo';
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);font-size:11px;color:var(--muted2)';
+    chip.innerHTML = `<span>📎</span><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.name)}</span><span style="color:var(--muted);flex-shrink:0">${size}</span><span onclick="retirerFichierJoint(${i})" style="cursor:pointer;color:var(--muted);margin-left:2px;font-size:13px" title="Retirer">×</span>`;
+    preview.appendChild(chip);
+  });
+}
+
+// Retirer un fichier de la liste (recrée l'input pour contourner la lecture seule)
+function retirerFichierJoint(index) {
+  const input = document.getElementById('compose-attachments');
+  const dt = new DataTransfer();
+  Array.from(input.files).forEach((f, i) => { if (i !== index) dt.items.add(f); });
+  input.files = dt.files;
+  afficherFichiersJoints(input);
+}
+
+// Lire un fichier en base64
+function lireFileBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 async function envoyerEmailSMTP() {
   const config = MEM.load('smtp_config');
   if (!config) { alert('Configurez votre email dans le menu.'); return; }
@@ -5831,30 +5878,51 @@ async function envoyerEmailSMTP() {
   const subject = document.getElementById('compose-subject').value.trim();
   const body = document.getElementById('compose-body').value.trim();
   const status = document.getElementById('send-status');
+  const fileInput = document.getElementById('compose-attachments');
+  const files = fileInput ? Array.from(fileInput.files) : [];
 
   if (!to || !subject || !body) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
-  status.textContent = '⏳ Envoi en cours...';
+
+  // Vérifier la taille totale (limite ~8 Mo encodé base64)
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+  if (totalSize > 6 * 1024 * 1024) {
+    status.textContent = '⚠️ Fichiers trop lourds (max 6 Mo au total).'; return;
+  }
+
+  status.textContent = files.length ? '⏳ Chargement des pièces jointes…' : '⏳ Envoi en cours...';
 
   try {
+    // Encoder les fichiers en base64
+    const attachments = await Promise.all(files.map(async f => ({
+      filename: f.name,
+      content: await lireFileBase64(f),
+      type: f.type || 'application/octet-stream'
+    })));
+
+    status.textContent = '⏳ Envoi en cours...';
+
     const res = await fetch(SMTP_WORKER, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from_email: config.email,
         from_name: config.nom,
-        to, subject, body
+        to, subject, body,
+        ...(attachments.length ? { attachments } : {})
       })
     });
     const data = await res.json();
     if (data.success) {
+      const nbJoints = attachments.length;
       status.textContent = '✅ Email envoyé !';
-      // Sauvegarder dans l'historique des envois
-      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString() });
+      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString(), attachments: attachments.length });
       MEM.save('emails_envoyes', emailsEnvoyes.slice(0, 50));
       document.getElementById('compose-to').value = '';
       document.getElementById('compose-subject').value = '';
       document.getElementById('compose-body').value = '';
-      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**`);
+      if (fileInput) { fileInput.value = ''; afficherFichiersJoints(fileInput); }
+      const jointsTxt = nbJoints ? ` avec **${nbJoints} pièce${nbJoints > 1 ? 's' : ''} jointe${nbJoints > 1 ? 's' : ''}**` : '';
+      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**${jointsTxt}`);
       setTimeout(() => status.textContent = '', 3000);
     } else {
       status.textContent = '❌ ' + (data.error || 'Erreur envoi');
