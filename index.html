@@ -2427,7 +2427,32 @@
         <button class="back-btn" onclick="fermerDash()" style="margin:0">✕</button>
       </div>
     </div>
-    <div class="dash-body" id="dash-body"><div class="dash-empty">Chargement...</div></div>
+    <div class="dash-body" id="dash-body">
+      <!-- Greeting -->
+      <div id="dash-greeting" style="margin-bottom:16px">
+        <div style="font-size:18px;font-weight:500;color:var(--text)" id="dash-bonjour">Bonjour !</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="dash-date-label"></div>
+      </div>
+
+      <!-- Bannière IA COO -->
+      <div id="dash-ai-banner" style="background:var(--surface);border:1px solid rgba(68,136,255,0.2);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(68,136,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.6" id="dash-ai-message">Chargement du résumé...</div>
+      </div>
+
+      <!-- Métriques -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px" id="dash-metrics"></div>
+
+      <!-- Sections -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px" id="dash-sections"></div>
+
+      <!-- Graphique ventes -->
+      <div id="dash-graph-section" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px"></div>
+
+      <!-- Actions rapides -->
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">⚡ Actions rapides</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px" id="dash-actions"></div>
+    </div>
   </div>
 </div>
 
@@ -3686,89 +3711,268 @@ function ouvrirDash() {
   document.getElementById('dash-overlay').classList.add('open');
   actualiserDash();
 }
-function fermerDash() { document.getElementById('dash-overlay').classList.remove('open'); }
+
+function fermerDash() {
+  document.getElementById('dash-overlay').classList.remove('open');
+}
+
 async function actualiserDash() {
-  const body = document.getElementById('dash-body');
-  body.innerHTML = '<div class="dash-empty">⏳ Chargement...</div>';
+  // Greeting
+  const prefs = MEM.load('prefs', {});
+  const maintenant = new Date();
+  const heure = maintenant.getHours();
+  const prenomStr = prefs.nom ? prefs.nom.split(' ')[0] : '';
+  let salut = 'Bonjour';
+  if (heure >= 12 && heure < 18) salut = 'Bon après-midi';
+  else if (heure >= 18) salut = 'Bonsoir';
+
+  const bonjour = document.getElementById('dash-bonjour');
+  const dateLabel = document.getElementById('dash-date-label');
+  if (bonjour) bonjour.textContent = `${salut}${prenomStr ? ' ' + prenomStr : ''} !`;
+  if (dateLabel) dateLabel.textContent = maintenant.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Données
   const sh = await getDashShopify();
   const fa = getDashFactures();
-  const rv = getDashRDV();
-  body.innerHTML = renderDashStats(sh,fa) + renderDashGraph(sh) + renderDashCommandes(sh) + renderDashFactures(fa) + renderDashRDV(rv);
+  const rdvs = getDashRDVNexus();
+  const taches = MEM.load('taches', []);
+  const aujourdhui = maintenant.toISOString().split('T')[0];
+  const tachesAujourdHui = taches.filter(t => t.date === aujourdhui && !t.completee);
+
+  // Bannière IA
+  genererMessageIA(sh, fa, rdvs, tachesAujourdHui);
+
+  // Métriques
+  renderMetriques(sh, fa);
+
+  // Sections
+  renderSections(sh, fa, rdvs);
+
+  // Graphique
+  renderGraphique(sh);
+
+  // Actions rapides
+  renderActionsRapides();
 }
+
+async function genererMessageIA(sh, fa, rdvs, taches) {
+  const parties = [];
+  const factures = MEM.load('factures', []);
+  const enRetard = factures.filter(f => {
+    if (f.statut === 'payee') return false;
+    const jours = Math.floor((new Date() - new Date(f.createdAt || f.date)) / (1000 * 60 * 60 * 24));
+    return jours >= 30;
+  });
+
+  if (sh?.orders?.length > 0) {
+    const ventes = sh.orders.reduce((t, o) => t + parseFloat(o.total_price || 0), 0);
+    parties.push(`💰 <strong>${sh.orders.length} commande${sh.orders.length > 1 ? 's' : ''}</strong> Shopify pour <strong>${ventes.toFixed(0)}$</strong> ce mois`);
+  }
+  if (enRetard.length > 0) {
+    const total = enRetard.reduce((t, f) => t + (f.total || 0), 0);
+    parties.push(`🧾 <strong>${enRetard.length} facture${enRetard.length > 1 ? 's' : ''} en retard</strong> — <strong>${total.toFixed(0)}$</strong> à récupérer`);
+  }
+  if (rdvs.length > 0) {
+    parties.push(`📅 <strong>${rdvs.length} RDV</strong> à venir cette semaine`);
+  }
+  if (taches.length > 0) {
+    parties.push(`✅ <strong>${taches.length} tâche${taches.length > 1 ? 's' : ''}</strong> à compléter aujourd'hui`);
+  }
+
+  const msg = document.getElementById('dash-ai-message');
+  if (!msg) return;
+
+  if (parties.length === 0) {
+    msg.innerHTML = `Tout est calme aujourd'hui — profites-en pour planifier ta semaine ! <button onclick="sendMessageFromDash('Donne-moi des conseils pour développer mon business')" style="background:none;border:none;color:rgba(68,136,255,0.8);cursor:pointer;font-size:12px;text-decoration:underline">Des conseils ?</button>`;
+    return;
+  }
+
+  msg.innerHTML = parties.join(' · ') + (enRetard.length > 0 ? ` <button onclick="sendMessageFromDash(\'Envoie les relances pour les ${enRetard.length} factures en retard\')" style="background:none;border:none;color:rgba(68,136,255,0.8);cursor:pointer;font-size:12px;text-decoration:underline;margin-left:6px">Envoyer les relances →</button>` : '');
+}
+
+function sendMessageFromDash(msg) {
+  fermerDash();
+  setTimeout(() => {
+    const input = document.getElementById('user-input');
+    if (input) { input.value = msg; sendMessage(); }
+  }, 300);
+}
+
+function renderMetriques(sh, fa) {
+  const container = document.getElementById('dash-metrics');
+  if (!container) return;
+
+  const factures = MEM.load('factures', []);
+  const debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
+  const facturesMois = factures.filter(f => new Date(f.createdAt || f.date) >= debut);
+  const revFactures = facturesMois.reduce((t, f) => t + (f.total || 0), 0);
+  const nonPayees = factures.filter(f => f.statut !== 'payee').length;
+  const revShopify = sh ? sh.orders.reduce((t, o) => t + parseFloat(o.total_price || 0), 0) : 0;
+  const totalClients = tousLesClients.length;
+
+  container.innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">💰 Revenus mois</div>
+      <div style="font-size:22px;font-weight:500;color:var(--text)">${(revFactures + revShopify).toFixed(0)}$</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${sh ? 'Shopify + Factures' : 'Factures seulement'}</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid ${nonPayees > 0 ? 'rgba(255,100,100,0.3)' : 'var(--border)'};border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">🧾 Factures</div>
+      <div style="font-size:22px;font-weight:500;color:var(--text)">${facturesMois.length}</div>
+      <div style="font-size:11px;color:${nonPayees > 0 ? '#ff6060' : 'var(--muted)'};margin-top:3px">${nonPayees > 0 ? nonPayees + ' non payée' + (nonPayees > 1 ? 's' : '') : 'Toutes payées ✅'}</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">👥 Clients</div>
+      <div style="font-size:22px;font-weight:500;color:var(--text)">${totalClients}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${tousLesClients.filter(c => c.statut === 'actif').length} actifs</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">🛍 Commandes</div>
+      <div style="font-size:22px;font-weight:500;color:var(--text)">${sh ? sh.orders.length : '—'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${sh ? '30 derniers jours' : 'Shopify non connecté'}</div>
+    </div>
+  `;
+}
+
+function renderSections(sh, fa, rdvs) {
+  const container = document.getElementById('dash-sections');
+  if (!container) return;
+
+  // Section factures
+  const factures = MEM.load('factures', []);
+  const debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
+  const facturesMois = factures.filter(f => new Date(f.createdAt || f.date) >= debut).slice(0, 4);
+
+  const facturesHTML = facturesMois.length ? facturesMois.map(f => {
+    const estPayee = f.statut === 'payee';
+    const uid = f.uid || f.numero;
+    const jours = Math.floor((new Date() - new Date(f.createdAt || f.date)) / (1000 * 60 * 60 * 24));
+    const enRetard = !estPayee && jours >= 30;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(f.client || f.numero)}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.total ? f.total.toFixed(0) + '$' : ''}</div>
+      </div>
+      <button onclick="toggleStatutFacture('${uid}');actualiserDash()" style="padding:2px 8px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : enRetard ? 'rgba(255,100,100,0.4)' : 'rgba(200,169,110,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : enRetard ? 'rgba(255,100,100,0.1)' : 'rgba(200,169,110,0.1)'};color:${estPayee ? '#4ec87a' : enRetard ? '#ff6060' : '#c8a96e'};font-size:11px;cursor:pointer;flex-shrink:0;margin-left:8px">
+        ${estPayee ? '✅' : enRetard ? '⚠️' : '⏳'}
+      </button>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted);padding:12px 0;text-align:center">Aucune facture ce mois</div>';
+
+  // Section RDV
+  const rdvsHTML = rdvs.length ? rdvs.slice(0, 4).map(rdv => {
+    const d = new Date(rdv.date + 'T12:00:00');
+    const joursN = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    const label = rdv.date === aujourdhui ? "Aujourd'hui" : joursN[d.getDay()] + ' ' + d.getDate();
+    return `<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="width:4px;height:32px;border-radius:2px;background:${rdv.couleur || '#4488ff'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(rdv.titre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${label}${rdv.heure ? ' · ' + rdv.heure : ''}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted);padding:12px 0;text-align:center">Aucun RDV à venir</div>';
+
+  container.innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">🧾 Factures ce mois</div>
+      ${facturesHTML}
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">📅 RDV à venir</div>
+      ${rdvsHTML}
+    </div>
+  `;
+}
+
+function renderGraphique(sh) {
+  const container = document.getElementById('dash-graph-section');
+  if (!container) return;
+
+  if (!sh?.orders?.length) {
+    // Afficher les tâches à la place
+    const taches = MEM.load('taches', []);
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    const tachesAuj = taches.filter(t => t.date === aujourdhui).slice(0, 5);
+    container.innerHTML = `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">✅ Tâches du jour</div>` +
+      (tachesAuj.length ? tachesAuj.map(t => `
+        <div style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div onclick="toggleTache('${t.id}');actualiserDash()" style="width:20px;height:20px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : '#4488ff'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+          </div>
+          <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
+        </div>`).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Aucune tâche aujourd\'hui 🎉</div>');
+    return;
+  }
+
+  const jours = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    jours.push({ date: d.toISOString().split('T')[0], lbl: d.toLocaleDateString('fr-CA', { weekday: 'short' }), v: 0 });
+  }
+  sh.orders.forEach(o => {
+    const j = jours.find(x => x.date === o.created_at?.split('T')[0]);
+    if (j) j.v += parseFloat(o.total_price || 0);
+  });
+  const max = Math.max(...jours.map(j => j.v), 1);
+  const aujourdhui = new Date().toISOString().split('T')[0];
+
+  container.innerHTML = `
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">📈 Ventes 7 jours</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:70px">
+      ${jours.map(j => `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="width:100%;border-radius:3px 3px 0 0;background:${j.date === aujourdhui ? 'rgba(68,136,255,0.8)' : 'rgba(68,136,255,0.3)'};height:${Math.max(j.v / max * 60, 3)}px" title="${j.v.toFixed(0)}$"></div>
+          <div style="font-size:10px;color:var(--muted)">${j.lbl.substring(0, 1).toUpperCase()}</div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function renderActionsRapides() {
+  const container = document.getElementById('dash-actions');
+  if (!container) return;
+  const actions = [
+    { icon: '🧾', label: 'Nouvelle facture', fn: "fermerDash();setTimeout(()=>toggleFacturePanel(),200)" },
+    { icon: '👥', label: 'Mes clients', fn: "fermerDash();setTimeout(()=>ouvrirCRM(),200)" },
+    { icon: '📅', label: 'Calendrier', fn: "fermerDash();setTimeout(()=>toggleCalPanel(),200)" },
+    { icon: '✅', label: 'Mes tâches', fn: "fermerDash();setTimeout(()=>ouvrirTaches(),200)" },
+    { icon: '🛍', label: 'Commandes', fn: "sendMessageFromDash('Montre-moi mes dernières commandes Shopify')" },
+    { icon: '📧', label: 'Envoyer email', fn: "fermerDash();setTimeout(()=>toggleGmailPanel(),200)" },
+  ];
+  container.innerHTML = actions.map(a => `
+    <button onclick="${a.fn}" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;text-align:left;font-family:'DM Sans',sans-serif;transition:all 0.15s">
+      ${a.icon} ${a.label}
+    </button>`).join('');
+}
+
+function getDashRDVNexus() {
+  const now = new Date();
+  const fin = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return (calEvents || []).filter(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    return d >= now && d <= fin;
+  }).sort((a, b) => a.date.localeCompare(b.date));
+}
+
 async function getDashShopify() {
   if (!shopifyConfig) return null;
   try {
-    const since = new Date(Date.now()-30*24*60*60*1000).toISOString();
-    const [r1,r2] = await Promise.all([
-      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?limit=50&status=any&created_at_min=${since}`,{headers:{'X-Shopify-Access-Token':shopifyConfig.token}}),
-      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/products/count.json`,{headers:{'X-Shopify-Access-Token':shopifyConfig.token}})
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const [r1, r2] = await Promise.all([
+      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?limit=50&status=any&created_at_min=${since}`, { headers: { 'X-Shopify-Access-Token': shopifyConfig.token } }),
+      fetch(`https://${shopifyConfig.url}/admin/api/2024-01/products/count.json`, { headers: { 'X-Shopify-Access-Token': shopifyConfig.token } })
     ]);
-    const d1=await r1.json(),d2=await r2.json();
-    return {orders:d1.orders||[],productsCount:d2.count||0};
-  } catch{return null;}
+    const d1 = await r1.json(), d2 = await r2.json();
+    return { orders: d1.orders || [], productsCount: d2.count || 0 };
+  } catch { return null; }
 }
+
 function getDashFactures() {
-  const all=MEM.load('factures',[]);
-  const debut=new Date(); debut.setDate(1); debut.setHours(0,0,0,0);
-  return {mois:all.filter(f=>new Date(f.createdAt||f.date)>=debut),all};
-}
-function getDashRDV() {
-  if (!window.calEvents) return [];
-  const now=new Date(),fin=new Date(now.getTime()+7*24*60*60*1000);
-  return calEvents.filter(e=>{const d=new Date(e.start?.dateTime||e.start?.date);return d>=now&&d<=fin;}).sort((a,b)=>new Date(a.start?.dateTime||a.start?.date)-new Date(b.start?.dateTime||b.start?.date));
-}
-function renderDashStats(sh,fa) {
-  const v=sh?sh.orders.reduce((t,o)=>t+parseFloat(o.total_price||0),0):0;
-  const nb=sh?sh.orders.length:0,p=sh?sh.orders.filter(o=>o.financial_status==='paid').length:0;
-  const tf=fa.mois.reduce((t,f)=>t+(f.total||0),0);
-  return `<div><div class="dash-section-title">Vue d'ensemble — 30 derniers jours</div><div class="stats-grid">
-    <div class="stat-card" style="--card-color:#c8a96e"><div class="stat-icon">💰</div><div class="stat-label">Ventes Shopify</div><div class="stat-value">${sh?v.toFixed(0)+'$':'—'}</div><div class="stat-sub">${nb} commande${nb!==1?'s':''}</div></div>
-    <div class="stat-card" style="--card-color:#5cb87a"><div class="stat-icon">✅</div><div class="stat-label">Payées</div><div class="stat-value">${sh?p:'—'}</div><div class="stat-sub">${sh?Math.round(p/Math.max(nb,1)*100)+'%':'Non connecté'}</div></div>
-    <div class="stat-card" style="--card-color:#5b9bd5"><div class="stat-icon">🧾</div><div class="stat-label">Factures mois</div><div class="stat-value">${tf>0?tf.toFixed(0)+'$':'0$'}</div><div class="stat-sub">${fa.mois.length} créée${fa.mois.length!==1?'s':''}</div></div>
-    <div class="stat-card" style="--card-color:#9b59b6"><div class="stat-icon">📦</div><div class="stat-label">Produits</div><div class="stat-value">${sh?sh.productsCount:'—'}</div><div class="stat-sub">${sh?'En catalogue':'Non connecté'}</div></div>
-  </div></div>`;
-}
-function renderDashGraph(sh) {
-  if (!sh||!sh.orders.length) return `<div><div class="dash-section-title">Ventes 7 jours</div><div class="dash-empty">Connectez Shopify pour voir le graphique</div></div>`;
-  const jours=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);jours.push({date:d.toISOString().split('T')[0],lbl:d.toLocaleDateString('fr-CA',{weekday:'short'}),v:0});}
-  sh.orders.forEach(o=>{const j=jours.find(x=>x.date===o.created_at?.split('T')[0]);if(j)j.v+=parseFloat(o.total_price||0);});
-  const max=Math.max(...jours.map(j=>j.v),1);
-  return `<div><div class="dash-section-title">Ventes 7 jours</div><div class="bar-chart">${jours.map(j=>`<div class="bar-wrap" title="${j.lbl}: ${j.v.toFixed(0)}$"><div class="bar" style="height:${Math.max(j.v/max*100,4)}%"></div><div class="bar-lbl">${j.lbl}</div></div>`).join('')}</div></div>`;
-}
-function renderDashCommandes(sh) {
-  if (!sh||!sh.orders.length) return `<div><div class="dash-section-title">Dernières commandes</div><div class="dash-empty">Shopify non connecté</div></div>`;
-  const rows=sh.orders.slice(0,5).map(o=>{
-    const d=new Date(o.created_at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'});
-    const nom=o.billing_address?`${o.billing_address.first_name} ${o.billing_address.last_name}`:(o.email||'Anonyme');
-    const s=o.financial_status==='paid'?'<span style="color:var(--success)">Payée</span>':'<span style="color:var(--accent)">En attente</span>';
-    return `<tr><td>#${o.order_number}</td><td>${escapeHtml(nom)}</td><td>${parseFloat(o.total_price).toFixed(2)}$</td><td>${s}</td><td>${d}</td></tr>`;
-  }).join('');
-  return `<div><div class="dash-section-title">Dernières commandes</div><table class="dash-table"><thead><tr><th>#</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-function renderDashFactures(fa) {
-  if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
-  return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f) => {
-    const estPayee = f.statut === 'payee';
-    const uid = f.uid || (f.numero + '_' + f.createdAt);
-    return `<div class="fact-row">
-      <div>
-        <div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div>
-        <div style="font-size:11px;color:var(--muted)">${f.date||''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div>
-        <button onclick="toggleStatutFacture('${uid}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
-          ${estPayee?'✅':'⏳'}
-        </button>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-}
-function renderDashRDV(rdvs) {
-  const jN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],mN=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-  if (!rdvs.length) return `<div><div class="dash-section-title">RDV cette semaine</div><div class="dash-empty">${calEvents.length?'Aucun RDV cette semaine':'Aucun RDV à venir'}</div></div>`;
-  return `<div><div class="dash-section-title">RDV cette semaine</div>${rdvs.slice(0,5).map(e=>{const d=new Date(e.start?.dateTime||e.start?.date);const h=e.start?.dateTime?d.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'}):'Toute la journée';return `<div class="rdv-row"><div class="rdv-date-lbl">${jN[d.getDay()]} ${d.getDate()} ${mN[d.getMonth()]}</div><div><div style="font-size:13px;color:var(--text)">${escapeHtml(e.summary||'Sans titre')}</div><div style="font-size:11px;color:var(--muted)">🕐 ${h}</div></div></div>`;}).join('')}</div>`;
+  const all = MEM.load('factures', []);
+  const debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
+  return { mois: all.filter(f => new Date(f.createdAt || f.date) >= debut), all };
 }
 
 // =====================
