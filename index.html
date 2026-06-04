@@ -4834,8 +4834,9 @@ async function sauvegarderStripeConfig() {
 }
 
 async function genererLienStripe() {
-  const d = collecterDonneesFacture();
+  const d = getFactureData();
   if (!d) return;
+  if (!d.client) { alert('Veuillez entrer le nom du client.'); return; }
   if (!d.total || d.total <= 0) { alert('Le montant doit être supérieur à 0$'); return; }
 
   // Vérifier si le client a sa propre config Stripe
