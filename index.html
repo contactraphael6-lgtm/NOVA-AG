@@ -2531,11 +2531,35 @@
       <div class="facture-section-title" style="margin-top:8px">Factures récentes</div>
       <div id="factures-liste" style="max-height:150px;overflow-y:auto"></div>
 
-      <div style="margin-top:12px;text-align:center">
+      <div class="facture-section-title" style="margin-top:14px">🧠 Mémoire longue</div>
+      <div id="memoire-liste" style="max-height:150px;overflow-y:auto;font-size:12px;color:var(--muted2)">
+        <div style="color:var(--muted);font-style:italic">Chargement des souvenirs...</div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
         <button onclick="effacerMemoire()" style="font-size:11px;color:var(--danger);background:transparent;border:1px solid var(--danger);padding:5px 14px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">
-          🗑 Effacer toute la mémoire
+          🗑 Effacer mémoire locale
+        </button>
+        <button onclick="effacerMemoireLongue()" style="font-size:11px;color:var(--danger);background:transparent;border:1px solid var(--danger);padding:5px 14px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">
+          🗑 Effacer souvenirs IA
         </button>
       </div>
+
+      <!-- Configuration Stripe -->
+      <div class="facture-section-title" style="margin-top:16px">💳 Stripe — Paiements en ligne</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Connecte ton compte Stripe pour générer des liens de paiement directement dans tes factures. L'argent va dans <strong>ton</strong> compte Stripe.</p>
+      <div id="stripe-config-status" style="font-size:12px;margin-bottom:8px"></div>
+      <div class="compose-field">
+        <label class="compose-label">Clé publique (pk_live_... ou pk_test_...)</label>
+        <input class="compose-input" id="p-stripe-pk" placeholder="pk_live_..." style="font-size:11px" />
+      </div>
+      <div class="compose-field">
+        <label class="compose-label">Clé secrète (sk_live_... ou sk_test_...)</label>
+        <input class="compose-input" id="p-stripe-sk" type="password" placeholder="sk_live_..." style="font-size:11px" />
+      </div>
+      <button onclick="sauvegarderStripeConfig()" style="width:100%;padding:9px;border-radius:9px;border:1px solid rgba(78,200,122,0.3);background:rgba(78,200,122,0.1);color:#4ec87a;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">
+        💳 Connecter Stripe
+      </button>
 
     </div>
     <div class="facture-actions">
@@ -2654,6 +2678,7 @@
       <button class="btn-ghost" onclick="toggleFacturePanel()">Annuler</button>
       <button class="btn-primary" onclick="genererFactureExcel()" style="flex:0;padding:10px 18px;white-space:nowrap">📊 Excel</button>
       <button class="btn-primary" onclick="envoyerFactureEmail()" style="flex:0;padding:10px 18px;white-space:nowrap;background:rgba(0,120,255,0.8)">📧 Email</button>
+      <button class="btn-primary" onclick="genererLienStripe()" style="flex:0;padding:10px 18px;white-space:nowrap;background:rgba(78,200,122,0.8)">💳 Lien paiement</button>
       <button class="btn-primary" onclick="genererFacturePDF()" style="flex:1;background:var(--accent2)">🧾 PDF</button>
     </div>
   </div>
@@ -2960,15 +2985,6 @@
           <div class="compose-field">
             <label class="compose-label">Message</label>
             <textarea class="compose-input compose-textarea" id="compose-body" placeholder="Écrivez votre message..."></textarea>
-          </div>
-          <div class="compose-field">
-            <label class="compose-label">Pièces jointes</label>
-            <label id="attach-label" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;border:1px dashed var(--border2);background:var(--surface);cursor:pointer;font-size:12px;color:var(--muted2);transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(68,136,255,0.5)'" onmouseout="this.style.borderColor='var(--border2)'">
-              <span style="font-size:16px">📎</span>
-              <span id="attach-label-text">Cliquer pour ajouter des fichiers…</span>
-              <input type="file" id="compose-attachments" multiple style="display:none" onchange="afficherFichiersJoints(this)" />
-            </label>
-            <div id="attachments-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
           </div>
           <button class="btn-primary" onclick="envoyerEmailSMTP()" style="margin-top:4px">📤 Envoyer</button>
           <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:6px"></div>
@@ -3734,6 +3750,7 @@ function renderDashFactures(fa) {
   if (!fa.mois.length) return `<div><div class="dash-section-title">Factures ce mois</div><div class="dash-empty">Aucune facture ce mois</div></div>`;
   return `<div><div class="dash-section-title">Factures ce mois</div>${fa.mois.slice(0,5).map((f) => {
     const estPayee = f.statut === 'payee';
+    const uid = f.uid || (f.numero + '_' + f.createdAt);
     return `<div class="fact-row">
       <div>
         <div style="font-size:13px;color:var(--text)">${escapeHtml(f.numero||'FAC')} — ${escapeHtml(f.client||'')}</div>
@@ -3741,7 +3758,7 @@ function renderDashFactures(fa) {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="fact-amt">${f.total?f.total.toFixed(2)+' $':'—'}</div>
-        <button onclick="toggleStatutFacture('${f.numero}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
+        <button onclick="toggleStatutFacture('${uid}');actualiserDash()" style="padding:3px 8px;border-radius:6px;border:1px solid ${estPayee?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${estPayee?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${estPayee?'#4ec87a':'#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap">
           ${estPayee?'✅':'⏳'}
         </button>
       </div>
@@ -3830,11 +3847,31 @@ function chargerMemoire() {
   // Calendrier Nexus — charger les RDV au démarrage
   if (currentUser) {
     setTimeout(() => chargerRdvNexus(), 1000);
+    // Vérifier retour paiement facture
+    const params = new URLSearchParams(window.location.search);
+    const facturePayee = params.get('facture_payee');
+    if (facturePayee) {
+      setTimeout(() => {
+        const factures = MEM.load('factures', []);
+        const idx = factures.findIndex(f => f.numero === facturePayee);
+        if (idx !== -1) {
+          factures[idx].statut = 'payee';
+          factures[idx].datePaiement = new Date().toISOString();
+          MEM.save('factures', factures);
+        }
+        addNovaMessage(`🎉 **Paiement reçu !** La facture **${facturePayee}** a été payée avec succès par carte Stripe !`);
+      }, 2000);
+    }
+
     // Vérifier les factures non payées depuis 30 jours
     setTimeout(() => verifierRelancesFactures(), 3000);
     // Vérifier tâches non complétées (à 18h)
     const heure = new Date().getHours();
     if (heure >= 18) setTimeout(() => verifierTachesJour(), 5000);
+    // Charger la mémoire longue
+    setTimeout(() => chargerMemoireLongue(), 2000);
+    // Charger la config Stripe du client
+    setTimeout(() => chargerStripeConfig(), 2500);
   }
 }
 
@@ -3863,15 +3900,17 @@ function sauvegarderClient(client, entreprise, adresse, email) {
 // Sauvegarder facture dans l'historique
 function sauvegarderFacture(data) {
   const factures = MEM.load('factures', []);
-  factures.unshift({ ...data, items: data.items, createdAt: new Date().toISOString(), statut: 'non_payee' });
+  factures.unshift({ ...data, items: data.items, uid: Date.now().toString() + Math.random().toString(36).substr(2,5), createdAt: new Date().toISOString(), statut: 'non_payee' });
   if (factures.length > 200) factures.pop();
   MEM.save('factures', factures);
   window.facturesHistorique = factures;
 }
 
-function toggleStatutFacture(numero) {
+function toggleStatutFacture(identifiant) {
   const factures = MEM.load('factures', []);
-  const index = factures.findIndex(f => f.numero === numero);
+  // Chercher par uid d'abord, puis par numéro+index comme fallback
+  let index = factures.findIndex(f => f.uid === identifiant);
+  if (index === -1) index = factures.findIndex(f => f.numero === identifiant);
   if (index === -1) return;
   factures[index].statut = factures[index].statut === 'payee' ? 'non_payee' : 'payee';
   factures[index].datePaiement = factures[index].statut === 'payee' ? new Date().toISOString() : null;
@@ -3932,17 +3971,34 @@ function chargerProfilUI() {
   const factures = MEM.load('factures', []);
   const facturesHtml = factures.length ? factures.slice(0, 8).map((f) => {
     const estPayee = f.statut === 'payee';
+    const uid = f.uid || f.numero;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--text)">${f.numero} — ${escapeHtml(f.client||'')}</div>
         <div style="font-size:11px;color:var(--muted)">${f.date || ''} · ${f.total ? f.total.toFixed(2) + ' $' : ''}</div>
       </div>
-      <button onclick="toggleStatutFacture('${f.numero}')" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
+      <button onclick="toggleStatutFacture('${uid}')" style="padding:4px 10px;border-radius:8px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : 'rgba(255,100,100,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : 'rgba(255,100,100,0.1)'};color:${estPayee ? '#4ec87a' : '#ff6060'};font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">
         ${estPayee ? '✅ Payée' : '⏳ Non payée'}
       </button>
     </div>`;
   }).join('') : '<div style="font-size:12px;color:var(--muted)">Aucune facture encore créée.</div>';
-  document.getElementById('factures-liste').innerHTML = facturesHtml;
+  // Afficher mémoire longue
+  const memoireContainer = document.getElementById('memoire-liste');
+  if (memoireContainer) {
+    const souvenirs = Object.values(memoireCache);
+    if (!souvenirs.length) {
+      memoireContainer.innerHTML = '<div style="color:var(--muted);font-style:italic;padding:4px 0">Aucun souvenir encore — Nexus AI apprend au fil des conversations.</div>';
+    } else {
+      memoireContainer.innerHTML = souvenirs
+        .sort((a,b) => (b.importance||1) - (a.importance||1))
+        .slice(0, 15)
+        .map(s => `<div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div><span style="font-size:10px;color:rgba(68,136,255,0.6);text-transform:uppercase;letter-spacing:0.06em">[${s.categorie||'general'}]</span><br><span style="color:var(--text);font-size:12px">${escapeHtml(s.valeur)}</span></div>
+          <button onclick="supprimerSouvenir('${s.cle}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0">✕</button>
+        </div>`)
+        .join('');
+    }
+  }
 }
 
 function sauvegarderProfil() {
@@ -3967,10 +4023,28 @@ function remplirClient(nom, entreprise, adresse, email) {
 }
 
 function effacerMemoire() {
-  if (!confirm('Effacer toute la mémoire de Nexus AI ? Cette action est irréversible.')) return;
+  if (!confirm('Effacer toute la mémoire locale de Nexus AI ? Cette action est irréversible.')) return;
   MEM.clearAll();
   conversationHistory = [];
   location.reload();
+}
+
+async function effacerMemoireLongue() {
+  if (!confirm('Effacer tous les souvenirs IA de Nexus AI ? Elle oubliera tout ce qu\'elle a appris sur toi.')) return;
+  try {
+    await supabaseClient.from('memoire').delete().eq('user_id', currentUser.id);
+    memoireCache = {};
+    chargerProfilUI();
+    addNovaMessage('🧠 Souvenirs effacés. Je repars de zéro mais j\'apprendrai vite !');
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+async function supprimerSouvenir(cle) {
+  try {
+    await supabaseClient.from('memoire').delete().eq('user_id', currentUser.id).eq('cle', cle);
+    delete memoireCache[cle];
+    chargerProfilUI();
+  } catch(e) { console.log('Erreur suppression souvenir:', e); }
 }
 
 // --- Shopify Modal ---
@@ -4707,10 +4781,196 @@ async function callClaudeAvecImage(texte, imageBase64, imageType) {
   return reply;
 }
 
+// =====================
+// STRIPE CONFIG CLIENT
+// =====================
+let clientStripeConfig = null;
+
+async function chargerStripeConfig() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabaseClient
+      .from('stripe_config')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .single();
+    if (data) {
+      clientStripeConfig = data;
+      // Afficher statut dans le profil
+      const status = document.getElementById('stripe-config-status');
+      if (status) {
+        status.innerHTML = '<span style="color:#4ec87a">✅ Stripe connecté — les liens de paiement utilisent ton compte</span>';
+      }
+    }
+  } catch(e) { /* Pas de config encore */ }
+}
+
+async function sauvegarderStripeConfig() {
+  const pk = document.getElementById('p-stripe-pk').value.trim();
+  const sk = document.getElementById('p-stripe-sk').value.trim();
+  const status = document.getElementById('stripe-config-status');
+
+  if (!pk || !sk) { status.innerHTML = '<span style="color:#ff6060">⚠️ Entre les deux clés.</span>'; return; }
+  if (!pk.startsWith('pk_')) { status.innerHTML = '<span style="color:#ff6060">⚠️ La clé publique doit commencer par pk_</span>'; return; }
+  if (!sk.startsWith('sk_')) { status.innerHTML = '<span style="color:#ff6060">⚠️ La clé secrète doit commencer par sk_</span>'; return; }
+
+  status.innerHTML = '<span style="color:var(--muted)">⏳ Sauvegarde...</span>';
+
+  try {
+    await supabaseClient.from('stripe_config').upsert({
+      user_id: currentUser.id,
+      stripe_pk: pk,
+      stripe_sk_encrypted: sk,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+
+    clientStripeConfig = { stripe_pk: pk, stripe_sk_encrypted: sk };
+    status.innerHTML = '<span style="color:#4ec87a">✅ Stripe connecté avec succès !</span>';
+    document.getElementById('p-stripe-sk').value = '';
+    addNovaMessage('💳 **Stripe connecté !** Je vais maintenant générer les liens de paiement avec ton propre compte Stripe.');
+  } catch(e) {
+    status.innerHTML = `<span style="color:#ff6060">❌ Erreur: ${e.message}</span>`;
+  }
+}
+
+async function genererLienStripe() {
+  const d = collecterDonneesFacture();
+  if (!d) return;
+  if (!d.total || d.total <= 0) { alert('Le montant doit être supérieur à 0$'); return; }
+
+  // Vérifier si le client a sa propre config Stripe
+  if (!clientStripeConfig) {
+    await chargerStripeConfig();
+  }
+
+  const stripeKey = clientStripeConfig?.stripe_sk_encrypted;
+  if (!stripeKey) {
+    // Proposer de configurer Stripe
+    const configurer = confirm('Tu n\'as pas encore connecté ton compte Stripe.\n\nVeux-tu le configurer maintenant dans Profil & Mémoire ?');
+    if (configurer) { toggleProfilPanel(); }
+    return;
+  }
+
+  const btn = document.querySelector('[onclick="genererLienStripe()"]');
+  if (btn) { btn.textContent = '⏳ Génération...'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(STRIPE_WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_payment_link',
+        stripe_sk: stripeKey,
+        montant: d.total,
+        description: `Facture ${d.numero}`,
+        client_email: d.clientEmail || '',
+        client_nom: d.client || '',
+        facture_numero: d.numero
+      })
+    });
+    const data = await res.json();
+
+    if (data.url) {
+      sauvegarderFacture({ ...d, lienStripe: data.url });
+      navigator.clipboard.writeText(data.url).catch(() => {});
+      addNovaMessage(`💳 **Lien de paiement créé !**\n\n**${d.numero}** — ${d.client} — **${d.total.toFixed(2)} $CA**\n\n🔗 ${data.url}\n\n*Lien copié dans le presse-papier ! Envoie-le par email, SMS ou WhatsApp.*`);
+      window.open(data.url, '_blank');
+      toggleFacturePanel();
+    } else {
+      throw new Error(data.error || 'Erreur création lien');
+    }
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '💳 Lien paiement'; btn.disabled = false; }
+  }
+}
+
+// =====================
+// MÉMOIRE LONGUE SUPABASE
+// =====================
+let memoireCache = {};
+
+async function chargerMemoireLongue() {
+  if (!currentUser) return {};
+  try {
+    const { data } = await supabaseClient
+      .from('memoire')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('importance', { ascending: false })
+      .limit(50);
+    memoireCache = {};
+    (data || []).forEach(m => { memoireCache[m.cle] = m; });
+    return memoireCache;
+  } catch(e) { return {}; }
+}
+
+async function sauvegarderSouvenir(cle, valeur, categorie = 'general', importance = 1) {
+  if (!currentUser) return;
+  try {
+    await supabaseClient.from('memoire').upsert({
+      user_id: currentUser.id,
+      cle, valeur, categorie, importance,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,cle' });
+    memoireCache[cle] = { cle, valeur, categorie, importance };
+  } catch(e) { console.log('Erreur sauvegarde mémoire:', e); }
+}
+
+async function extraireSouvenirs(message, reponse) {
+  if (!currentUser) return;
+  // Extraire automatiquement les infos importantes avec Claude
+  try {
+    const res = await fetch(CLAUDE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 500,
+        system: `Tu es un extracteur de mémoire. Analyse la conversation et extrait les informations importantes à retenir sur l'utilisateur. 
+Réponds UNIQUEMENT en JSON valide avec ce format :
+{"souvenirs": [{"cle": "cle_unique", "valeur": "info importante", "categorie": "preference|client|business|habitude|projet", "importance": 1-3}]}
+Si rien d'important, réponds: {"souvenirs": []}
+Maximum 3 souvenirs par appel. Sois concis.`,
+        messages: [{
+          role: 'user',
+          content: `Message: "${message}"\nRéponse: "${reponse.substring(0, 200)}"`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '{"souvenirs":[]}';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    for (const s of (parsed.souvenirs || [])) {
+      if (s.cle && s.valeur) {
+        await sauvegarderSouvenir(s.cle, s.valeur, s.categorie, s.importance);
+      }
+    }
+  } catch(e) { /* Silencieux */ }
+}
+
+function formatMemoirePourPrompt() {
+  const souvenirs = Object.values(memoireCache);
+  if (!souvenirs.length) return 'Aucun souvenir encore.';
+  return souvenirs
+    .sort((a,b) => (b.importance||1) - (a.importance||1))
+    .slice(0, 20)
+    .map(s => `- [${s.categorie||'general'}] ${s.cle}: ${s.valeur}`)
+    .join('\n');
+}
+
 async function callClaude(userMessage) {
   const prefs = MEM.load('prefs', {});
   const ent = MEM.load('entreprise', {});
   const clients = MEM.load('clients', []);
+
+  // Charger la mémoire longue
+  if (Object.keys(memoireCache).length === 0 && currentUser) {
+    await chargerMemoireLongue();
+  }
+  const memoireStr = formatMemoirePourPrompt();
 
   const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle et chaleureuse qui parle en français. Tu aides un entrepreneur avec son quotidien : gestion Shopify, emails Gmail, création de fichiers, facturation, réponses aux questions, conseils business.
 
@@ -4729,6 +4989,9 @@ ENTREPRISE (mémorisée) :
 CLIENTS RÉCURRENTS (${clients.length}) :
 ${clients.slice(0,5).map(c => `- ${c.nom}${c.entreprise ? ' ('+c.entreprise+')' : ''}`).join('\n') || 'Aucun encore'}
 
+🧠 MÉMOIRE LONGUE (souvenirs des conversations passées) :
+${memoireStr}
+
 CONNEXIONS ACTIVES :
 - Shopify : ${shopifyConfig ? 'connecté (' + shopifyConfig.url + ')' : 'non connecté'}
 - Gmail : ${gmailToken ? 'connecté' : 'non connecté'}
@@ -4736,7 +4999,7 @@ CONNEXIONS ACTIVES :
 
 INSTRUCTIONS :
 - Tu connais l'utilisateur par son nom (${prefs.nom || 'patron'}) et utilise-le naturellement
-- Tu te souviens des conversations passées grâce à l'historique fourni
+- Tu utilises ta mémoire longue pour personnaliser chaque réponse — rappelle des infos passées quand c'est pertinent
 - Tu parles toujours en français, de façon professionnelle mais chaleureuse et personnalisée
 - Tu es proactive et suggères des actions utiles basées sur le contexte
 - Si on te demande des données Shopify, indique [SHOPIFY_DATA] dans ta réponse
@@ -4771,6 +5034,10 @@ Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
   sauvegarderHistorique();
   // Sauvegarder dans Supabase aussi
   sauvegarderConversationSupabase();
+  // Extraire les souvenirs importants en arrière-plan (1 message sur 3)
+  if (conversationHistory.length % 3 === 0) {
+    extraireSouvenirs(userMessage, reply);
+  }
   return reply;
 }
 
@@ -5832,44 +6099,6 @@ function deconnecterSMTP() {
   document.getElementById('smtp-password').value = '';
 }
 
-// Afficher l'aperçu des pièces jointes sélectionnées
-function afficherFichiersJoints(input) {
-  const preview = document.getElementById('attachments-preview');
-  const label = document.getElementById('attach-label-text');
-  preview.innerHTML = '';
-  const files = Array.from(input.files);
-  if (!files.length) { label.textContent = 'Cliquer pour ajouter des fichiers…'; return; }
-  label.textContent = 'Ajouter d\'autres fichiers…';
-  files.forEach((f, i) => {
-    const size = f.size < 1024 * 1024
-      ? (f.size / 1024).toFixed(0) + ' Ko'
-      : (f.size / 1024 / 1024).toFixed(1) + ' Mo';
-    const chip = document.createElement('div');
-    chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);font-size:11px;color:var(--muted2)';
-    chip.innerHTML = `<span>📎</span><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.name)}</span><span style="color:var(--muted);flex-shrink:0">${size}</span><span onclick="retirerFichierJoint(${i})" style="cursor:pointer;color:var(--muted);margin-left:2px;font-size:13px" title="Retirer">×</span>`;
-    preview.appendChild(chip);
-  });
-}
-
-// Retirer un fichier de la liste (recrée l'input pour contourner la lecture seule)
-function retirerFichierJoint(index) {
-  const input = document.getElementById('compose-attachments');
-  const dt = new DataTransfer();
-  Array.from(input.files).forEach((f, i) => { if (i !== index) dt.items.add(f); });
-  input.files = dt.files;
-  afficherFichiersJoints(input);
-}
-
-// Lire un fichier en base64
-function lireFileBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 async function envoyerEmailSMTP() {
   const config = MEM.load('smtp_config');
   if (!config) { alert('Configurez votre email dans le menu.'); return; }
@@ -5878,51 +6107,30 @@ async function envoyerEmailSMTP() {
   const subject = document.getElementById('compose-subject').value.trim();
   const body = document.getElementById('compose-body').value.trim();
   const status = document.getElementById('send-status');
-  const fileInput = document.getElementById('compose-attachments');
-  const files = fileInput ? Array.from(fileInput.files) : [];
 
   if (!to || !subject || !body) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
-
-  // Vérifier la taille totale (limite ~8 Mo encodé base64)
-  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
-  if (totalSize > 6 * 1024 * 1024) {
-    status.textContent = '⚠️ Fichiers trop lourds (max 6 Mo au total).'; return;
-  }
-
-  status.textContent = files.length ? '⏳ Chargement des pièces jointes…' : '⏳ Envoi en cours...';
+  status.textContent = '⏳ Envoi en cours...';
 
   try {
-    // Encoder les fichiers en base64
-    const attachments = await Promise.all(files.map(async f => ({
-      filename: f.name,
-      content: await lireFileBase64(f),
-      type: f.type || 'application/octet-stream'
-    })));
-
-    status.textContent = '⏳ Envoi en cours...';
-
     const res = await fetch(SMTP_WORKER, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from_email: config.email,
         from_name: config.nom,
-        to, subject, body,
-        ...(attachments.length ? { attachments } : {})
+        to, subject, body
       })
     });
     const data = await res.json();
     if (data.success) {
-      const nbJoints = attachments.length;
       status.textContent = '✅ Email envoyé !';
-      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString(), attachments: attachments.length });
+      // Sauvegarder dans l'historique des envois
+      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString() });
       MEM.save('emails_envoyes', emailsEnvoyes.slice(0, 50));
       document.getElementById('compose-to').value = '';
       document.getElementById('compose-subject').value = '';
       document.getElementById('compose-body').value = '';
-      if (fileInput) { fileInput.value = ''; afficherFichiersJoints(fileInput); }
-      const jointsTxt = nbJoints ? ` avec **${nbJoints} pièce${nbJoints > 1 ? 's' : ''} jointe${nbJoints > 1 ? 's' : ''}**` : '';
-      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**${jointsTxt}`);
+      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**`);
       setTimeout(() => status.textContent = '', 3000);
     } else {
       status.textContent = '❌ ' + (data.error || 'Erreur envoi');
@@ -6098,7 +6306,82 @@ async function onConnected() {
 
   // Montrer onboarding si première visite
   const dejavu = MEM.load('onboarding_done', false);
-  if (!dejavu) setTimeout(() => demarrerOnboarding(), 800);
+  if (!dejavu) {
+    setTimeout(() => demarrerOnboarding(), 800);
+  } else {
+    // Message de bienvenue personnalisé
+    setTimeout(() => afficherMessageBienvenue(), 1000);
+  }
+}
+
+async function afficherMessageBienvenue() {
+  const prefs = MEM.load('prefs', {});
+  const nom = prefs.nom ? prefs.nom.split(' ')[0] : null;
+  const maintenant = new Date();
+  const heure = maintenant.getHours();
+  const aujourdhui = maintenant.toISOString().split('T')[0];
+
+  // Salutation selon l'heure
+  let salut = 'Bonjour';
+  if (heure >= 12 && heure < 18) salut = 'Bon après-midi';
+  else if (heure >= 18) salut = 'Bonsoir';
+
+  const prenomStr = nom ? ` **${nom}**` : '';
+
+  // Construire le résumé
+  const parties = [];
+
+  // RDV du jour
+  const rdvAujourdhui = calEvents.filter(e => e.date === aujourdhui);
+  if (rdvAujourdhui.length > 0) {
+    const rdvStr = rdvAujourdhui.map(r => `**${r.titre}**${r.heure ? ' à ' + r.heure : ''}`).join(', ');
+    parties.push(`📅 ${rdvAujourdhui.length} RDV aujourd'hui — ${rdvStr}`);
+  }
+
+  // Tâches du jour
+  const taches = MEM.load('taches', []);
+  const tachesAujourdhui = taches.filter(t => t.date === aujourdhui && !t.completee);
+  if (tachesAujourdhui.length > 0) {
+    parties.push(`✅ **${tachesAujourdhui.length} tâche${tachesAujourdhui.length > 1 ? 's' : ''}** à compléter aujourd'hui`);
+  }
+
+  // Factures non payées
+  const factures = MEM.load('factures', []);
+  const facturesNonPayees = factures.filter(f => f.statut !== 'payee');
+  if (facturesNonPayees.length > 0) {
+    const total = facturesNonPayees.reduce((sum, f) => sum + (f.total || 0), 0);
+    parties.push(`🧾 **${facturesNonPayees.length} facture${facturesNonPayees.length > 1 ? 's' : ''}** non payée${facturesNonPayees.length > 1 ? 's' : ''} — **${total.toFixed(2)} $** en attente`);
+  }
+
+  // Construire le message
+  let message = `${salut}${prenomStr} ! 👋`;
+
+  if (parties.length > 0) {
+    message += `\n\nVoici ton résumé du **${maintenant.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' })}** :\n\n${parties.map(p => `• ${p}`).join('\n')}`;
+  } else {
+    message += `\n\nTu n'as rien de prévu aujourd'hui — c'est une belle journée pour avancer sur tes projets ! 💪`;
+  }
+
+  message += `\n\n*Comment puis-je t'aider aujourd'hui ?*`;
+
+  // Remplacer le message de bienvenue générique
+  const msgs = document.getElementById('messages');
+  if (msgs) {
+    const premierMsg = msgs.querySelector('.msg.nova');
+    if (premierMsg) {
+      const bubble = premierMsg.querySelector('.msg-bubble');
+      if (bubble) {
+        bubble.innerHTML = message
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\n/g, '<br>');
+        return;
+      }
+    }
+  }
+
+  // Si pas de message existant, en créer un
+  addNovaMessage(message);
 }
 
 // =====================
@@ -6329,6 +6612,15 @@ let stripeCustomerId = null;
 
 async function verifierAbonnement() {
   if (!currentUser?.email) return;
+
+  // Afficher "Vérification..." pendant qu'on attend Stripe
+  const badge = document.getElementById('plan-badge');
+  if (badge) {
+    badge.textContent = '⏳ Vérification...';
+    badge.style.color = 'var(--muted)';
+    badge.style.borderColor = 'rgba(100,100,100,0.2)';
+  }
+
   try {
     // 1. Vérifier Stripe d'abord
     const res = await fetch(STRIPE_WORKER, {
@@ -6371,20 +6663,21 @@ async function verifierAbonnement() {
     if (upgradeBtn) upgradeBtn.style.display = abonnementActif ? 'none' : 'flex';
     if (portalBtn) portalBtn.style.display = abonnementActif ? 'flex' : 'none';
 
-    // Si pas d'abonnement actif → montrer la page de paiement après 4 secondes
+    // Si pas d'abonnement actif → montrer la page de paiement
     if (!abonnementActif) {
       const params = new URLSearchParams(window.location.search);
       if (params.get('payment') === 'success') {
         addNovaMessage('🎉 **Paiement réussi !** Bienvenue dans Nexus AI Pro. Toutes les fonctionnalités sont maintenant disponibles !');
         abonnementActif = true;
+        // Mettre à jour le badge
+        if (badge) {
+          badge.textContent = '⚡ Pro';
+          badge.style.color = '#4ec87a';
+          badge.style.borderColor = 'rgba(78,200,122,0.3)';
+        }
       } else {
-        // Attendre 4 secondes pour être sûr que Stripe a répondu
-        setTimeout(async () => {
-          // Revérifier une dernière fois avant d'afficher le paywall
-          if (!abonnementActif) {
-            afficherPagePaiement();
-          }
-        }, 4000);
+        // Stripe a répondu — maintenant on peut afficher le paywall
+        afficherPagePaiement();
       }
     }
   } catch(e) {
@@ -6421,10 +6714,6 @@ async function ouvrirPortailClient() {
     const data = await res.json();
     if (data.url) window.open(data.url, '_blank');
   } catch(e) { alert('Erreur : ' + e.message); }
-}
-
-function afficherPagePaiement() {
-  document.getElementById('paywall').style.display = 'flex';
 }
 
 function fermerPaywall() {
