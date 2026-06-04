@@ -934,14 +934,36 @@
     min-width: 0;
   }
 
+  /* Zone tableau de bord en haut */
+  .main-dashboard {
+    height: 45%;
+    min-height: 200px;
+    max-height: 420px;
+    border-bottom: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .main-dashboard::-webkit-scrollbar { width: 4px; }
+  .main-dashboard::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Zone chat en bas */
+  .main-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
   /* Messages */
   .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 16px 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     scroll-behavior: smooth;
   }
 
@@ -2926,71 +2948,83 @@
       <button class="icon-btn" onclick="toggleRecherche()" style="width:32px;height:32px;font-size:14px">✕</button>
     </div>
 
-    <div class="messages" id="messages">
+    <!-- TABLEAU DE BORD EN HAUT (50%) -->
+    <div class="main-dashboard" id="main-dashboard-zone">
+      <div id="mini-dashboard" style="height:100%">
 
-      <!-- Mini Dashboard en haut du chat -->
-      <div id="mini-dashboard" style="margin:12px 8px 8px;background:var(--surface);border:1px solid rgba(68,136,255,0.15);border-radius:16px;overflow:hidden;display:none">
-
-        <!-- Header mini dash -->
-        <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+        <!-- Header -->
+        <div style="padding:10px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:var(--surface)">
           <div id="mini-dash-greeting" style="font-size:15px;font-weight:500;color:var(--text)">Bonjour !</div>
-          <div style="display:flex;gap:6px">
-            <button onclick="ouvrirDash()" style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:'DM Sans',sans-serif">Tout voir</button>
-            <button onclick="document.getElementById('mini-dashboard').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✕</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div id="mini-dash-date" style="font-size:11px;color:var(--muted)"></div>
+            <button onclick="actualiserMiniDash()" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif">🔄</button>
+            <button onclick="ouvrirDash()" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:'DM Sans',sans-serif">Détails →</button>
           </div>
         </div>
 
         <!-- Bannière IA -->
-        <div style="padding:10px 16px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--border);background:rgba(68,136,255,0.03)">
+        <div style="padding:8px 16px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--border);background:rgba(68,136,255,0.03)">
           <div style="font-size:16px;flex-shrink:0">🤖</div>
-          <div id="mini-dash-ai" style="font-size:13px;color:var(--text);line-height:1.6">Chargement...</div>
+          <div id="mini-dash-ai" style="font-size:13px;color:var(--text);line-height:1.6">Chargement du résumé...</div>
         </div>
 
-        <!-- Métriques mini -->
-        <div id="mini-dash-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border)"></div>
+        <!-- Métriques -->
+        <div id="mini-dash-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)"></div>
 
-        <!-- Actions rapides mini -->
-        <div style="padding:10px 12px;display:flex;gap:6px;flex-wrap:wrap">
+        <!-- Actions rapides -->
+        <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
           <button onclick="toggleFacturePanel()" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">🧾 Facture</button>
           <button onclick="ouvrirCRM()" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">👥 Clients</button>
           <button onclick="toggleCalPanel()" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📅 Calendrier</button>
           <button onclick="ouvrirTaches()" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Tâches</button>
+          <button onclick="ouvrirDash()" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(68,136,255,0.3);background:rgba(68,136,255,0.06);color:var(--accent-blue);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📊 Tableau complet</button>
         </div>
-      </div>
 
-      <!-- Welcome message -->
-      <div class="msg nova">
-        <div class="msg-avatar">N</div>
-        <div>
-          <div class="msg-bubble">
-            Bonjour ! Je suis <strong>Nexus AI</strong>, votre secrétaire IA personnelle. Je suis ici pour vous faciliter la vie au quotidien.<br><br>
-            Je peux vous aider à :<br>
-            • 📅 Gérer votre <strong>Calendrier</strong> — RDV, rappels, semaine<br>
-            • 🧾 Créer des <strong>factures avec TPS/TVQ</strong> québécoise<br>
-            • 📦 Consulter vos commandes et ventes <strong>Shopify</strong><br>
-            • 📧 Lire et envoyer des <strong>emails</strong><br>
-            • 📊 Créer des fichiers <strong>Excel, Word et PowerPoint</strong><br>
-            • 💡 Répondre à vos questions et donner des conseils<br><br>
-            Comment puis-je vous aider aujourd'hui ?
+        <!-- RDV + Factures côte à côte -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;height:calc(100% - 170px);overflow:hidden">
+          <div style="padding:10px 14px;overflow-y:auto;border-right:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">📅 RDV à venir</div>
+            <div id="mini-dash-rdv"></div>
           </div>
-          <div class="msg-time">Maintenant</div>
+          <div style="padding:10px 14px;overflow-y:auto">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">🧾 Factures récentes</div>
+            <div id="mini-dash-factures"></div>
+          </div>
         </div>
+
       </div>
     </div>
 
-    <div class="input-area">
-      <div id="photo-preview" style="display:none;padding:6px 0 4px;position:relative">
-        <img id="photo-preview-img" style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border2)" />
-        <button onclick="annulerPhoto()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px">✕</button>
+    <!-- CHAT EN BAS (50%) -->
+    <div class="main-chat">
+      <div class="messages" id="messages">
+        <!-- Welcome message -->
+        <div class="msg nova">
+          <div class="msg-avatar">N</div>
+          <div>
+            <div class="msg-bubble">
+              Bonjour ! Je suis <strong>Nexus AI</strong>, votre secrétaire IA personnelle. Je suis ici pour vous faciliter la vie au quotidien.<br><br>
+              Comment puis-je vous aider aujourd'hui ?
+            </div>
+            <div class="msg-time">Maintenant</div>
+          </div>
+        </div>
       </div>
-      <div class="input-row">
-        <button onclick="document.getElementById('photo-input').click()" title="Envoyer une photo" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">📷</button>
-        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="chargerPhoto(this)" />
-        <textarea id="user-input" placeholder="Écrivez à Nexus AI..." rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+
+      <div class="input-area">
+        <div id="photo-preview" style="display:none;padding:6px 0 4px;position:relative">
+          <img id="photo-preview-img" style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border2)" />
+          <button onclick="annulerPhoto()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px">✕</button>
+        </div>
+        <div class="input-row">
+          <button onclick="document.getElementById('photo-input').click()" title="Envoyer une photo" style="width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">📷</button>
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="chargerPhoto(this)" />
+          <textarea id="user-input" placeholder="Écrivez à Nexus AI..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="input-hint">Appuyez sur Entrée pour envoyer · Maj+Entrée pour un saut de ligne</div>
       </div>
-      <div class="input-hint">Appuyez sur Entrée pour envoyer · Maj+Entrée pour un saut de ligne</div>
     </div>
   </main>
 
@@ -6551,22 +6585,19 @@ async function onConnected() {
 }
 
 async function afficherMiniDashboard() {
-  const dash = document.getElementById('mini-dashboard');
-  if (!dash) return;
-  dash.style.display = 'block';
-
-  // Greeting
-  const prefs = MEM.load('prefs', {});
   const maintenant = new Date();
+  const prefs = MEM.load('prefs', {});
   const heure = maintenant.getHours();
   const prenom = prefs.nom ? prefs.nom.split(' ')[0] : '';
   let salut = 'Bonjour';
   if (heure >= 12 && heure < 18) salut = 'Bon après-midi';
   else if (heure >= 18) salut = 'Bonsoir';
-  const greetEl = document.getElementById('mini-dash-greeting');
-  if (greetEl) greetEl.textContent = `${salut}${prenom ? ' ' + prenom : ''} !`;
 
-  // Métriques
+  const greetEl = document.getElementById('mini-dash-greeting');
+  const dateEl = document.getElementById('mini-dash-date');
+  if (greetEl) greetEl.textContent = `${salut}${prenom ? ' ' + prenom : ''} !`;
+  if (dateEl) dateEl.textContent = maintenant.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' });
+
   const factures = MEM.load('factures', []);
   const debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
   const facturesMois = factures.filter(f => new Date(f.createdAt || f.date) >= debut);
@@ -6576,38 +6607,58 @@ async function afficherMiniDashboard() {
   const aujourdhui = maintenant.toISOString().split('T')[0];
   const tachesAuj = taches.filter(t => t.date === aujourdhui && !t.completee).length;
   const rdvsAuj = (calEvents || []).filter(e => e.date === aujourdhui).length;
-
-  const metricsEl = document.getElementById('mini-dash-metrics');
-  if (metricsEl) {
-    metricsEl.innerHTML = [
-      { icon: '💰', val: revFactures.toFixed(0) + '$', label: 'Revenus' },
-      { icon: '🧾', val: nonPayees.toString(), label: 'Non payées', alert: nonPayees > 0 },
-      { icon: '📅', val: rdvsAuj.toString(), label: "RDV aujourd'hui" },
-      { icon: '✅', val: tachesAuj.toString(), label: 'Tâches', alert: tachesAuj > 0 },
-    ].map(m => `
-      <div style="padding:10px 12px;border-right:1px solid var(--border);text-align:center">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${m.label}</div>
-        <div style="font-size:18px;font-weight:500;color:${m.alert ? '#ff9060' : 'var(--text)'}">${m.icon} ${m.val}</div>
-      </div>`).join('');
-  }
-
-  // Message IA
-  const parties = [];
   const enRetard = factures.filter(f => {
     if (f.statut === 'payee') return false;
     return Math.floor((maintenant - new Date(f.createdAt || f.date)) / (1000 * 60 * 60 * 24)) >= 30;
   });
-  if (enRetard.length > 0) parties.push(`⚠️ <strong>${enRetard.length} facture${enRetard.length > 1 ? 's' : ''} en retard</strong>`);
-  if (tachesAuj > 0) parties.push(`✅ <strong>${tachesAuj} tâche${tachesAuj > 1 ? 's' : ''}</strong> à faire aujourd'hui`);
+
+  const metricsEl = document.getElementById('mini-dash-metrics');
+  if (metricsEl) {
+    metricsEl.innerHTML = [
+      { icon: '💰', val: revFactures.toFixed(0) + '$', label: 'Revenus mois' },
+      { icon: '🧾', val: nonPayees.toString(), label: 'Non payées', alert: nonPayees > 0 },
+      { icon: '📅', val: rdvsAuj.toString(), label: "RDV aujourd'hui" },
+      { icon: '✅', val: tachesAuj.toString(), label: 'Tâches restantes', alert: tachesAuj > 0 },
+    ].map((m, i) => `
+      <div style="padding:10px 12px;${i < 3 ? 'border-right:1px solid var(--border);' : ''}text-align:center">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${m.label}</div>
+        <div style="font-size:20px;font-weight:500;color:${m.alert ? '#ff9060' : 'var(--text)'}">${m.icon} ${m.val}</div>
+      </div>`).join('');
+  }
+
+  const parties = [];
+  if (enRetard.length > 0) parties.push(`⚠️ <strong>${enRetard.length} facture${enRetard.length > 1 ? 's' : ''} en retard</strong> — <button onclick="sendMessageFromDash('Envoie les relances pour les factures en retard')" style="background:none;border:none;color:rgba(68,136,255,0.8);cursor:pointer;font-size:12px;text-decoration:underline;padding:0">Envoyer les relances →</button>`);
+  if (tachesAuj > 0) parties.push(`✅ <strong>${tachesAuj} tâche${tachesAuj > 1 ? 's' : ''}</strong> à compléter`);
   if (rdvsAuj > 0) parties.push(`📅 <strong>${rdvsAuj} RDV</strong> aujourd'hui`);
 
   const aiEl = document.getElementById('mini-dash-ai');
-  if (aiEl) {
-    aiEl.innerHTML = parties.length > 0
-      ? parties.join(' · ')
-      : 'Tout est en ordre — bonne journée ! 🚀';
+  if (aiEl) aiEl.innerHTML = parties.length > 0 ? parties.join(' &nbsp;·&nbsp; ') : `Tout est en ordre — bonne journée${prenom ? ' ' + prenom : ''} ! 🚀`;
+
+  const rdvEl = document.getElementById('mini-dash-rdv');
+  if (rdvEl) {
+    const rdvs = (calEvents || []).filter(e => new Date(e.date + 'T12:00:00') >= new Date()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    rdvEl.innerHTML = rdvs.length ? rdvs.map(rdv => {
+      const d = new Date(rdv.date + 'T12:00:00');
+      const joursN = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+      const label = rdv.date === aujourdhui ? "Auj." : joursN[d.getDay()] + ' ' + d.getDate();
+      return `<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:3px;height:28px;border-radius:2px;background:${rdv.couleur || '#4488ff'};flex-shrink:0"></div><div><div style="font-size:12px;color:var(--text)">${escapeHtml(rdv.titre)}</div><div style="font-size:11px;color:var(--muted)">${label}${rdv.heure ? ' · ' + rdv.heure : ''}</div></div></div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:4px 0">Aucun RDV à venir</div>';
+  }
+
+  const factEl = document.getElementById('mini-dash-factures');
+  if (factEl) {
+    factEl.innerHTML = factures.slice(0, 4).map(f => {
+      const estPayee = f.statut === 'payee';
+      const uid = f.uid || f.numero;
+      const jours = Math.floor((maintenant - new Date(f.createdAt || f.date)) / (1000 * 60 * 60 * 24));
+      const enRet = !estPayee && jours >= 30;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:12px;color:var(--text)">${escapeHtml(f.client || f.numero)}</div><div style="font-size:11px;color:var(--muted)">${f.total ? f.total.toFixed(0) + '$' : ''}</div></div><button onclick="toggleStatutFacture('${uid}');afficherMiniDashboard()" style="padding:2px 7px;border-radius:6px;border:1px solid ${estPayee ? 'rgba(78,200,122,0.3)' : enRet ? 'rgba(255,100,100,0.4)' : 'rgba(200,169,110,0.3)'};background:${estPayee ? 'rgba(78,200,122,0.1)' : enRet ? 'rgba(255,100,100,0.1)' : 'rgba(200,169,110,0.1)'};color:${estPayee ? '#4ec87a' : enRet ? '#ff6060' : '#c8a96e'};font-size:11px;cursor:pointer">${estPayee ? '✅' : enRet ? '⚠️' : '⏳'}</button></div>`;
+    }).join('') || '<div style="font-size:12px;color:var(--muted);padding:4px 0">Aucune facture</div>';
   }
 }
+
+function actualiserMiniDash() { afficherMiniDashboard(); }
+
 
 async function afficherMessageBienvenue() {
   // Charger le mini dashboard
