@@ -533,13 +533,6 @@
   }
   .quick-action:hover { background: rgba(68,136,255,0.05); color: var(--text); }
   .quick-action:hover::before { opacity: 1; }
-  .quick-action .qa-icon {
-    width: 28px; height: 28px; border-radius: 7px;
-    background: rgba(68,136,255,0.08);
-    border: 1px solid rgba(68,136,255,0.12);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; flex-shrink: 0;
-  }
 
   .sidebar-divider { height: 1px; background: var(--border); margin: 6px 14px; }
 
@@ -906,17 +899,6 @@
     font-family: 'DM Sans', sans-serif;
   }
   .quick-action:hover { background: var(--surface); color: var(--text); }
-  .quick-action .qa-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
 
   .sidebar-divider {
     height: 1px;
@@ -2839,90 +2821,90 @@
     <div class="sidebar-section">Actions rapides</div>
 
     <button class="quick-action" onclick="ouvrirDash(); toggleSidebar()">
-      <span class="qa-icon">📊</span> Tableau de bord
+      Tableau de bord
     </button>
     <button class="quick-action" onclick="ouvrirHistorique(); toggleSidebar()">
-      <span class="qa-icon">💬</span> Historique conversations
+      Historique conversations
     </button>
     <button class="quick-action" onclick="toggleCalPanel(); showCalTab('nouveau')">
-      <span class="qa-icon">📅</span> Nouveau RDV
+      Nouveau RDV
     </button>
     <button class="quick-action" onclick="toggleCalPanel(); showCalTab('agenda')">
-      <span class="qa-icon">🗓</span> Mon agenda
+      Mon agenda
     </button>
     <button class="quick-action" onclick="toggleFacturePanel()">
-      <span class="qa-icon">🧾</span> Nouvelle facture
+      Nouvelle facture
     </button>
     <button class="quick-action" onclick="quickSend('Montre-moi mes dernières commandes Shopify')">
-      <span class="qa-icon">📦</span> Commandes récentes
+      Commandes récentes
     </button>
     <button class="quick-action" onclick="ouvrirGestionnaire()">
-      <span class="qa-icon">📁</span> Mes fichiers Excel
+      Mes fichiers Excel
     </button>
     <button class="quick-action" onclick="ouvrirEditeurExcel({filename:'nouveau-fichier.xlsx',sheets:[{name:'Feuille1',headers:['Colonne A','Colonne B','Colonne C','Colonne D'],rows:Array(20).fill(null).map(()=>['','','',''])}]})">
-      <span class="qa-icon">📊</span> Éditeur Excel
+      Éditeur Excel
     </button>
     <button class="quick-action" onclick="quickSend('Crée-moi un fichier Excel avec un tableau de suivi des ventes')">
-      <span class="qa-icon">📊</span> Tableau Excel
+      Tableau Excel
     </button>
     <button class="quick-action" onclick="quickSend('Rédige un rapport Word de mes ventes du mois')">
-      <span class="qa-icon">📝</span> Rapport Word
+      Rapport Word
     </button>
     <button class="quick-action" onclick="quickSend('Crée une présentation PowerPoint pour mon entreprise')">
-      <span class="qa-icon">📋</span> Présentation
+      Présentation
     </button>
 
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Connexions</div>
 
     <button class="quick-action" id="shopify-btn" onclick="openShopifyModal(); toggleSidebar()">
-      <span class="qa-icon">🛍</span> <span id="shopify-btn-text">Connecter Shopify</span>
+      <span id="shopify-btn-text">Connecter Shopify</span>
     </button>
     <button class="quick-action" id="gmail-toggle-btn" onclick="toggleGmailPanel(); toggleSidebar()">
-      <span class="qa-icon">📧</span> <span id="gmail-btn-text">Gmail</span>
+      <span id="gmail-btn-text">Gmail</span>
     </button>
     <button class="quick-action" id="cal-toggle-btn" onclick="toggleCalPanel(); toggleSidebar()">
-      <span class="qa-icon">📅</span> <span id="cal-btn-text">Calendrier</span>
+      <span id="cal-btn-text">Calendrier</span>
     </button>
     <button class="quick-action" onclick="toggleProfilPanel(); toggleSidebar()">
-      <span class="qa-icon">🧠</span> Profil & Mémoire
+      Profil & Mémoire
     </button>
 
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Abonnement</div>
 
     <button class="quick-action" onclick="ouvrirTaxes(); toggleSidebar()">
-      <span class="qa-icon">🏛</span> TPS/TVQ
+      TPS/TVQ
     </button>
 
     <button class="quick-action" onclick="afficherPagePaiement(); toggleSidebar()" id="upgrade-btn">
-      <span class="qa-icon">⚡</span> Passer à Pro
+      Passer à Pro
     </button>
     <button class="quick-action" onclick="ouvrirPortailClient(); toggleSidebar()" id="portal-btn" style="display:none">
-      <span class="qa-icon">💳</span> Gérer mon abonnement
+      Gérer mon abonnement
     </button>
 
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Aide</div>
 
     <button class="quick-action" onclick="ouvrirTaches(); toggleSidebar()">
-      <span class="qa-icon">✅</span> Mes tâches
+      Mes tâches
     </button>
     <button class="quick-action" onclick="ouvrirCRM(); toggleSidebar()">
-      <span class="qa-icon">👥</span> Mes clients
+      Mes clients
     </button>
 
     <button class="quick-action" onclick="quickSend('Quelles sont toutes les choses que tu peux faire pour moi ?')">
-      <span class="qa-icon">✨</span> Mes capacités
+      Mes capacités
     </button>
     <button class="quick-action" onclick="quickSend('Donne-moi des conseils pour améliorer mes ventes en ligne')">
-      <span class="qa-icon">💡</span> Conseils business
+      Conseils business
     </button>
     <button class="quick-action" onclick="toggleGmailPanel(); showTab('compose')">
-      <span class="qa-icon">📧</span> Rédiger un email
+      Rédiger un email
     </button>
     <button class="quick-action" onclick="toggleGmailPanel(); showTab('inbox')">
-      <span class="qa-icon">📬</span> Voir mes emails
+      Voir mes emails
     </button>  </aside>
 
   <!-- Calendar Panel -->
