@@ -4913,14 +4913,32 @@ function sauvegarderFacture(data) {
 
 function toggleStatutFacture(identifiant) {
   const factures = MEM.load('factures', []);
-  // Chercher par uid d'abord, puis par numéro+index comme fallback
   let index = factures.findIndex(f => f.uid === identifiant);
   if (index === -1) index = factures.findIndex(f => f.numero === identifiant);
   if (index === -1) return;
-  factures[index].statut = factures[index].statut === 'payee' ? 'non_payee' : 'payee';
+  const etaitPayee = factures[index].statut === 'payee';
+  factures[index].statut = etaitPayee ? 'non_payee' : 'payee';
   factures[index].datePaiement = factures[index].statut === 'payee' ? new Date().toISOString() : null;
   MEM.save('factures', factures);
   window.facturesHistorique = factures;
+
+  // Ajouter automatiquement dans Finance si marquée payée
+  if (!etaitPayee && factures[index].total && currentUser) {
+    const f = factures[index];
+    ajouterFinanceDepuisIA(
+      'entree',
+      f.total,
+      'Facture payée',
+      `${f.numero} — ${f.client || ''}`
+    ).then(() => {
+      if (document.getElementById('finances-overlay')?.classList.contains('open')) {
+        renderFinancesApercu();
+        renderFinancesListe('entree');
+      }
+      afficherMiniDashboard();
+    });
+  }
+
   chargerProfilUI();
   verifierRelancesFactures();
 }
@@ -5692,8 +5710,51 @@ async function fetchShopifyOrders() {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.orders || [];
+    const orders = data.orders || [];
+
+    // Synchroniser les commandes payées dans Finance automatiquement
+    if (orders.length > 0 && currentUser) {
+      syncShopifyVersFinance(orders);
+    }
+
+    return orders;
   } catch { return null; }
+}
+
+async function syncShopifyVersFinance(orders) {
+  try {
+    // Récupérer les transactions Shopify déjà enregistrées
+    const { data: existantes } = await supabaseClient
+      .from('finances')
+      .select('description')
+      .eq('user_id', currentUser.id)
+      .eq('categorie', 'Shopify');
+
+    const descExistantes = new Set((existantes || []).map(f => f.description));
+
+    // Ajouter seulement les nouvelles commandes payées
+    const nouvelles = orders.filter(o =>
+      o.financial_status === 'paid' &&
+      !descExistantes.has(`Commande #${o.order_number}`)
+    );
+
+    for (const o of nouvelles) {
+      await ajouterFinanceDepuisIA(
+        'entree',
+        parseFloat(o.total_price),
+        'Shopify',
+        `Commande #${o.order_number}`
+      );
+    }
+
+    if (nouvelles.length > 0) {
+      if (document.getElementById('finances-overlay')?.classList.contains('open')) {
+        renderFinancesApercu();
+        renderFinancesListe('entree');
+      }
+      afficherMiniDashboard();
+    }
+  } catch(e) { console.log('Erreur sync Shopify:', e); }
 }
 
 function renderOrders(orders) {
