@@ -2303,6 +2303,123 @@
   </div>
 </div>
 
+<!-- ===== MODULE FINANCE ===== -->
+<div class="crm-overlay" id="finances-overlay">
+  <div class="crm-modal" style="max-width:860px">
+    <div class="crm-header">
+      <h2>💰 Finance</h2>
+      <div style="display:flex;gap:8px">
+        <button class="tb-btn" onclick="actualiserFinances()">🔄 Actualiser</button>
+        <button class="back-btn" onclick="fermerFinances()" style="margin:0">✕</button>
+      </div>
+    </div>
+    <div class="crm-body">
+
+      <!-- Onglets -->
+      <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px">
+        <button class="admin-tab active" id="ftab-apercu" onclick="financeTab(this,'f-apercu')">Aperçu</button>
+        <button class="admin-tab" id="ftab-entrees" onclick="financeTab(this,'f-entrees')">Entrées d'argent</button>
+        <button class="admin-tab" id="ftab-depenses" onclick="financeTab(this,'f-depenses')">Dépenses</button>
+        <button class="admin-tab" id="ftab-ajouter" onclick="financeTab(this,'f-ajouter')">+ Ajouter</button>
+      </div>
+
+      <!-- APERÇU -->
+      <div id="f-apercu">
+        <div id="f-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div id="f-graph-section" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px"></div>
+          <div id="f-categories-section" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px"></div>
+        </div>
+        <div id="f-recent-section" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px"></div>
+      </div>
+
+      <!-- ENTRÉES -->
+      <div id="f-entrees" style="display:none">
+        <div id="f-entrees-list"></div>
+      </div>
+
+      <!-- DÉPENSES -->
+      <div id="f-depenses" style="display:none">
+        <div id="f-depenses-list"></div>
+      </div>
+
+      <!-- AJOUTER -->
+      <div id="f-ajouter" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- Formulaire entrée -->
+          <div style="background:var(--bg);border:1px solid rgba(78,200,122,0.2);border-radius:12px;padding:16px">
+            <div style="font-size:13px;font-weight:500;color:#4ec87a;margin-bottom:14px">Ajouter une entrée d'argent</div>
+            <div class="compose-field">
+              <label class="compose-label">Montant ($)</label>
+              <input class="compose-input" id="f-entree-montant" type="number" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Catégorie</label>
+              <select class="compose-input" id="f-entree-categorie">
+                <option value="Vente">Vente</option>
+                <option value="Facture payée">Facture payée</option>
+                <option value="Shopify">Shopify</option>
+                <option value="Service">Service</option>
+                <option value="Consultation">Consultation</option>
+                <option value="Remboursement">Remboursement</option>
+                <option value="Autre revenu">Autre revenu</option>
+              </select>
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Description</label>
+              <input class="compose-input" id="f-entree-desc" placeholder="Ex: Paiement client Jean Tremblay" />
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Date</label>
+              <input class="compose-input" id="f-entree-date" type="date" />
+            </div>
+            <button onclick="ajouterFinance('entree')" style="width:100%;padding:10px;border-radius:9px;border:none;background:rgba(78,200,122,0.8);color:#fff;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Ajouter l'entrée</button>
+            <div id="f-entree-status" style="font-size:12px;text-align:center;margin-top:6px;min-height:16px"></div>
+          </div>
+
+          <!-- Formulaire dépense -->
+          <div style="background:var(--bg);border:1px solid rgba(255,100,100,0.2);border-radius:12px;padding:16px">
+            <div style="font-size:13px;font-weight:500;color:#ff7777;margin-bottom:14px">Ajouter une dépense</div>
+            <div class="compose-field">
+              <label class="compose-label">Montant ($)</label>
+              <input class="compose-input" id="f-depense-montant" type="number" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Catégorie</label>
+              <select class="compose-input" id="f-depense-categorie">
+                <option value="Loyer">Loyer</option>
+                <option value="Téléphone">Téléphone</option>
+                <option value="Internet">Internet</option>
+                <option value="Matériel">Matériel</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Logiciels">Logiciels</option>
+                <option value="Transport">Transport</option>
+                <option value="Repas d'affaires">Repas d'affaires</option>
+                <option value="Sous-traitants">Sous-traitants</option>
+                <option value="Fournitures">Fournitures</option>
+                <option value="Formation">Formation</option>
+                <option value="Autre dépense">Autre dépense</option>
+              </select>
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Description</label>
+              <input class="compose-input" id="f-depense-desc" placeholder="Ex: Abonnement Adobe 55$/mois" />
+            </div>
+            <div class="compose-field">
+              <label class="compose-label">Date</label>
+              <input class="compose-input" id="f-depense-date" type="date" />
+            </div>
+            <button onclick="ajouterFinance('depense')" style="width:100%;padding:10px;border-radius:9px;border:none;background:rgba(255,100,100,0.7);color:#fff;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Ajouter la dépense</button>
+            <div id="f-depense-status" style="font-size:12px;text-align:center;margin-top:6px;min-height:16px"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODULE TPS/TVQ ===== -->
 <div class="crm-overlay" id="taxes-overlay">
   <div class="crm-modal" style="max-width:700px">
@@ -2873,6 +2990,9 @@
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Abonnement</div>
 
+    <button class="quick-action" onclick="ouvrirFinances(); toggleSidebar()">
+      Finance
+    </button>
     <button class="quick-action" onclick="ouvrirTaxes(); toggleSidebar()">
       TPS/TVQ
     </button>
@@ -3562,6 +3682,259 @@ function verifierTachesJour() {
   if (nonCompletees.length > 0) {
     addNovaMessage(`⏰ Tu as encore **${nonCompletees.length} tâche${nonCompletees.length > 1 ? 's' : ''}** non complétée${nonCompletees.length > 1 ? 's' : ''} aujourd'hui :\n${nonCompletees.map(t => `• ${t.texte}`).join('\n')}`);
   }
+}
+
+// =====================
+// MODULE FINANCE
+// =====================
+let financesData = [];
+
+async function ouvrirFinances() {
+  document.getElementById('finances-overlay').classList.add('open');
+  // Init dates
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-entree-date').value = today;
+  document.getElementById('f-depense-date').value = today;
+  await actualiserFinances();
+}
+
+function fermerFinances() {
+  document.getElementById('finances-overlay').classList.remove('open');
+}
+
+function financeTab(btn, tabId) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['f-apercu','f-entrees','f-depenses','f-ajouter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === tabId ? 'block' : 'none';
+  });
+}
+
+async function actualiserFinances() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabaseClient
+      .from('finances').select('*').eq('user_id', currentUser.id)
+      .order('date', { ascending: false }).limit(200);
+    financesData = data || [];
+    renderFinancesApercu();
+    renderFinancesListe('entree');
+    renderFinancesListe('depense');
+  } catch(e) { console.log('Erreur finances:', e); }
+}
+
+function renderFinancesApercu() {
+  const maintenant = new Date();
+  const debutMois = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+  const finMois = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0);
+
+  const duMois = financesData.filter(f => {
+    const d = new Date(f.date);
+    return d >= debutMois && d <= finMois;
+  });
+
+  const entreesMois = duMois.filter(f => f.type === 'entree').reduce((t, f) => t + parseFloat(f.montant), 0);
+  const depensesMois = duMois.filter(f => f.type === 'depense').reduce((t, f) => t + parseFloat(f.montant), 0);
+  const profitMois = entreesMois - depensesMois;
+  const totalEntrees = financesData.filter(f => f.type === 'entree').reduce((t, f) => t + parseFloat(f.montant), 0);
+  const totalDepenses = financesData.filter(f => f.type === 'depense').reduce((t, f) => t + parseFloat(f.montant), 0);
+
+  // Stats
+  document.getElementById('f-stats-grid').innerHTML = [
+    { label: 'Entrées ce mois', val: entreesMois.toFixed(2) + '$', color: 'rgba(78,200,122,0.2)', border: 'rgba(78,200,122,0.3)', text: '#4ec87a' },
+    { label: 'Dépenses ce mois', val: depensesMois.toFixed(2) + '$', color: 'rgba(255,100,100,0.1)', border: 'rgba(255,100,100,0.3)', text: '#ff7777' },
+    { label: 'Profit net', val: profitMois.toFixed(2) + '$', color: profitMois >= 0 ? 'rgba(78,200,122,0.08)' : 'rgba(255,100,100,0.08)', border: profitMois >= 0 ? 'rgba(78,200,122,0.2)' : 'rgba(255,100,100,0.2)', text: profitMois >= 0 ? '#4ec87a' : '#ff7777' },
+    { label: 'Marge bénéficiaire', val: entreesMois > 0 ? (profitMois/entreesMois*100).toFixed(1) + '%' : '—', color: 'rgba(68,136,255,0.08)', border: 'rgba(68,136,255,0.2)', text: 'var(--accent-blue)' },
+  ].map(s => `
+    <div style="background:${s.color};border:1px solid ${s.border};border-radius:12px;padding:14px;text-align:center">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${s.label}</div>
+      <div style="font-size:22px;font-weight:500;color:${s.text}">${s.val}</div>
+    </div>`).join('');
+
+  // Graphique 6 mois
+  const moisNoms = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const mois6 = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(maintenant.getFullYear(), maintenant.getMonth() - i, 1);
+    const fin = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const entrees = financesData.filter(f => f.type === 'entree' && new Date(f.date) >= d && new Date(f.date) <= fin).reduce((t, f) => t + parseFloat(f.montant), 0);
+    const depenses = financesData.filter(f => f.type === 'depense' && new Date(f.date) >= d && new Date(f.date) <= fin).reduce((t, f) => t + parseFloat(f.montant), 0);
+    mois6.push({ lbl: moisNoms[d.getMonth()], entrees, depenses });
+  }
+  const maxVal = Math.max(...mois6.map(m => Math.max(m.entrees, m.depenses)), 1);
+
+  document.getElementById('f-graph-section').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">Revenus vs Dépenses — 6 mois</div>
+    <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:6px">
+      ${mois6.map(m => `
+        <div style="flex:1;display:flex;gap:2px;align-items:flex-end">
+          <div style="flex:1;background:rgba(78,200,122,0.6);border-radius:3px 3px 0 0;height:${Math.max(m.entrees/maxVal*80,2)}px" title="Entrées: ${m.entrees.toFixed(0)}$"></div>
+          <div style="flex:1;background:rgba(255,100,100,0.5);border-radius:3px 3px 0 0;height:${Math.max(m.depenses/maxVal*80,2)}px" title="Dépenses: ${m.depenses.toFixed(0)}$"></div>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px">
+      ${mois6.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m.lbl}</div>`).join('')}
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--muted)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(78,200,122,0.6);border-radius:2px;margin-right:4px"></span>Entrées</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,100,100,0.5);border-radius:2px;margin-right:4px"></span>Dépenses</span>
+    </div>`;
+
+  // Catégories de dépenses
+  const catDepenses = {};
+  duMois.filter(f => f.type === 'depense').forEach(f => {
+    catDepenses[f.categorie] = (catDepenses[f.categorie] || 0) + parseFloat(f.montant);
+  });
+  const sortedCats = Object.entries(catDepenses).sort((a,b) => b[1]-a[1]).slice(0,6);
+
+  document.getElementById('f-categories-section').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">Dépenses par catégorie</div>
+    ${sortedCats.length ? sortedCats.map(([cat, val]) => {
+      const pct = depensesMois > 0 ? (val/depensesMois*100).toFixed(0) : 0;
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span style="color:var(--text)">${cat}</span>
+          <span style="color:var(--muted)">${val.toFixed(0)}$ (${pct}%)</span>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:6px">
+          <div style="background:rgba(255,100,100,0.6);border-radius:4px;height:6px;width:${pct}%"></div>
+        </div>
+      </div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Aucune dépense ce mois</div>'}`;
+
+  // Transactions récentes
+  const recentes = financesData.slice(0, 8);
+  document.getElementById('f-recent-section').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">Transactions récentes</div>
+    ${recentes.length ? `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:6px 10px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Date</th>
+          <th style="padding:6px 10px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Description</th>
+          <th style="padding:6px 10px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Catégorie</th>
+          <th style="padding:6px 10px;text-align:right;font-weight:400;color:var(--muted);font-size:11px">Montant</th>
+          <th style="padding:6px 10px;text-align:center;font-weight:400;color:var(--muted);font-size:11px">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${recentes.map(f => `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 10px;color:var(--muted);font-size:12px">${f.date}</td>
+            <td style="padding:8px 10px;color:var(--text)">${escapeHtml(f.description || f.categorie)}</td>
+            <td style="padding:8px 10px"><span style="padding:2px 8px;border-radius:8px;font-size:11px;background:${f.type==='entree'?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${f.type==='entree'?'#4ec87a':'#ff7777'}">${escapeHtml(f.categorie)}</span></td>
+            <td style="padding:8px 10px;text-align:right;font-weight:500;color:${f.type==='entree'?'#4ec87a':'#ff7777'}">${f.type==='entree'?'+':'-'}${parseFloat(f.montant).toFixed(2)}$</td>
+            <td style="padding:8px 10px;text-align:center"><button onclick="supprimerFinance('${f.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">🗑</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>` : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Aucune transaction encore</div>'}`;
+}
+
+function renderFinancesListe(type) {
+  const containerId = type === 'entree' ? 'f-entrees-list' : 'f-depenses-list';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const items = financesData.filter(f => f.type === type);
+  const total = items.reduce((t, f) => t + parseFloat(f.montant), 0);
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${type==='entree'?'Toutes les entrées':'Toutes les dépenses'} — <span style="color:${type==='entree'?'#4ec87a':'#ff7777'}">${total.toFixed(2)}$</span></div>
+      <button onclick="financeTab(document.getElementById('ftab-ajouter'),'f-ajouter')" style="padding:6px 14px;border-radius:8px;border:1px solid ${type==='entree'?'rgba(78,200,122,0.3)':'rgba(255,100,100,0.3)'};background:${type==='entree'?'rgba(78,200,122,0.1)':'rgba(255,100,100,0.1)'};color:${type==='entree'?'#4ec87a':'#ff7777'};font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter</button>
+    </div>
+    ${items.length ? `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Date</th>
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Description</th>
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Catégorie</th>
+          <th style="padding:8px 12px;text-align:right;font-weight:400;color:var(--muted);font-size:11px">Montant</th>
+          <th style="padding:8px 12px;text-align:center;font-weight:400;color:var(--muted);font-size:11px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(f => `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;color:var(--muted)">${f.date}</td>
+            <td style="padding:8px 12px;color:var(--text)">${escapeHtml(f.description || '—')}</td>
+            <td style="padding:8px 12px;color:var(--muted2)">${escapeHtml(f.categorie)}</td>
+            <td style="padding:8px 12px;text-align:right;font-weight:500;color:${type==='entree'?'#4ec87a':'#ff7777'}">${type==='entree'?'+':'-'}${parseFloat(f.montant).toFixed(2)}$</td>
+            <td style="padding:8px 12px;text-align:center"><button onclick="supprimerFinance('${f.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">🗑</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>` : `<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">Aucune ${type==='entree'?'entrée':'dépense'} enregistrée</div>`}`;
+}
+
+async function ajouterFinance(type) {
+  if (!currentUser) return;
+  const montantEl = document.getElementById(`f-${type}-montant`);
+  const catEl = document.getElementById(`f-${type}-categorie`);
+  const descEl = document.getElementById(`f-${type}-desc`);
+  const dateEl = document.getElementById(`f-${type}-date`);
+  const statusEl = document.getElementById(`f-${type}-status`);
+
+  const montant = parseFloat(montantEl.value);
+  if (!montant || montant <= 0) { statusEl.textContent = '⚠️ Entre un montant valide.'; statusEl.style.color = '#ff6060'; return; }
+
+  statusEl.textContent = '⏳ Sauvegarde...'; statusEl.style.color = 'var(--muted)';
+
+  try {
+    const { data, error } = await supabaseClient.from('finances').insert({
+      user_id: currentUser.id,
+      type,
+      montant,
+      categorie: catEl.value,
+      description: descEl.value.trim(),
+      date: dateEl.value || new Date().toISOString().split('T')[0],
+      source: 'manuel'
+    }).select().single();
+
+    if (error) throw error;
+
+    financesData.unshift(data);
+    statusEl.textContent = '✅ Ajouté !'; statusEl.style.color = '#4ec87a';
+    montantEl.value = '';
+    descEl.value = '';
+
+    renderFinancesApercu();
+    renderFinancesListe(type);
+
+    addNovaMessage(`${type==='entree'?'💰 Entrée':'💸 Dépense'} enregistrée : **${montant.toFixed(2)}$** — ${catEl.value}${descEl.value ? ' · ' + descEl.value : ''}`);
+    setTimeout(() => statusEl.textContent = '', 3000);
+  } catch(e) {
+    statusEl.textContent = 'Erreur: ' + e.message; statusEl.style.color = '#ff6060';
+  }
+}
+
+async function supprimerFinance(id) {
+  if (!confirm('Supprimer cette transaction ?')) return;
+  try {
+    await supabaseClient.from('finances').delete().eq('id', id);
+    financesData = financesData.filter(f => f.id !== id);
+    renderFinancesApercu();
+    renderFinancesListe('entree');
+    renderFinancesListe('depense');
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+// Ajouter depuis le chat ou la voix
+async function ajouterFinanceDepuisIA(type, montant, categorie, description) {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabaseClient.from('finances').insert({
+      user_id: currentUser.id,
+      type,
+      montant: parseFloat(montant),
+      categorie: categorie || (type === 'entree' ? 'Vente' : 'Autre dépense'),
+      description: description || '',
+      date: new Date().toISOString().split('T')[0],
+      source: 'ia'
+    }).select().single();
+    if (data) financesData.unshift(data);
+  } catch(e) { console.log('Erreur ajout finance IA:', e); }
 }
 
 // =====================
@@ -5368,6 +5741,15 @@ async function traiterActionsReponse(reply) {
   } else if (reply.includes('[CRÉER_ÉVÉNEMENT]')) {
     const jsonMatch = reply.match(/\[CRÉER_ÉVÉNEMENT\]([\s\S]*?)\[\/CRÉER_ÉVÉNEMENT\]/);
     if (jsonMatch) { try { await creerEvenementDepuisNova(JSON.parse(jsonMatch[1])); } catch(e) {} }
+  } else if (reply.includes('[AJOUTER_FINANCE]')) {
+    const jsonMatch = reply.match(/\[AJOUTER_FINANCE\]([\s\S]*?)\[\/AJOUTER_FINANCE\]/);
+    if (jsonMatch) {
+      try {
+        const data = JSON.parse(jsonMatch[1]);
+        await ajouterFinanceDepuisIA(data.type, data.montant, data.categorie, data.description);
+        afficherMiniDashboard();
+      } catch(e) {}
+    }
   }
 }
 
@@ -5640,6 +6022,7 @@ INSTRUCTIONS :
 - Pour créer des fichiers, utilise les balises [CRÉER_EXCEL], [CRÉER_WORD], [CRÉER_PPT]
 - Pour créer un événement dans le calendrier par message, utilise [CRÉER_ÉVÉNEMENT]{"titre":"...","debut":"2026-05-20T14:00:00","fin":"2026-05-20T15:00:00","description":"..."}[/CRÉER_ÉVÉNEMENT]
 - Pour les événements, calcule les dates à partir d'aujourd'hui (${new Date().toISOString().split('T')[0]}) — "demain", "vendredi", etc.
+- Pour ajouter une transaction financière (dépense ou entrée d'argent), utilise [AJOUTER_FINANCE]{"type":"entree ou depense","montant":100.00,"categorie":"Vente","description":"..."}[/AJOUTER_FINANCE]
 - Quand tu crées un événement par message, mets aussi une confirmation textuelle avant la balise
 
 CRÉATION DE FICHIERS :
