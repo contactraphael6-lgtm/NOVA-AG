@@ -2303,6 +2303,73 @@
   </div>
 </div>
 
+<!-- ===== MODULE DOCUMENTS ===== -->
+<div class="crm-overlay" id="documents-overlay">
+  <div class="crm-modal" style="max-width:800px">
+    <div class="crm-header">
+      <h2>📁 Documents</h2>
+      <div style="display:flex;gap:8px">
+        <button class="tb-btn" onclick="document.getElementById('doc-upload-input').click()" style="background:rgba(68,136,255,0.1);border-color:rgba(68,136,255,0.3);color:var(--accent-blue)">
+          + Uploader
+        </button>
+        <input type="file" id="doc-upload-input" accept="image/*,application/pdf" style="display:none" onchange="uploadDocument(this)" />
+        <button class="back-btn" onclick="fermerDocuments()" style="margin:0">✕</button>
+      </div>
+    </div>
+    <div class="crm-body">
+
+      <!-- Barre de recherche et filtres -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <input class="crm-search" id="doc-search" placeholder="Rechercher un document..." oninput="filtrerDocuments(this.value)" style="flex:1" />
+        <select class="crm-filter" id="doc-filtre-type" onchange="filtrerDocuments(document.getElementById('doc-search').value)">
+          <option value="">Tous les types</option>
+          <option value="facture">Factures reçues</option>
+          <option value="recu">Reçus</option>
+          <option value="contrat">Contrats</option>
+          <option value="autre">Autres</option>
+        </select>
+      </div>
+
+      <!-- Stats -->
+      <div id="doc-stats" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+      <!-- Zone de drop -->
+      <div id="doc-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all 0.2s"
+        onclick="document.getElementById('doc-upload-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent-blue)'"
+        ondragleave="this.style.borderColor='var(--border2)'"
+        ondrop="handleDocDrop(event)">
+        <div style="font-size:24px;margin-bottom:8px">📷</div>
+        <div style="font-size:13px;color:var(--muted)">Glisse une photo ou un PDF ici, ou clique pour uploader</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Nexus AI va analyser et extraire les informations automatiquement</div>
+      </div>
+
+      <!-- Upload en cours -->
+      <div id="doc-upload-progress" style="display:none;background:rgba(68,136,255,0.06);border:1px solid rgba(68,136,255,0.2);border-radius:10px;padding:12px 16px;margin-bottom:12px">
+        <div style="font-size:13px;color:var(--text)" id="doc-upload-status">Analyse en cours...</div>
+        <div style="margin-top:8px;height:4px;background:var(--border);border-radius:2px">
+          <div id="doc-upload-bar" style="height:4px;background:var(--accent-blue);border-radius:2px;width:0%;transition:width 0.5s"></div>
+        </div>
+      </div>
+
+      <!-- Liste des documents -->
+      <div id="doc-liste"></div>
+
+      <!-- Modal détail document -->
+      <div id="doc-detail-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:500;color:var(--text)" id="doc-detail-titre">Document</div>
+            <button onclick="fermerDetailDoc()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button>
+          </div>
+          <div id="doc-detail-content" style="padding:20px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODULE FINANCE ===== -->
 <div class="crm-overlay" id="finances-overlay">
   <div class="crm-modal" style="max-width:860px">
@@ -2990,6 +3057,9 @@
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">Abonnement</div>
 
+    <button class="quick-action" onclick="ouvrirDocuments(); toggleSidebar()">
+      Documents
+    </button>
     <button class="quick-action" onclick="ouvrirFinances(); toggleSidebar()">
       Finance
     </button>
@@ -5854,6 +5924,301 @@ async function callClaudeAvecImage(texte, imageBase64, imageType) {
   conversationHistory.push({ role: 'assistant', content: reply });
   sauvegarderHistorique();
   return reply;
+}
+
+// =====================
+// MODULE DOCUMENTS
+// =====================
+let tousLesDocuments = [];
+
+async function ouvrirDocuments() {
+  document.getElementById('documents-overlay').classList.add('open');
+  await chargerDocuments();
+}
+
+function fermerDocuments() {
+  document.getElementById('documents-overlay').classList.remove('open');
+}
+
+async function chargerDocuments() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabaseClient
+      .from('documents').select('*').eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    tousLesDocuments = data || [];
+    renderDocuments(tousLesDocuments);
+    renderDocStats();
+  } catch(e) { console.log('Erreur chargement docs:', e); }
+}
+
+function renderDocStats() {
+  const total = tousLesDocuments.length;
+  const factures = tousLesDocuments.filter(d => d.type === 'facture').length;
+  const montantTotal = tousLesDocuments.filter(d => d.montant).reduce((t, d) => t + parseFloat(d.montant), 0);
+
+  document.getElementById('doc-stats').innerHTML = `
+    <div style="padding:8px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text)">
+      📁 <strong>${total}</strong> document${total > 1 ? 's' : ''}
+    </div>
+    <div style="padding:8px 14px;background:rgba(68,136,255,0.08);border:1px solid rgba(68,136,255,0.2);border-radius:10px;font-size:12px;color:var(--accent-blue)">
+      🧾 <strong>${factures}</strong> facture${factures > 1 ? 's' : ''}
+    </div>
+    ${montantTotal > 0 ? `<div style="padding:8px 14px;background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.2);border-radius:10px;font-size:12px;color:#ff7777">
+      💸 <strong>${montantTotal.toFixed(2)}$</strong> en dépenses scannées
+    </div>` : ''}`;
+}
+
+function renderDocuments(docs) {
+  const container = document.getElementById('doc-liste');
+  if (!docs.length) {
+    container.innerHTML = `<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">
+      Aucun document. Uploadez une photo de facture ou un PDF !
+    </div>`;
+    return;
+  }
+
+  const typeLabels = { facture: 'Facture', recu: 'Reçu', contrat: 'Contrat', autre: 'Document' };
+
+  container.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Document</th>
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Fournisseur</th>
+          <th style="padding:8px 12px;text-align:left;font-weight:400;color:var(--muted);font-size:11px">Date</th>
+          <th style="padding:8px 12px;text-align:right;font-weight:400;color:var(--muted);font-size:11px">Montant</th>
+          <th style="padding:8px 12px;text-align:center;font-weight:400;color:var(--muted);font-size:11px">Type</th>
+          <th style="padding:8px 12px;text-align:center;font-weight:400;color:var(--muted);font-size:11px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${docs.map(d => `
+          <tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="voirDocument('${d.id}')">
+            <td style="padding:10px 12px">
+              <div style="font-size:13px;color:var(--text);font-weight:500">${escapeHtml(d.nom)}</div>
+              <div style="font-size:11px;color:var(--muted)">${new Date(d.created_at).toLocaleDateString('fr-CA')}</div>
+            </td>
+            <td style="padding:10px 12px;color:var(--muted2)">${escapeHtml(d.fournisseur || '—')}</td>
+            <td style="padding:10px 12px;color:var(--muted)">${d.date_facture || '—'}</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:500;color:${d.montant ? '#ff7777' : 'var(--muted)'}">
+              ${d.montant ? parseFloat(d.montant).toFixed(2) + '$' : '—'}
+            </td>
+            <td style="padding:10px 12px;text-align:center">
+              <span style="padding:2px 8px;border-radius:8px;font-size:11px;background:rgba(68,136,255,0.1);color:var(--accent-blue);border:1px solid rgba(68,136,255,0.2)">
+                ${typeLabels[d.type] || 'Document'}
+              </span>
+            </td>
+            <td style="padding:10px 12px;text-align:center;display:flex;gap:6px;justify-content:center">
+              <button onclick="event.stopPropagation();telechargerDocument('${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px" title="Télécharger">⬇️</button>
+              <button onclick="event.stopPropagation();supprimerDocument('${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px" title="Supprimer">🗑</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filtrerDocuments(query) {
+  const filtre = document.getElementById('doc-filtre-type').value;
+  let docs = tousLesDocuments;
+  if (filtre) docs = docs.filter(d => d.type === filtre);
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    docs = docs.filter(d =>
+      d.nom?.toLowerCase().includes(q) ||
+      d.fournisseur?.toLowerCase().includes(q) ||
+      d.notes?.toLowerCase().includes(q)
+    );
+  }
+  renderDocuments(docs);
+}
+
+async function uploadDocument(input) {
+  const file = input.files[0];
+  if (!file || !currentUser) return;
+  input.value = '';
+
+  const progress = document.getElementById('doc-upload-progress');
+  const status = document.getElementById('doc-upload-status');
+  const bar = document.getElementById('doc-upload-bar');
+  progress.style.display = 'block';
+  bar.style.width = '20%';
+
+  try {
+    // Lire le fichier
+    const reader = new FileReader();
+    const fileData = await new Promise((res, rej) => {
+      reader.onload = e => res(e.target.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+
+    status.textContent = 'Analyse du document par Nexus AI...';
+    bar.style.width = '40%';
+
+    // Analyser avec Claude si c'est une image
+    let infosExtraites = { nom: file.name, type: 'autre', fournisseur: null, montant: null, date: null, notes: '' };
+
+    if (file.type.startsWith('image/')) {
+      const base64 = fileData.split(',')[1];
+      const res = await fetch(CLAUDE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 500,
+          system: 'Tu es un extracteur de données de factures. Analyse l\'image et réponds UNIQUEMENT en JSON valide avec ces champs: {"type":"facture|recu|contrat|autre","fournisseur":"nom du fournisseur ou vendeur","montant":99.99,"date":"2026-01-15","description":"description courte","categorie":"Logiciels|Transport|Loyer|Matériel|Marketing|Alimentation|Autre"}. Si tu ne trouves pas une valeur mets null.',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+              { type: 'text', text: 'Analyse ce document et extrait les informations.' }
+            ]
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || '{}';
+      try {
+        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+        infosExtraites = {
+          nom: parsed.fournisseur ? `Facture ${parsed.fournisseur}` : file.name,
+          type: parsed.type || 'facture',
+          fournisseur: parsed.fournisseur,
+          montant: parsed.montant,
+          date: parsed.date,
+          notes: parsed.description || '',
+          categorie: parsed.categorie
+        };
+      } catch(e) {}
+    }
+
+    bar.style.width = '60%';
+    status.textContent = 'Sauvegarde dans le cloud...';
+
+    // Uploader dans Supabase Storage
+    const filePath = `${currentUser.id}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabaseClient.storage
+      .from('documents').upload(filePath, file, { contentType: file.type });
+
+    if (uploadError) throw uploadError;
+
+    bar.style.width = '80%';
+
+    // Sauvegarder les métadonnées
+    const { data: doc, error: dbError } = await supabaseClient.from('documents').insert({
+      user_id: currentUser.id,
+      nom: infosExtraites.nom,
+      type: infosExtraites.type || 'autre',
+      montant: infosExtraites.montant,
+      fournisseur: infosExtraites.fournisseur,
+      date_facture: infosExtraites.date,
+      categorie: infosExtraites.categorie,
+      storage_path: filePath,
+      notes: infosExtraites.notes
+    }).select().single();
+
+    if (dbError) throw dbError;
+
+    tousLesDocuments.unshift(doc);
+    bar.style.width = '100%';
+
+    // Ajouter dans Finance si montant trouvé
+    if (infosExtraites.montant && infosExtraites.montant > 0) {
+      await ajouterFinanceDepuisIA(
+        'depense',
+        infosExtraites.montant,
+        infosExtraites.categorie || 'Facture scannée',
+        infosExtraites.fournisseur || infosExtraites.nom
+      );
+      status.textContent = `Document analysé ! ${infosExtraites.montant}$ ajouté dans Finance automatiquement.`;
+    } else {
+      status.textContent = 'Document sauvegardé avec succès !';
+    }
+
+    renderDocuments(tousLesDocuments);
+    renderDocStats();
+
+    addNovaMessage(`📁 Document **"${infosExtraites.nom}"** sauvegardé !${infosExtraites.fournisseur ? ' Fournisseur : **' + infosExtraites.fournisseur + '**' : ''}${infosExtraites.montant ? ' · Montant : **' + infosExtraites.montant + '$**' : ''}${infosExtraites.montant ? ' → ajouté dans Finance' : ''}`);
+
+    setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 3000);
+
+  } catch(e) {
+    status.textContent = 'Erreur: ' + e.message;
+    bar.style.width = '0%';
+    console.log('Erreur upload:', e);
+  }
+}
+
+function handleDocDrop(event) {
+  event.preventDefault();
+  document.getElementById('doc-drop-zone').style.borderColor = 'var(--border2)';
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById('doc-upload-input');
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  uploadDocument(input);
+}
+
+async function voirDocument(id) {
+  const doc = tousLesDocuments.find(d => d.id === id);
+  if (!doc) return;
+
+  document.getElementById('doc-detail-titre').textContent = doc.nom;
+  document.getElementById('doc-detail-modal').style.display = 'flex';
+
+  let imageHTML = '';
+  if (doc.storage_path) {
+    try {
+      const { data } = await supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 3600);
+      if (data?.signedUrl) {
+        imageHTML = `<img src="${data.signedUrl}" style="width:100%;border-radius:8px;margin-bottom:16px;border:1px solid var(--border)" alt="${escapeHtml(doc.nom)}" />`;
+      }
+    } catch(e) {}
+  }
+
+  document.getElementById('doc-detail-content').innerHTML = `
+    ${imageHTML}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      ${doc.fournisseur ? `<div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Fournisseur</div><div style="font-size:13px;color:var(--text)">${escapeHtml(doc.fournisseur)}</div></div>` : ''}
+      ${doc.montant ? `<div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Montant</div><div style="font-size:13px;color:#ff7777;font-weight:500">${parseFloat(doc.montant).toFixed(2)}$</div></div>` : ''}
+      ${doc.date_facture ? `<div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Date</div><div style="font-size:13px;color:var(--text)">${doc.date_facture}</div></div>` : ''}
+      ${doc.categorie ? `<div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Catégorie</div><div style="font-size:13px;color:var(--text)">${escapeHtml(doc.categorie)}</div></div>` : ''}
+    </div>
+    ${doc.notes ? `<div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted2)">${escapeHtml(doc.notes)}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="telechargerDocument('${doc.id}')" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Télécharger</button>
+      <button onclick="supprimerDocument('${doc.id}');fermerDetailDoc()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(255,80,80,0.3);background:transparent;color:rgba(255,120,120,0.8);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Supprimer</button>
+    </div>`;
+}
+
+function fermerDetailDoc() {
+  document.getElementById('doc-detail-modal').style.display = 'none';
+}
+
+async function telechargerDocument(id) {
+  const doc = tousLesDocuments.find(d => d.id === id);
+  if (!doc?.storage_path) return;
+  try {
+    const { data } = await supabaseClient.storage.from('documents').createSignedUrl(doc.storage_path, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  } catch(e) { alert('Erreur téléchargement'); }
+}
+
+async function supprimerDocument(id) {
+  if (!confirm('Supprimer ce document ?')) return;
+  const doc = tousLesDocuments.find(d => d.id === id);
+  try {
+    if (doc?.storage_path) {
+      await supabaseClient.storage.from('documents').remove([doc.storage_path]);
+    }
+    await supabaseClient.from('documents').delete().eq('id', id);
+    tousLesDocuments = tousLesDocuments.filter(d => d.id !== id);
+    renderDocuments(tousLesDocuments);
+    renderDocStats();
+  } catch(e) { alert('Erreur: ' + e.message); }
 }
 
 // =====================
