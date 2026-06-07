@@ -1630,7 +1630,31 @@
     border: 1px solid var(--border); border-radius: 10px;
     margin-bottom: 8px;
   }
-  /* ===== PLEIN ÉCRAN — tous les modules ===== */
+  /* ===== BOUTON RETOUR AU CHAT ===== */
+  .btn-retour-chat {
+    display: none; /* Caché par défaut */
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    padding: 12px 22px; border-radius: 50px; border: none;
+    background: linear-gradient(135deg, rgba(68,136,255,0.9), rgba(100,60,200,0.9));
+    color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 4px 20px rgba(68,136,255,0.4);
+    align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn-retour-chat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(68,136,255,0.6);
+  }
+  /* Afficher le bouton seulement quand l'overlay parent est ouvert */
+  .crm-overlay.open .btn-retour-chat,
+  .dash-overlay.open .btn-retour-chat,
+  .facture-overlay.open .btn-retour-chat { display: flex; }
+  /* Pour cal-panel et gmail-panel qui utilisent .hidden */
+  .cal-panel:not(.hidden) .btn-retour-chat,
+  .gmail-panel:not(.hidden) .btn-retour-chat { display: flex; }
+  /* Pour profil-modal */
+  #profil-modal.open .btn-retour-chat { display: flex; }
   .crm-overlay, .dash-overlay {
     position: fixed; inset: 0; z-index: 1000;
     background: var(--bg);
@@ -2343,7 +2367,7 @@
 
 <!-- Historique Conversations -->
 <div class="dash-overlay" id="hist-overlay">
-  <button onclick="fermerHistorique()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerHistorique()" class="btn-retour-chat">← Retour au chat</button>
   <div class="dash-modal">
     <div class="dash-header">
       <h2>💬 Historique des conversations</h2>
@@ -2360,7 +2384,7 @@
 
 <!-- ===== MODULE ÉQUIPE ===== -->
 <div class="crm-overlay" id="equipe-overlay">
-  <button onclick="fermerEquipe()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerEquipe()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>👥 Mon Équipe</h2>
@@ -2474,7 +2498,7 @@
 
 <!-- ===== MODULE DOCUMENTS ===== -->
 <div class="crm-overlay" id="documents-overlay">
-  <button onclick="fermerDocuments()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerDocuments()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>📁 Documents</h2>
@@ -2542,7 +2566,7 @@
 
 <!-- ===== MODULE FINANCE ===== -->
 <div class="crm-overlay" id="finances-overlay">
-  <button onclick="fermerFinances()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerFinances()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>💰 Finance</h2>
@@ -2660,7 +2684,7 @@
 
 <!-- ===== MODULE TPS/TVQ ===== -->
 <div class="crm-overlay" id="taxes-overlay">
-  <button onclick="fermerTaxes()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerTaxes()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>🏛 TPS/TVQ — Rapport de taxes</h2>
@@ -2720,7 +2744,7 @@
 
 <!-- ===== TÂCHES ===== -->
 <div class="crm-overlay" id="taches-overlay">
-  <button onclick="fermerTaches()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerTaches()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>✅ Mes tâches</h2>
@@ -2758,7 +2782,7 @@
 
 <!-- ===== CRM CLIENTS ===== -->
 <div class="crm-overlay" id="crm-overlay">
-  <button onclick="fermerCRM()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerCRM()" class="btn-retour-chat">← Retour au chat</button>
   <div class="crm-modal">
     <div class="crm-header">
       <h2>👥 Mes clients</h2>
@@ -2840,7 +2864,7 @@
 
 <!-- Tableau de Bord -->
 <div class="dash-overlay" id="dash-overlay">
-  <button onclick="fermerDash()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="fermerDash()" class="btn-retour-chat">← Retour au chat</button>
   <div class="dash-modal">
     <div class="dash-header">
       <h2>📊 Tableau de bord</h2>
@@ -2945,7 +2969,7 @@
 
 <!-- Profil Modal -->
 <div class="facture-overlay" id="profil-modal">
-  <button onclick="toggleProfilPanel()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="toggleProfilPanel()" class="btn-retour-chat">← Retour au chat</button>
   <div class="facture-modal" style="width:520px">
     <div class="facture-header">
       <h2>🧠 Mémoire de Nexus AI</h2>
@@ -3019,7 +3043,7 @@
 
 <!-- Facture Modal -->
 <div class="facture-overlay" id="facture-overlay">
-  <button onclick="toggleFacturePanel()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="toggleFacturePanel()" class="btn-retour-chat">← Retour au chat</button>
   <div class="facture-modal">
     <div class="facture-header">
       <h2>🧾 Nouvelle Facture</h2>
@@ -3286,7 +3310,7 @@
 
   <!-- Calendar Panel -->
   <aside class="cal-panel hidden" id="cal-panel">
-  <button onclick="toggleCalPanel()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="toggleCalPanel()" class="btn-retour-chat">← Retour au chat</button>
     <div class="cal-header">
       <div class="cal-title">📅 Mon Calendrier</div>
       <button class="back-to-chat" onclick="toggleCalPanel()">← Retour au chat</button>
@@ -3476,7 +3500,7 @@
 
   <!-- Gmail Panel -->
   <aside class="gmail-panel hidden" id="gmail-panel">
-  <button onclick="toggleGmailPanel()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
+  <button onclick="toggleGmailPanel()" class="btn-retour-chat">← Retour au chat</button>
     <div class="gmail-header">
       <div class="gmail-title">📧 Email</div>
       <button class="back-to-chat" onclick="toggleGmailPanel()">← Retour au chat</button>
@@ -4449,7 +4473,10 @@ async function chargerHistoriqueTaxes() {
 }
 
 async function marquerRemisePayee() {
-  if (!currentUser || !window._taxesData) return;
+  if (!currentUser) return;
+  // Forcer le recalcul avant de marquer — s'assurer que les données sont à jour
+  calculerTaxes();
+  if (!window._taxesData) return;
   const { label, tpsTotal, tvqTotal } = window._taxesData;
   try {
     await supabaseClient.from('remises_taxes').insert({
@@ -4466,6 +4493,8 @@ async function marquerRemisePayee() {
 }
 
 function exporterRapportTaxes() {
+  // Forcer le recalcul pour s'assurer que les données sont à jour
+  calculerTaxes();
   if (!window._taxesData) return;
   const { label, facturesPeriode, tpsTotal, tvqTotal, sousTotal, dateLimite } = window._taxesData;
   const ent = MEM.load('entreprise', {});
@@ -4874,10 +4903,15 @@ async function genererMessageIA(sh, fa, rdvs, taches) {
 }
 
 function sendMessageFromDash(msg) {
-  fermerDash();
+  // Fermer tous les overlays ouverts
+  if (typeof fermerDash === 'function') fermerDash();
+  // En mode employé le dashboard n'existe pas — pas besoin de fermer
   setTimeout(() => {
     const input = document.getElementById('user-input');
-    if (input) { input.value = msg; sendMessage(); }
+    if (input) {
+      input.value = msg;
+      sendMessage();
+    }
   }, 300);
 }
 
@@ -5732,8 +5766,11 @@ let calDateSelectionnee = null;
 
 function toggleCalPanel() {
   if (!verifierPro('calendrier')) return;
-  calPanelOpen = !calPanelOpen;
-  document.getElementById('cal-panel').classList.toggle('hidden', !calPanelOpen);
+  const panel = document.getElementById('cal-panel');
+  if (!panel) return;
+  // Lire l'état réel du DOM pour éviter la désynchronisation
+  calPanelOpen = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !calPanelOpen);
   if (calPanelOpen) {
     chargerRdvNexus();
     renderMiniCalNexus();
@@ -6041,8 +6078,9 @@ async function fetchShopifyOrders() {
 }
 
 async function syncShopifyVersFinance(orders) {
+  if (!currentUser || !orders?.length) return;
   try {
-    // Récupérer les transactions Shopify déjà enregistrées
+    // Récupérer TOUS les numéros de commandes déjà dans Finance
     const { data: existantes } = await supabaseClient
       .from('finances')
       .select('description')
@@ -6051,28 +6089,37 @@ async function syncShopifyVersFinance(orders) {
 
     const descExistantes = new Set((existantes || []).map(f => f.description));
 
-    // Ajouter seulement les nouvelles commandes payées
+    // Filtrer les nouvelles commandes payées non encore enregistrées
     const nouvelles = orders.filter(o =>
       o.financial_status === 'paid' &&
+      parseFloat(o.total_price) > 0 &&
       !descExistantes.has(`Commande #${o.order_number}`)
     );
 
-    for (const o of nouvelles) {
-      await ajouterFinanceDepuisIA(
-        'entree',
-        parseFloat(o.total_price),
-        'Shopify',
-        `Commande #${o.order_number}`
-      );
-    }
+    if (!nouvelles.length) return; // Rien à ajouter
 
-    if (nouvelles.length > 0) {
-      if (document.getElementById('finances-overlay')?.classList.contains('open')) {
-        renderFinancesApercu();
-        renderFinancesListe('entree');
-      }
-      afficherMiniDashboard();
+    // Insérer en batch pour éviter les doublons race condition
+    const inserts = nouvelles.map(o => ({
+      user_id: currentUser.id,
+      type: 'entree',
+      montant: parseFloat(o.total_price),
+      categorie: 'Shopify',
+      description: `Commande #${o.order_number}`,
+      date: (o.created_at || new Date().toISOString()).split('T')[0],
+      source: 'shopify'
+    }));
+
+    const { error } = await supabaseClient.from('finances').insert(inserts);
+    if (error) { console.log('Erreur sync Shopify:', error); return; }
+
+    // Mettre à jour le cache local
+    financesData = [...inserts.map((d, i) => ({ ...d, id: `shopify_${i}` })), ...financesData];
+
+    if (document.getElementById('finances-overlay')?.classList.contains('open')) {
+      renderFinancesApercu();
+      renderFinancesListe('entree');
     }
+    afficherMiniDashboard();
   } catch(e) { console.log('Erreur sync Shopify:', e); }
 }
 
@@ -6277,7 +6324,13 @@ async function envoyerNotification(userId, titre, message, type = 'info', data =
 
 // Écouter les notifications en temps réel (Supabase Realtime)
 function demarrerEcouteNotifications() {
-  if (!currentUser || notifSubscription) return;
+  if (!currentUser) return;
+  // Nettoyer l'ancienne subscription si elle existe
+  if (notifSubscription) {
+    try { supabaseClient.removeChannel(notifSubscription); } catch(e) {}
+    notifSubscription = null;
+  }
+
   notifSubscription = supabaseClient
     .channel('notifications-' + currentUser.id)
     .on('postgres_changes', {
@@ -6289,11 +6342,16 @@ function demarrerEcouteNotifications() {
       const notif = payload.new;
       notificationsData.unshift(notif);
       updateNotifBadge();
-      // Notification système du navigateur
       afficherNotifNavigateur(notif.titre, notif.message);
-      // Message dans le chat si important
       if (notif.type === 'task') {
         addNovaMessage(`🔔 **${notif.titre}**\n${notif.message}`);
+      }
+    })
+    .on('system', {}, (status) => {
+      // Reconnexion automatique si la connexion se coupe
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.log('Realtime déconnecté — reconnexion dans 5s...');
+        setTimeout(() => demarrerEcouteNotifications(), 5000);
       }
     })
     .subscribe();
@@ -6436,19 +6494,21 @@ async function toggleTacheEmploye(id, estComplete) {
       statut: !estComplete ? 'completee' : 'a_faire'
     }).eq('id', id);
 
-    // Notifier le patron
+    // Notifier le patron — dans un try séparé pour ne pas bloquer si ça échoue
     if (!estComplete) {
-      const { data: tache } = await supabaseClient
-        .from('taches_equipe').select('*').eq('id', id).single();
-      if (tache?.assigne_par) {
-        const prefs = MEM.load('prefs', {});
-        await envoyerNotification(
-          tache.assigne_par,
-          'Tâche complétée ✅',
-          `${prefs.nom || currentUser?.email || 'Votre employé'} a complété : "${tache.texte}"`,
-          'task'
-        );
-      }
+      try {
+        const { data: tache } = await supabaseClient
+          .from('taches_equipe').select('*').eq('id', id).single();
+        if (tache?.assigne_par) {
+          const prefs = MEM.load('prefs', {});
+          await envoyerNotification(
+            tache.assigne_par,
+            'Tâche complétée ✅',
+            `${prefs.nom || currentUser?.email || 'Votre employé'} a complété : "${tache.texte}"`,
+            'task'
+          );
+        }
+      } catch(e) { /* Notification non critique */ }
       addNovaMessage('✅ Tâche marquée comme complétée — bon travail !');
     }
     chargerTachesEmploye();
@@ -6468,6 +6528,9 @@ function obtenirLienEmploye() {
 // RAPPORT FINANCIER MENSUEL PDF
 // =====================
 async function genererRapportMensuel(moisOffset = 0) {
+  // Afficher indicateur de chargement
+  addNovaMessage('⏳ Génération du rapport en cours...');
+
   const maintenant = new Date();
   const moisCible = new Date(maintenant.getFullYear(), maintenant.getMonth() - moisOffset, 1);
   const debutMois = new Date(moisCible.getFullYear(), moisCible.getMonth(), 1);
@@ -6478,7 +6541,7 @@ async function genererRapportMensuel(moisOffset = 0) {
   const prefs = MEM.load('prefs', {});
   const ent = MEM.load('entreprise', {});
 
-  // Données finances
+  // Données finances — toujours charger depuis Supabase pour avoir les données à jour
   let entreesMois = [], depensesMois = [];
   if (currentUser) {
     try {
@@ -6489,7 +6552,11 @@ async function genererRapportMensuel(moisOffset = 0) {
         .order('date', { ascending: true });
       entreesMois = (data || []).filter(f => f.type === 'entree');
       depensesMois = (data || []).filter(f => f.type === 'depense');
-    } catch(e) {}
+    } catch(e) {
+      // Fallback sur le cache local si Supabase échoue
+      entreesMois = financesData.filter(f => f.type === 'entree' && f.date >= debutMois.toISOString().split('T')[0] && f.date <= finMois.toISOString().split('T')[0]);
+      depensesMois = financesData.filter(f => f.type === 'depense' && f.date >= debutMois.toISOString().split('T')[0] && f.date <= finMois.toISOString().split('T')[0]);
+    }
   }
 
   // Données factures
@@ -7613,7 +7680,6 @@ async function sauvegarderSouvenir(cle, valeur, categorie = 'general', importanc
 
 async function extraireSouvenirs(message, reponse) {
   if (!currentUser) return;
-  // Extraire automatiquement les infos importantes avec Claude
   try {
     const res = await fetch(CLAUDE_API, {
       method: 'POST',
@@ -7622,26 +7688,41 @@ async function extraireSouvenirs(message, reponse) {
         model: 'claude-sonnet-4-5',
         max_tokens: 500,
         system: `Tu es un extracteur de mémoire. Analyse la conversation et extrait les informations importantes à retenir sur l'utilisateur. 
-Réponds UNIQUEMENT en JSON valide avec ce format :
-{"souvenirs": [{"cle": "cle_unique", "valeur": "info importante", "categorie": "preference|client|business|habitude|projet", "importance": 1-3}]}
-Si rien d'important, réponds: {"souvenirs": []}
-Maximum 3 souvenirs par appel. Sois concis.`,
+Réponds UNIQUEMENT en JSON valide avec ce format EXACT (aucun texte avant ou après) :
+{"souvenirs": [{"cle": "cle_unique_sans_espaces", "valeur": "info importante", "categorie": "preference|client|business|habitude|projet", "importance": 1}]}
+Si rien d'important, réponds exactement: {"souvenirs": []}
+Maximum 3 souvenirs. Sois concis. Ne mets JAMAIS de texte hors du JSON.`,
         messages: [{
           role: 'user',
-          content: `Message: "${message}"\nRéponse: "${reponse.substring(0, 200)}"`
+          content: `Message: "${message.substring(0, 300)}"\nRéponse: "${reponse.substring(0, 200)}"`
         }]
       })
     });
+
+    if (!res.ok) return;
     const data = await res.json();
-    const text = data.content?.[0]?.text || '{"souvenirs":[]}';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const text = (data.content?.[0]?.text || '').trim();
+
+    // Extraire le JSON même s'il y a du texte autour
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      console.log('Mémoire: JSON invalide ignoré');
+      return;
+    }
+
     for (const s of (parsed.souvenirs || [])) {
-      if (s.cle && s.valeur) {
-        await sauvegarderSouvenir(s.cle, s.valeur, s.categorie, s.importance);
+      if (s.cle && s.valeur && typeof s.cle === 'string' && typeof s.valeur === 'string') {
+        // Nettoyer la clé — pas d'espaces ni caractères spéciaux
+        const cleNette = s.cle.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 50);
+        await sauvegarderSouvenir(cleNette, s.valeur, s.categorie, s.importance || 1);
       }
     }
-  } catch(e) { /* Silencieux */ }
+  } catch(e) { /* Silencieux — mémoire non critique */ }
 }
 
 function formatMemoirePourPrompt() {
@@ -8790,7 +8871,8 @@ function deconnecterSMTP() {
   document.getElementById('gmail-toggle-btn').classList.remove('connected');
   document.getElementById('gmail-btn-text').textContent = 'Email';
   document.getElementById('smtp-email').value = '';
-  document.getElementById('smtp-password').value = '';
+  const pwEl = document.getElementById('smtp-password');
+  if (pwEl) pwEl.value = '';
 }
 
 async function envoyerEmailSMTP() {
