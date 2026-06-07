@@ -1604,32 +1604,42 @@
   /* ===== MODE EMPLOYÉ ===== */
   .employe-mode .sidebar { display: none !important; }
   .employe-mode .main-dashboard { display: none !important; }
+  .employe-mode .main-chat { display: none !important; }
+  .employe-mode header { display: none !important; }
   .employe-mode .header-icons-extra { display: none !important; }
-  .employe-header {
+
+  /* Interface employé plein écran */
+  .employe-interface {
     display: none;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .employe-mode .employe-header { display: flex; }
-  .employe-taches {
-    display: none;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
+    position: fixed; inset: 0; z-index: 2000;
     background: var(--bg);
-    max-height: 280px;
-    overflow-y: auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .employe-mode .employe-interface { display: flex; }
+
+  .employe-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .employe-body {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .employe-section {
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-  .employe-mode .employe-taches { display: block; }
-  .employe-tache-item {
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 10px 12px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 8px;
+  .employe-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; background: var(--surface);
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    cursor: pointer;
   }
+  .employe-section-body { padding: 12px 16px; }
+  .employe-cal-section { flex: 1; min-height: 300px; }
   /* ===== BOUTON RETOUR AU CHAT ===== */
   .btn-retour-chat {
     display: none; /* Caché par défaut */
@@ -3389,25 +3399,88 @@
   <!-- Main chat -->
   <main class="main">
     <!-- Header employé (visible seulement en mode employé) -->
-    <div class="employe-header">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(68,136,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--accent-blue)" id="employe-avatar">E</div>
-        <div>
-          <div style="font-size:14px;font-weight:500;color:var(--text)" id="employe-nom">Mon espace</div>
-          <div style="font-size:11px;color:var(--muted)">Nexus AI — Mode employé</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="toggleTheme()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:14px;cursor:pointer">🌙</button>
-        <button onclick="deconnexion()" style="padding:6px 14px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Déconnexion</button>
-      </div>
+    <div class="employe-header" style="display:none"></div>
+    <!-- Zone tâches employé (visible seulement en mode employé) -->
+    <div class="employe-taches" id="employe-taches-zone" style="display:none">
+      <div id="employe-taches-liste"></div>
     </div>
 
-    <!-- Zone tâches employé (visible seulement en mode employé) -->
-    <div class="employe-taches" id="employe-taches-zone">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">Mes tâches assignées</div>
-      <div id="employe-taches-liste">
-        <div style="font-size:12px;color:var(--muted);text-align:center;padding:10px">Chargement...</div>
+    <!-- Interface employé plein écran -->
+    <div class="employe-interface" id="employe-interface">
+
+      <!-- Top bar -->
+      <div class="employe-topbar">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(68,136,255,0.2),rgba(100,60,200,0.2));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--accent-blue)" id="employe-avatar">E</div>
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--text)" id="employe-nom">Mon espace</div>
+            <div style="font-size:11px;color:var(--muted)">Nexus AI — Espace employé</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="toggleTheme()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:14px;cursor:pointer" id="employe-theme-btn">🌙</button>
+          <button onclick="deconnexion()" style="padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Déconnexion</button>
+        </div>
+      </div>
+
+      <div class="employe-body">
+
+        <!-- Section Tâches -->
+        <div class="employe-section">
+          <div class="employe-section-header" onclick="toggleEmployeSection('taches')">
+            <span>📋 Mes tâches</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="employe-taches-count" style="background:rgba(68,136,255,0.15);color:var(--accent-blue);padding:2px 8px;border-radius:10px;font-size:11px"></span>
+              <span id="employe-taches-chevron">▼</span>
+            </div>
+          </div>
+          <div class="employe-section-body" id="employe-taches-body">
+
+            <!-- Ajouter une tâche -->
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input id="employe-nouvelle-tache" class="crm-search" placeholder="Ajouter une tâche..." style="flex:1" onkeydown="if(event.key==='Enter') ajouterTacheEmploye()" />
+              <select id="employe-tache-priorite" class="crm-filter" style="width:100px">
+                <option value="normale">Normale</option>
+                <option value="haute">Haute</option>
+                <option value="basse">Basse</option>
+              </select>
+              <button onclick="ajouterTacheEmploye()" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.8),rgba(100,60,200,0.8));color:#fff;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">+</button>
+            </div>
+
+            <!-- Liste des tâches -->
+            <div id="employe-taches-liste-v2"></div>
+          </div>
+        </div>
+
+        <!-- Section Calendrier -->
+        <div class="employe-section employe-cal-section">
+          <div class="employe-section-header" onclick="toggleEmployeSection('cal')">
+            <span>📅 Mon calendrier</span>
+            <span id="employe-cal-chevron">▼</span>
+          </div>
+          <div class="employe-section-body" id="employe-cal-body" style="padding:0">
+            <!-- Mini calendrier -->
+            <div id="employe-mini-cal" style="padding:12px 16px;border-bottom:1px solid var(--border)"></div>
+            <!-- RDV du jour/semaine -->
+            <div id="employe-rdv-liste" style="padding:12px 16px"></div>
+            <!-- Ajouter un RDV -->
+            <div style="padding:12px 16px;border-top:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">+ Nouveau RDV</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <input id="employe-rdv-titre" class="crm-search" placeholder="Titre du RDV" />
+                <input id="employe-rdv-date" class="crm-search" type="date" />
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <input id="employe-rdv-heure" class="crm-search" type="time" placeholder="Heure" />
+                <input id="employe-rdv-duree" class="crm-search" type="number" placeholder="Durée (min)" value="60" />
+              </div>
+              <button onclick="ajouterRdvEmploye()" style="width:100%;padding:9px;border-radius:9px;border:none;background:rgba(68,136,255,0.15);color:var(--accent-blue);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid rgba(68,136,255,0.3)">
+                Créer le RDV
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -6433,129 +6506,200 @@ const EQUIPE_ID_URL = new URLSearchParams(window.location.search).get('equipe');
 function activerModeEmploye() {
   if (!MODE_EMPLOYE) return;
   document.getElementById('app').classList.add('employe-mode');
-  // Associer automatiquement l'employé à l'équipe si ID fourni
-  if (EQUIPE_ID_URL && currentUser) {
-    associerEmployeEquipe(EQUIPE_ID_URL);
-  }
-  chargerTachesEmploye();
+  if (EQUIPE_ID_URL && currentUser) associerEmployeEquipe(EQUIPE_ID_URL);
+  chargerInterfaceEmploye();
+}
+
+async function chargerInterfaceEmploye() {
+  if (!currentUser || !MODE_EMPLOYE) return;
+  const prefs = MEM.load('prefs', {});
+  const nom = prefs.nom || currentUser.email || 'Employé';
+  const avatarEl = document.getElementById('employe-avatar');
+  const nomEl = document.getElementById('employe-nom');
+  if (avatarEl) avatarEl.textContent = nom.charAt(0).toUpperCase();
+  if (nomEl) nomEl.textContent = nom;
+  await chargerTachesEmployeV2();
+  chargerCalEmploye();
 }
 
 async function associerEmployeEquipe(equipeId) {
   if (!currentUser) return;
   try {
-    // Vérifier si déjà membre
-    const { data: existant } = await supabaseClient
-      .from('equipe_membres').select('id')
-      .eq('equipe_id', equipeId)
-      .eq('user_id', currentUser.id)
-      .single();
-
+    const { data: existant } = await supabaseClient.from('equipe_membres').select('id')
+      .eq('equipe_id', equipeId).eq('user_id', currentUser.id).single();
     if (!existant) {
-      // Ajouter comme membre actif
       const prefs = MEM.load('prefs', {});
       await supabaseClient.from('equipe_membres').upsert({
-        equipe_id: equipeId,
-        user_id: currentUser.id,
-        nom: prefs.nom || currentUser.email,
-        email: currentUser.email,
-        role: 'employe',
-        statut: 'actif'
+        equipe_id: equipeId, user_id: currentUser.id,
+        nom: prefs.nom || currentUser.email, email: currentUser.email,
+        role: 'employe', statut: 'actif'
       }, { onConflict: 'equipe_id,user_id' });
     }
   } catch(e) { console.log('Erreur association équipe:', e); }
 }
 
-async function chargerTachesEmploye() {
-  if (!currentUser || !MODE_EMPLOYE) return;
-
-  const prefs = MEM.load('prefs', {});
-  const nom = prefs.nom || 'Employé';
-  const avatarEl = document.getElementById('employe-avatar');
-  const nomEl = document.getElementById('employe-nom');
-  if (avatarEl) avatarEl.textContent = nom.charAt(0).toUpperCase();
-  if (nomEl) nomEl.textContent = nom;
-
-  const container = document.getElementById('employe-taches-liste');
+async function chargerTachesEmployeV2() {
+  const container = document.getElementById('employe-taches-liste-v2');
+  const countEl = document.getElementById('employe-taches-count');
   if (!container) return;
-
+  container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">⏳ Chargement...</div>';
   try {
-    let query = supabaseClient
-      .from('taches_equipe').select('*')
-      .eq('assigne_a', currentUser.id)
-      .order('date', { ascending: true })
-      .limit(20);
-
-    // Filtrer par équipe spécifique si ID dans l'URL
-    if (EQUIPE_ID_URL) {
-      query = query.eq('equipe_id', EQUIPE_ID_URL);
-    }
-
+    let query = supabaseClient.from('taches_equipe').select('*')
+      .or(`assigne_a.eq.${currentUser.id},assigne_par.eq.${currentUser.id}`)
+      .order('date', { ascending: true }).limit(50);
+    if (EQUIPE_ID_URL) query = query.eq('equipe_id', EQUIPE_ID_URL);
     const { data: taches } = await query;
-
-    if (!taches?.length) {
-      container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Aucune tâche assignée pour linstant 🎉</div>';
+    const toutes = taches || [];
+    const aFaire = toutes.filter(t => !t.completee);
+    if (countEl) countEl.textContent = `${aFaire.length} à faire`;
+    if (!toutes.length) {
+      container.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">Aucune tâche pour l\'instant 🎉</div>';
       return;
     }
-
     const prioriteColors = { haute: '#e05c5c', normale: 'var(--accent-blue)', basse: 'var(--muted)' };
-    const aFaire = taches.filter(t => !t.completee);
-    const completees = taches.filter(t => t.completee);
-
-    container.innerHTML = `
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${aFaire.length} à faire · ${completees.length} complétée${completees.length > 1 ? 's' : ''}</div>
-      ${taches.map(t => `
-        <div class="employe-tache-item" style="opacity:${t.completee ? '0.6' : '1'}">
-          <div onclick="toggleTacheEmploye('${t.id}',${t.completee})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : prioriteColors[t.priorite]||'var(--accent-blue)'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.2s">
-            ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+    container.innerHTML = toutes.map(t => {
+      const estAssignee = t.assigne_par !== currentUser.id;
+      return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:${t.completee ? 'transparent' : 'var(--surface)'};border:1px solid ${t.completee ? 'var(--border)' : 'rgba(68,136,255,0.15)'};border-radius:10px;margin-bottom:8px;opacity:${t.completee ? '0.6' : '1'}">
+        <div onclick="toggleTacheEmployeV2('${t.id}',${t.completee})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : prioriteColors[t.priorite]||'var(--accent-blue)'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s">
+          ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+            ${estAssignee ? '<span style="font-size:10px;background:rgba(68,136,255,0.1);color:var(--accent-blue);padding:1px 6px;border-radius:6px">Assignée</span>' : ''}
+            ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}</span>` : ''}
+            <span style="font-size:11px;color:${prioriteColors[t.priorite]||'var(--muted)'}">${t.priorite === 'haute' ? '🔴 Urgent' : t.priorite === 'basse' ? '⚪ Basse' : '🔵 Normale'}</span>
           </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
-            <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-              ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}</span>` : ''}
-              <span style="font-size:11px;color:${prioriteColors[t.priorite]||'var(--muted)'}">${t.priorite === 'haute' ? '🔴 Urgent' : t.priorite === 'basse' ? '⚪ Basse' : '🔵 Normale'}</span>
-              ${t.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">${escapeHtml(t.notes)}</span>` : ''}
-            </div>
-          </div>
-        </div>`).join('')}`;
-
-    // Message de bienvenue employé
-    if (aFaire.length > 0) {
-      addNovaMessage(`Bonjour **${nom}** ! 👋 Tu as **${aFaire.length} tâche${aFaire.length > 1 ? 's' : ''}** assignée${aFaire.length > 1 ? 's' : ''} aujourd'hui. Coche-les quand tu les complètes, ou demande-moi de l'aide !`);
-    } else {
-      addNovaMessage(`Bonjour **${nom}** ! 👋 Toutes tes tâches sont complétées — excellent travail ! Comment puis-je t'aider ?`);
-    }
-  } catch(e) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Erreur de chargement</div>';
-  }
+        </div>
+        ${!estAssignee ? `<button onclick="supprimerTacheEmployeV2('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">🗑</button>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Erreur de chargement</div>'; }
 }
 
-async function toggleTacheEmploye(id, estComplete) {
+async function ajouterTacheEmploye() {
+  if (!currentUser || !EQUIPE_ID_URL) return;
+  const input = document.getElementById('employe-nouvelle-tache');
+  const texte = input?.value.trim();
+  if (!texte) return;
+  const priorite = document.getElementById('employe-tache-priorite')?.value || 'normale';
   try {
-    await supabaseClient.from('taches_equipe').update({
-      completee: !estComplete,
-      statut: !estComplete ? 'completee' : 'a_faire'
-    }).eq('id', id);
+    await supabaseClient.from('taches_equipe').insert({
+      equipe_id: EQUIPE_ID_URL, assigne_par: currentUser.id, assigne_a: currentUser.id,
+      texte, priorite, date: new Date().toISOString().split('T')[0],
+      statut: 'a_faire', completee: false
+    });
+    if (input) input.value = '';
+    chargerTachesEmployeV2();
+  } catch(e) { console.log('Erreur ajout tâche:', e); }
+}
 
-    // Notifier le patron — dans un try séparé pour ne pas bloquer si ça échoue
+async function toggleTacheEmployeV2(id, estComplete) {
+  try {
+    await supabaseClient.from('taches_equipe').update({ completee: !estComplete, statut: !estComplete ? 'completee' : 'a_faire' }).eq('id', id);
     if (!estComplete) {
       try {
-        const { data: tache } = await supabaseClient
-          .from('taches_equipe').select('*').eq('id', id).single();
-        if (tache?.assigne_par) {
+        const { data: tache } = await supabaseClient.from('taches_equipe').select('*').eq('id', id).single();
+        if (tache?.assigne_par && tache.assigne_par !== currentUser.id) {
           const prefs = MEM.load('prefs', {});
-          await envoyerNotification(
-            tache.assigne_par,
-            'Tâche complétée ✅',
-            `${prefs.nom || currentUser?.email || 'Votre employé'} a complété : "${tache.texte}"`,
-            'task'
-          );
+          await envoyerNotification(tache.assigne_par, 'Tâche complétée ✅', `${prefs.nom || currentUser.email} a complété : "${tache.texte}"`, 'task');
         }
-      } catch(e) { /* Notification non critique */ }
-      addNovaMessage('✅ Tâche marquée comme complétée — bon travail !');
+      } catch(e) {}
     }
-    chargerTachesEmploye();
-  } catch(e) { console.log('Erreur toggle tâche employé:', e); }
+    chargerTachesEmployeV2();
+  } catch(e) { console.log('Erreur toggle tâche:', e); }
 }
+
+async function supprimerTacheEmployeV2(id) {
+  if (!confirm('Supprimer cette tâche ?')) return;
+  try { await supabaseClient.from('taches_equipe').delete().eq('id', id); chargerTachesEmployeV2(); } catch(e) {}
+}
+
+function toggleEmployeSection(section) {
+  const body = document.getElementById(`employe-${section}-body`);
+  const chevron = document.getElementById(`employe-${section}-chevron`);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+}
+
+async function chargerCalEmploye() {
+  if (!currentUser) return;
+  try {
+    const depuis = new Date(); depuis.setMonth(depuis.getMonth() - 1);
+    const { data } = await supabaseClient.from('rdv').select('*')
+      .eq('user_id', currentUser.id)
+      .gte('date', depuis.toISOString().split('T')[0])
+      .order('date', { ascending: true }).limit(50);
+    calEvents = data || [];
+    renderMiniCalEmploye();
+    renderRdvEmploye();
+  } catch(e) { console.log('Erreur cal employé:', e); }
+}
+
+function renderMiniCalEmploye() {
+  const container = document.getElementById('employe-mini-cal');
+  if (!container) return;
+  const maintenant = new Date();
+  const annee = maintenant.getFullYear(), mois = maintenant.getMonth(), aujourd = maintenant.getDate();
+  const moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const joursRdv = new Set(calEvents.filter(e => { const d = parseDate(e.date); return d.getFullYear()===annee&&d.getMonth()===mois; }).map(e => parseInt(e.date.split('-')[2])));
+  const premier = new Date(annee, mois, 1).getDay();
+  const nbJours = new Date(annee, mois + 1, 0).getDate();
+  let html = `<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;text-align:center">${moisNoms[mois]} ${annee}</div>`;
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">';
+  ['Di','Lu','Ma','Me','Je','Ve','Sa'].forEach(j => { html += `<div style="font-size:10px;color:var(--muted);padding:3px 0;font-weight:500">${j}</div>`; });
+  for (let i = 0; i < premier; i++) html += '<div></div>';
+  for (let d = 1; d <= nbJours; d++) {
+    const estAuj = d === aujourd, aRdv = joursRdv.has(d);
+    html += `<div style="padding:4px 2px;font-size:12px;border-radius:6px;cursor:pointer;background:${estAuj?'var(--accent-blue)':'transparent'};color:${estAuj?'#fff':'var(--text)'}" onclick="filtrerRdvEmployeJour(${annee},${mois+1},${d})">${d}${aRdv?'<div style="width:4px;height:4px;border-radius:50%;background:var(--accent2);margin:0 auto"></div>':''}</div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+let rdvEmployeFiltre = null;
+function filtrerRdvEmployeJour(annee, mois, jour) {
+  rdvEmployeFiltre = `${annee}-${String(mois).padStart(2,'0')}-${String(jour).padStart(2,'0')}`;
+  renderRdvEmploye();
+}
+
+function renderRdvEmploye() {
+  const container = document.getElementById('employe-rdv-liste');
+  if (!container) return;
+  const aujourdhui = new Date().toISOString().split('T')[0];
+  const rdvs = rdvEmployeFiltre ? calEvents.filter(e => e.date === rdvEmployeFiltre) : calEvents.filter(e => e.date >= aujourdhui).slice(0, 5);
+  const titre = rdvEmployeFiltre ? `RDV du ${rdvEmployeFiltre}` : 'Prochains RDV';
+  if (!rdvs.length) { container.innerHTML = `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">${titre}</div><div style="font-size:12px;color:var(--muted);padding:8px 0">Aucun RDV</div>`; return; }
+  container.innerHTML = `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">${titre}</div>` +
+    rdvs.map(rdv => `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div style="width:3px;height:32px;border-radius:2px;background:${rdv.couleur||'#4488ff'};flex-shrink:0"></div><div style="flex:1"><div style="font-size:13px;color:var(--text)">${escapeHtml(rdv.titre)}</div><div style="font-size:11px;color:var(--muted)">${rdv.date}${rdv.heure?' · '+rdv.heure:''}</div></div><button onclick="supprimerRdvEmploye('${rdv.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px">🗑</button></div>`).join('');
+}
+
+async function ajouterRdvEmploye() {
+  if (!currentUser) return;
+  const titre = document.getElementById('employe-rdv-titre')?.value.trim();
+  const date = document.getElementById('employe-rdv-date')?.value;
+  const heure = document.getElementById('employe-rdv-heure')?.value || '';
+  const duree = document.getElementById('employe-rdv-duree')?.value || 60;
+  if (!titre || !date) { alert('Entre un titre et une date.'); return; }
+  try {
+    const { data: rdv } = await supabaseClient.from('rdv').insert({ user_id: currentUser.id, titre, date, heure, duree: parseInt(duree), couleur: '#4488ff' }).select().single();
+    if (rdv) calEvents.push(rdv);
+    calEvents.sort((a, b) => a.date.localeCompare(b.date));
+    document.getElementById('employe-rdv-titre').value = '';
+    document.getElementById('employe-rdv-date').value = '';
+    renderMiniCalEmploye(); renderRdvEmploye();
+  } catch(e) { console.log('Erreur ajout RDV:', e); }
+}
+
+async function supprimerRdvEmploye(id) {
+  if (!confirm('Supprimer ce RDV ?')) return;
+  try { await supabaseClient.from('rdv').delete().eq('id', id); calEvents = calEvents.filter(e => e.id !== id); renderMiniCalEmploye(); renderRdvEmploye(); } catch(e) {}
+}
+
+async function chargerTachesEmploye() { return chargerTachesEmployeV2(); }
+async function toggleTacheEmploye(id, estComplete) { return toggleTacheEmployeV2(id, estComplete); }
 
 // Obtenir le lien employé pour partager
 function obtenirLienEmploye() {
@@ -9198,24 +9342,32 @@ async function onConnected() {
     if (MODE_EMPLOYE) activerModeEmploye();
 
     // Vérifier abonnement Stripe — non bloquant
-    try { await verifierAbonnement(); } catch(e) { console.log('Stripe non vérifié:', e); }
-
-    // Onboarding ou message de bienvenue
-    const dejavu = MEM.load('onboarding_done', false);
-    if (!dejavu) {
-      setTimeout(() => demarrerOnboarding(), 800);
+    // Les employés n'ont pas besoin de payer
+    if (MODE_EMPLOYE) {
+      abonnementActif = true; // L'employé utilise le compte du patron
     } else {
-      setTimeout(() => afficherMessageBienvenue(), 1000);
+      try { await verifierAbonnement(); } catch(e) { console.log('Stripe non vérifié:', e); }
     }
 
-    // Chargements différés — non bloquants
-    setTimeout(() => { try { verifierRelancesFactures(); } catch(e) {} }, 3000);
-    setTimeout(() => { try { const h = new Date().getHours(); if (h >= 18) verifierTachesJour(); } catch(e) {} }, 5000);
-    setTimeout(() => { try { chargerMemoireLongue(); } catch(e) {} }, 2000);
-    setTimeout(() => { try { chargerStripeConfig(); } catch(e) {} }, 2500);
-    setTimeout(() => { try { chargerTachesEquipePourEmploye(); } catch(e) {} }, 3500);
-    setTimeout(() => { try { verifierRapportMensuelAuto(); } catch(e) {} }, 6000);
-    setTimeout(() => { try { chargerNotifications(); demarrerEcouteNotifications(); } catch(e) {} }, 2000);
+
+    // Onboarding ou message de bienvenue — pas pour les employés
+    if (!MODE_EMPLOYE) {
+      const dejavu = MEM.load('onboarding_done', false);
+      if (!dejavu) {
+        setTimeout(() => demarrerOnboarding(), 800);
+      } else {
+        setTimeout(() => afficherMessageBienvenue(), 1000);
+      }
+
+      // Chargements différés — non bloquants
+      setTimeout(() => { try { verifierRelancesFactures(); } catch(e) {} }, 3000);
+      setTimeout(() => { try { const h = new Date().getHours(); if (h >= 18) verifierTachesJour(); } catch(e) {} }, 5000);
+      setTimeout(() => { try { chargerMemoireLongue(); } catch(e) {} }, 2000);
+      setTimeout(() => { try { chargerStripeConfig(); } catch(e) {} }, 2500);
+      setTimeout(() => { try { chargerTachesEquipePourEmploye(); } catch(e) {} }, 3500);
+      setTimeout(() => { try { verifierRapportMensuelAuto(); } catch(e) {} }, 6000);
+      setTimeout(() => { try { chargerNotifications(); demarrerEcouteNotifications(); } catch(e) {} }, 2000);
+    }
 
   } catch(e) {
     console.error('Erreur onConnected:', e);
