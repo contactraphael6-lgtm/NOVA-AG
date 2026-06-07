@@ -3648,6 +3648,21 @@
 </div>
 
 <script>
+// Détection IMMÉDIATE du mode employé — avant tout le reste
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') === 'employe') {
+    document.documentElement.classList.add('employe-mode-early');
+    // Cacher le paywall immédiatement si jamais il apparaît
+    document.addEventListener('DOMContentLoaded', function() {
+      const paywall = document.getElementById('paywall');
+      if (paywall) paywall.style.display = 'none !important';
+      const app = document.getElementById('app');
+      if (app) app.classList.add('employe-mode');
+    });
+  }
+})();
+
 const CLAUDE_API = "https://nova-ai.contact-raphael6.workers.dev";
 let shopifyConfig = null;
 let conversationHistory = [];
@@ -9330,6 +9345,13 @@ async function inscription() {
 
 async function onConnected() {
   try {
+    // PRIORITÉ 1 — Si mode employé, bloquer le paywall immédiatement
+    if (MODE_EMPLOYE) {
+      abonnementActif = true;
+      const paywall = document.getElementById('paywall');
+      if (paywall) paywall.style.display = 'none';
+    }
+
     document.getElementById('auth-page').classList.add('hidden');
     const app = document.getElementById('app');
     const splash = document.getElementById('splash');
@@ -9343,11 +9365,8 @@ async function onConnected() {
     afficherBoutonAdmin();
     if (MODE_EMPLOYE) activerModeEmploye();
 
-    // Vérifier abonnement Stripe — non bloquant
-    // Les employés n'ont pas besoin de payer
-    if (MODE_EMPLOYE) {
-      abonnementActif = true; // L'employé utilise le compte du patron
-    } else {
+    // Vérifier abonnement Stripe — seulement pour les patrons
+    if (!MODE_EMPLOYE) {
       try { await verifierAbonnement(); } catch(e) { console.log('Stripe non vérifié:', e); }
     }
 
@@ -9543,8 +9562,8 @@ let abonnementActif = false;
 // VÉRIFICATION PRO
 // =====================
 function verifierPro(nomFonction) {
+  if (MODE_EMPLOYE) return true; // Les employés ont accès à leur interface
   if (abonnementActif) return true;
-  // Montrer le paywall avec message personnalisé
   afficherPagePaiement(nomFonction);
   return false;
 }
@@ -9765,6 +9784,8 @@ async function chargerAccesGratuitsAdmin() {
 let stripeCustomerId = null;
 
 async function verifierAbonnement() {
+  // Les employés n'ont jamais besoin de vérifier l'abonnement
+  if (MODE_EMPLOYE) { abonnementActif = true; return; }
   if (!currentUser?.email) return;
 
   // Afficher "Vérification..." pendant qu'on attend Stripe
