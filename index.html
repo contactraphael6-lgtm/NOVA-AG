@@ -6580,15 +6580,42 @@ async function chargerInterfaceEmploye() {
 async function associerEmployeEquipe(equipeId) {
   if (!currentUser) return;
   try {
-    const { data: existant } = await supabaseClient.from('equipe_membres').select('id')
+    // Vérifier si déjà membre actif avec son vrai user_id
+    const { data: existant } = await supabaseClient.from('equipe_membres').select('id,statut')
       .eq('equipe_id', equipeId).eq('user_id', currentUser.id).single();
-    if (!existant) {
+
+    if (existant) {
+      // Déjà membre — mettre à jour le statut si en attente
+      if (existant.statut === 'en_attente') {
+        await supabaseClient.from('equipe_membres').update({ statut: 'actif' }).eq('id', existant.id);
+      }
+      return;
+    }
+
+    // Chercher une invitation en attente par email
+    const { data: invitation } = await supabaseClient.from('equipe_membres').select('*')
+      .eq('equipe_id', equipeId)
+      .eq('email', currentUser.email)
+      .eq('statut', 'en_attente')
+      .single();
+
+    if (invitation) {
+      // Mettre à jour l'invitation avec le vrai user_id et activer
+      await supabaseClient.from('equipe_membres').update({
+        user_id: currentUser.id,
+        statut: 'actif'
+      }).eq('id', invitation.id);
+    } else {
+      // Pas d'invitation — ajouter directement comme membre actif
       const prefs = MEM.load('prefs', {});
-      await supabaseClient.from('equipe_membres').upsert({
-        equipe_id: equipeId, user_id: currentUser.id,
-        nom: prefs.nom || currentUser.email, email: currentUser.email,
-        role: 'employe', statut: 'actif'
-      }, { onConflict: 'equipe_id,user_id' });
+      await supabaseClient.from('equipe_membres').insert({
+        equipe_id: equipeId,
+        user_id: currentUser.id,
+        nom: prefs.nom || currentUser.email,
+        email: currentUser.email,
+        role: 'employe',
+        statut: 'actif'
+      });
     }
   } catch(e) { console.log('Erreur association équipe:', e); }
 }
@@ -7419,10 +7446,10 @@ async function inviterMembre() {
   const nomEquipe = equipeData.nom || 'l\'équipe';
 
   try {
-    // Ajouter comme membre en attente
+    // Ajouter comme membre en attente — sans user_id pour l'instant
     await supabaseClient.from('equipe_membres').insert({
       equipe_id: equipeData.id,
-      user_id: currentUser.id,
+      user_id: null,
       nom: nom || email,
       email, role,
       statut: 'en_attente'
