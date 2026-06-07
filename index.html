@@ -9412,11 +9412,20 @@ async function inscription() {
 
 async function onConnected() {
   try {
+    // Récupérer les params sauvegardés si Supabase a effacé l'URL
+    const savedMode = sessionStorage.getItem('nexus_mode');
+    const savedEquipe = sessionStorage.getItem('nexus_equipe');
+    const estEmploye = MODE_EMPLOYE || savedMode === 'employe';
+    const equipeId = EQUIPE_ID_URL || savedEquipe;
+
     // PRIORITÉ 1 — Si mode employé, bloquer le paywall immédiatement
-    if (MODE_EMPLOYE) {
+    if (estEmploye) {
       abonnementActif = true;
       const paywall = document.getElementById('paywall');
       if (paywall) paywall.style.display = 'none';
+      // Nettoyer sessionStorage après usage
+      sessionStorage.removeItem('nexus_mode');
+      sessionStorage.removeItem('nexus_equipe');
     }
 
     document.getElementById('auth-page').classList.add('hidden');
@@ -9430,16 +9439,24 @@ async function onConnected() {
 
     chargerMemoire();
     afficherBoutonAdmin();
-    if (MODE_EMPLOYE) activerModeEmploye();
+    if (estEmploye) {
+      const app = document.getElementById('app');
+      if (app) app.classList.add('employe-mode');
+      if (equipeId) await associerEmployeEquipe(equipeId);
+      await chargerInterfaceEmploye();
+      demarrerEcouteTachesEmploye();
+    } else if (MODE_EMPLOYE) {
+      activerModeEmploye();
+    }
 
     // Vérifier abonnement Stripe — seulement pour les patrons
-    if (!MODE_EMPLOYE) {
+    if (!estEmploye && !MODE_EMPLOYE) {
       try { await verifierAbonnement(); } catch(e) { console.log('Stripe non vérifié:', e); }
     }
 
 
     // Onboarding ou message de bienvenue — pas pour les employés
-    if (!MODE_EMPLOYE) {
+    if (!estEmploye && !MODE_EMPLOYE) {
       const dejavu = MEM.load('onboarding_done', false);
       if (!dejavu) {
         setTimeout(() => demarrerOnboarding(), 800);
@@ -10077,18 +10094,58 @@ async function verifierSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
+    // Sauvegarder les params URL avant que Supabase les efface
+    const params = new URLSearchParams(window.location.search);
+    const modeEmploye = params.get('mode') === 'employe' || MODE_EMPLOYE;
+    const equipeId = params.get('equipe') || EQUIPE_ID_URL;
+
+    // Si mode employé — bloquer le paywall immédiatement
+    if (modeEmploye) {
+      abonnementActif = true;
+      const paywall = document.getElementById('paywall');
+      if (paywall) paywall.style.display = 'none';
+    }
+
     document.getElementById('auth-page').classList.add('hidden');
     document.getElementById('splash').style.display = 'none';
     document.getElementById('splash').classList.add('hidden');
-    await chargerProfilSupabase();
+
+    try { await chargerProfilSupabase(); } catch(e) {}
+
     const app = document.getElementById('app');
     app.style.opacity = '1';
     app.style.pointerEvents = 'all';
     app.classList.add('visible');
     chargerMemoire();
     afficherBoutonAdmin();
-    await verifierAbonnement();
+
+    if (modeEmploye) {
+      // S'assurer que la classe est bien appliquée
+      app.classList.add('employe-mode');
+      if (equipeId) await associerEmployeEquipe(equipeId);
+      await chargerInterfaceEmploye();
+      demarrerEcouteTachesEmploye();
+    } else {
+      await verifierAbonnement();
+      const dejavu = MEM.load('onboarding_done', false);
+      if (!dejavu) {
+        setTimeout(() => demarrerOnboarding(), 800);
+      } else {
+        setTimeout(() => afficherMessageBienvenue(), 1000);
+      }
+      setTimeout(() => { try { verifierRelancesFactures(); } catch(e) {} }, 3000);
+      setTimeout(() => { try { chargerMemoireLongue(); } catch(e) {} }, 2000);
+      setTimeout(() => { try { chargerStripeConfig(); } catch(e) {} }, 2500);
+      setTimeout(() => { try { chargerNotifications(); demarrerEcouteNotifications(); } catch(e) {} }, 2000);
+    }
   } else {
+    // Pas de session — afficher la page de connexion
+    // Sauvegarder les params dans sessionStorage pour les retrouver après connexion
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'employe') {
+      sessionStorage.setItem('nexus_mode', 'employe');
+      sessionStorage.setItem('nexus_equipe', params.get('equipe') || '');
+    }
     document.getElementById('splash').style.display = 'none';
     document.getElementById('splash').classList.add('hidden');
     document.getElementById('auth-page').style.display = 'flex';
