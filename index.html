@@ -3547,6 +3547,20 @@
             <label class="compose-label">Message</label>
             <textarea class="compose-input compose-textarea" id="compose-body" placeholder="Écrivez votre message..."></textarea>
           </div>
+
+          <!-- Pièces jointes -->
+          <div class="compose-field">
+            <label class="compose-label">Pièces jointes</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button onclick="document.getElementById('email-attachment-input').click()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px">
+                📎 Ajouter un fichier
+              </button>
+              <input type="file" id="email-attachment-input" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none" onchange="ajouterPiecesJointes(this)" />
+              <span style="font-size:11px;color:var(--muted)">Images, PDF, Word, Excel — max 10MB</span>
+            </div>
+            <div id="email-attachments-liste" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+
           <button class="btn-primary" onclick="envoyerEmailSMTP()" style="margin-top:4px">📤 Envoyer</button>
           <div id="send-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:6px"></div>
         </div>
@@ -3834,11 +3848,18 @@ async function chargerSession(sessionId) {
 
 async function supprimerSession(sessionId) {
   if (!confirm('Supprimer cette conversation ?')) return;
-  if (currentUser && sessionId !== 'local') {
-    await supabaseClient.from('conversations').delete().eq('id', sessionId);
+  try {
+    if (currentUser && sessionId !== 'local') {
+      await supabaseClient.from('conversations').delete().eq('id', sessionId);
+    }
+    toutesSessionsHist = toutesSessionsHist.filter(s => s.id !== sessionId);
+    afficherSessionsHist(toutesSessionsHist);
+  } catch(e) {
+    console.log('Erreur suppression session:', e);
+    // Supprimer quand même du cache local
+    toutesSessionsHist = toutesSessionsHist.filter(s => s.id !== sessionId);
+    afficherSessionsHist(toutesSessionsHist);
   }
-  toutesSessionsHist = toutesSessionsHist.filter(s => s.id !== sessionId);
-  afficherSessionsHist(toutesSessionsHist);
 }
 
 // =====================
@@ -3996,6 +4017,7 @@ function verifierTachesJour() {
 let financesData = [];
 
 async function ouvrirFinances() {
+  if (!verifierPro('finances')) return;
   document.getElementById('finances-overlay').classList.add('open');
   // Init dates
   const today = new Date().toISOString().split('T')[0];
@@ -4250,6 +4272,7 @@ const TPS_RATE = 0.05;
 const TVQ_RATE = 0.09975;
 
 function ouvrirTaxes() {
+  if (!verifierPro('taxes')) return;
   document.getElementById('taxes-overlay').classList.add('open');
   // Remplir les années
   const select = document.getElementById('taxes-annee');
@@ -4572,8 +4595,15 @@ function exporterRapportTaxes() {
 let tousLesClients = [];
 
 async function ouvrirCRM() {
+  if (!verifierPro('crm')) return;
   document.getElementById('crm-overlay').classList.add('open');
-  await chargerClientsCRM();
+  try {
+    await chargerClientsCRM();
+  } catch(e) {
+    console.log('Erreur chargement CRM:', e);
+    const container = document.getElementById('crm-liste');
+    if (container) container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Erreur de chargement — vérifie ta connexion.</div>';
+  }
 }
 
 function fermerCRM() {
@@ -4732,9 +4762,11 @@ async function voirClientCRM(id) {
   const client = tousLesClients.find(c => c.id === id);
   if (!client) return;
 
-  // Mettre à jour dernier contact
-  await supabaseClient.from('clients').update({ dernier_contact: new Date().toISOString() }).eq('id', id);
-  client.dernier_contact = new Date().toISOString();
+  // Mettre à jour dernier contact — non bloquant
+  try {
+    await supabaseClient.from('clients').update({ dernier_contact: new Date().toISOString() }).eq('id', id);
+    client.dernier_contact = new Date().toISOString();
+  } catch(e) { console.log('Erreur mise à jour contact:', e); }
 
   document.getElementById('crm-liste-view').style.display = 'none';
   document.getElementById('crm-form-view').style.display = 'none';
@@ -5183,22 +5215,6 @@ function chargerMemoire() {
         addNovaMessage(`🎉 **Paiement reçu !** La facture **${facturePayee}** a été payée avec succès par carte Stripe !`);
       }, 2000);
     }
-
-    // Vérifier les factures non payées depuis 30 jours
-    setTimeout(() => verifierRelancesFactures(), 3000);
-    // Vérifier tâches non complétées (à 18h)
-    const heure = new Date().getHours();
-    if (heure >= 18) setTimeout(() => verifierTachesJour(), 5000);
-    // Charger la mémoire longue
-    setTimeout(() => chargerMemoireLongue(), 2000);
-    // Charger la config Stripe du client
-    setTimeout(() => chargerStripeConfig(), 2500);
-    // Charger les tâches équipe assignées
-    setTimeout(() => chargerTachesEquipePourEmploye(), 3500);
-    // Vérifier rapport mensuel automatique
-    setTimeout(() => verifierRapportMensuelAuto(), 6000);
-    // Charger et écouter les notifications
-    setTimeout(() => { chargerNotifications(); demarrerEcouteNotifications(); }, 2000);
   }
 }
 
@@ -5279,6 +5295,23 @@ function verifierRelancesFactures() {
     }
   });
   MEM.save('factures', factures);
+}
+
+// Limiter l'historique pour ne pas dépasser les tokens max
+function limiterHistoireTokens(history, maxTokens = 60000) {
+  // Estimation: 1 token ≈ 4 caractères
+  let total = 0;
+  const result = [];
+  // Parcourir de la fin vers le début pour garder les plus récents
+  for (let i = history.length - 1; i >= 0; i--) {
+    const tokens = Math.ceil((history[i].content || '').length / 4);
+    if (total + tokens > maxTokens && result.length > 0) break;
+    result.unshift(history[i]);
+    total += tokens;
+  }
+  // Toujours garder au moins le dernier message utilisateur
+  if (!result.length && history.length) result.push(history[history.length - 1]);
+  return result;
 }
 
 // Sauvegarder historique conversation (max 30 messages)
@@ -6140,45 +6173,54 @@ function renderOrders(orders) {
 // --- Claude API ---
 // Alias pour utiliser dans le mode vocal
 async function envoyerMessageIA(texte) {
-  return await callClaude(texte);
+  try {
+    return await callClaude(texte);
+  } catch(e) {
+    console.log('Erreur envoyerMessageIA:', e);
+    return "Désolée, une erreur s'est produite. Réessaie dans quelques instants.";
+  }
 }
 
 // Traiter les actions d'une réponse (pour le mode vocal)
 async function traiterActionsReponse(reply) {
-  if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
-    const orders = await fetchShopifyOrders();
-    if (orders) {
-      const msgs = document.getElementById('messages');
-      const lastMsg = msgs.lastElementChild;
-      if (lastMsg) {
-        const extra = document.createElement('div');
-        extra.innerHTML = renderOrders(orders);
-        lastMsg.querySelector('.msg-bubble')?.appendChild(extra);
-      }
-    }
-  } else if (reply.includes('[CRÉER_EXCEL]')) {
-    const jsonMatch = reply.match(/\[CRÉER_EXCEL\]([\s\S]*?)\[\/CRÉER_EXCEL\]/);
-    if (jsonMatch) { try { createExcelFile(JSON.parse(jsonMatch[1])); } catch(e) {} }
-  } else if (reply.includes('[CRÉER_WORD]')) {
-    const jsonMatch = reply.match(/\[CRÉER_WORD\]([\s\S]*?)\[\/CRÉER_WORD\]/);
-    if (jsonMatch) { try { const dlHtml = createWordFile(JSON.parse(jsonMatch[1])); addNovaMessage('', dlHtml); } catch(e) {} }
-  } else if (reply.includes('[CRÉER_PPT]')) {
-    const jsonMatch = reply.match(/\[CRÉER_PPT\]([\s\S]*?)\[\/CRÉER_PPT\]/);
-    if (jsonMatch) { try { const dlHtml = createPptFile(JSON.parse(jsonMatch[1])); addNovaMessage('', dlHtml); } catch(e) {} }
-  } else if (reply.includes('[CRÉER_ÉVÉNEMENT]')) {
-    const jsonMatch = reply.match(/\[CRÉER_ÉVÉNEMENT\]([\s\S]*?)\[\/CRÉER_ÉVÉNEMENT\]/);
-    if (jsonMatch) { try { await creerEvenementDepuisNova(JSON.parse(jsonMatch[1])); } catch(e) {} }
-  } else if (reply.includes('[AJOUTER_FINANCE]')) {
-    const jsonMatch = reply.match(/\[AJOUTER_FINANCE\]([\s\S]*?)\[\/AJOUTER_FINANCE\]/);
-    if (jsonMatch) {
+  try {
+    if (reply.includes('[SHOPIFY_DATA]') && shopifyConfig) {
       try {
-        const data = JSON.parse(jsonMatch[1]);
-        await ajouterFinanceDepuisIA(data.type, data.montant, data.categorie, data.description);
-        afficherMiniDashboard();
-      } catch(e) {}
+        const orders = await fetchShopifyOrders();
+        if (orders) {
+          const msgs = document.getElementById('messages');
+          const lastMsg = msgs.lastElementChild;
+          if (lastMsg) {
+            const extra = document.createElement('div');
+            extra.innerHTML = renderOrders(orders);
+            lastMsg.querySelector('.msg-bubble')?.appendChild(extra);
+          }
+        }
+      } catch(e) { console.log('Erreur Shopify data:', e); }
     }
-  }
+    if (reply.includes('[CRÉER_EXCEL]')) {
+      const m = reply.match(/\[CRÉER_EXCEL\]([\s\S]*?)\[\/CRÉER_EXCEL\]/);
+      if (m) { try { createExcelFile(JSON.parse(m[1])); } catch(e) { console.log('Erreur Excel:', e); } }
+    }
+    if (reply.includes('[CRÉER_WORD]')) {
+      const m = reply.match(/\[CRÉER_WORD\]([\s\S]*?)\[\/CRÉER_WORD\]/);
+      if (m) { try { const h = createWordFile(JSON.parse(m[1])); addNovaMessage('', h); } catch(e) { console.log('Erreur Word:', e); } }
+    }
+    if (reply.includes('[CRÉER_PPT]')) {
+      const m = reply.match(/\[CRÉER_PPT\]([\s\S]*?)\[\/CRÉER_PPT\]/);
+      if (m) { try { const h = createPptFile(JSON.parse(m[1])); addNovaMessage('', h); } catch(e) { console.log('Erreur PPT:', e); } }
+    }
+    if (reply.includes('[CRÉER_ÉVÉNEMENT]')) {
+      const m = reply.match(/\[CRÉER_ÉVÉNEMENT\]([\s\S]*?)\[\/CRÉER_ÉVÉNEMENT\]/);
+      if (m) { try { await creerEvenementDepuisNova(JSON.parse(m[1])); } catch(e) { console.log('Erreur RDV:', e); } }
+    }
+    if (reply.includes('[AJOUTER_FINANCE]')) {
+      const m = reply.match(/\[AJOUTER_FINANCE\]([\s\S]*?)\[\/AJOUTER_FINANCE\]/);
+      if (m) { try { const d = JSON.parse(m[1]); await ajouterFinanceDepuisIA(d.type, d.montant, d.categorie, d.description); afficherMiniDashboard(); } catch(e) { console.log('Erreur Finance IA:', e); } }
+    }
+  } catch(e) { console.log('Erreur traiterActionsReponse:', e); }
 }
+
 
 async function callClaudeAvecImage(texte, imageBase64, imageType) {
   const systemPrompt = `Tu es Nexus AI, une secrétaire IA professionnelle avec vision avancée. Tu PEUX voir et analyser les images — c'est une de tes capacités principales. Tu analyses les documents, factures, photos de produits, captures d'écran, textes dans les images, et tout contenu visuel. Ne dis JAMAIS que tu ne peux pas voir les images. Réponds toujours en français avec précision.`;
@@ -6528,6 +6570,7 @@ function obtenirLienEmploye() {
 // RAPPORT FINANCIER MENSUEL PDF
 // =====================
 async function genererRapportMensuel(moisOffset = 0) {
+  if (!verifierPro('rapport')) return;
   // Afficher indicateur de chargement
   addNovaMessage('⏳ Génération du rapport en cours...');
 
@@ -6893,8 +6936,15 @@ let equipeData = null;
 let membresCached = [];
 
 async function ouvrirEquipe() {
+  if (!verifierPro('equipe')) return;
   document.getElementById('equipe-overlay').classList.add('open');
-  await chargerEquipe();
+  try {
+    await chargerEquipe();
+  } catch(e) {
+    console.log('Erreur chargement équipe:', e);
+    const container = document.getElementById('e-membres-liste');
+    if (container) container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Erreur de chargement — vérifie ta connexion.</div>';
+  }
 }
 
 function fermerEquipe() {
@@ -7251,6 +7301,7 @@ async function chargerTachesEquipePourEmploye() {
 let tousLesDocuments = [];
 
 async function ouvrirDocuments() {
+  if (!verifierPro('documents')) return;
   document.getElementById('documents-overlay').classList.add('open');
   await chargerDocuments();
 }
@@ -7792,6 +7843,10 @@ Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
 
   conversationHistory.push({ role: 'user', content: userMessage });
 
+  // Limiter l'historique pour éviter de dépasser les tokens (environ 4 chars = 1 token)
+  // On garde les messages les plus récents qui tiennent dans ~60k tokens
+  const histLimite = limiterHistoireTokens(conversationHistory, 60000);
+
   const res = await fetch(CLAUDE_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -7799,7 +7854,7 @@ Le JSON doit être valide. Tu peux mettre du texte avant/après les balises.`;
       model: 'claude-sonnet-4-5',
       max_tokens: 4000,
       system: systemPrompt,
-      messages: conversationHistory
+      messages: histLimite
     })
   });
 
@@ -8875,6 +8930,53 @@ function deconnecterSMTP() {
   if (pwEl) pwEl.value = '';
 }
 
+// =====================
+// PIÈCES JOINTES EMAIL
+// =====================
+let emailAttachments = [];
+
+function ajouterPiecesJointes(input) {
+  const files = Array.from(input.files);
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  files.forEach(file => {
+    if (file.size > maxSize) {
+      alert(`${file.name} est trop volumineux (max 10MB)`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result.split(',')[1];
+      emailAttachments.push({ name: file.name, base64, size: file.size, type: file.type });
+      renderPiecesJointes();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderPiecesJointes() {
+  const container = document.getElementById('email-attachments-liste');
+  if (!container) return;
+  if (!emailAttachments.length) { container.innerHTML = ''; return; }
+
+  container.innerHTML = emailAttachments.map((f, i) => {
+    const sizeStr = f.size < 1024 ? f.size + 'B' : f.size < 1024*1024 ? Math.round(f.size/1024) + 'KB' : (f.size/1024/1024).toFixed(1) + 'MB';
+    const icon = f.type.startsWith('image/') ? '🖼' : f.name.endsWith('.pdf') ? '📄' : f.name.endsWith('.xlsx') || f.name.endsWith('.xls') ? '📊' : f.name.endsWith('.docx') || f.name.endsWith('.doc') ? '📝' : '📎';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text)">
+      <span>${icon}</span>
+      <span style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.name)}</span>
+      <span style="color:var(--muted)">${sizeStr}</span>
+      <button onclick="retirerPieceJointe(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;margin-left:2px">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function retirerPieceJointe(index) {
+  emailAttachments.splice(index, 1);
+  renderPiecesJointes();
+}
+
 async function envoyerEmailSMTP() {
   const config = MEM.load('smtp_config');
   if (!config) { alert('Configurez votre email dans le menu.'); return; }
@@ -8885,28 +8987,41 @@ async function envoyerEmailSMTP() {
   const status = document.getElementById('send-status');
 
   if (!to || !subject || !body) { status.textContent = '⚠️ Remplis tous les champs.'; return; }
-  status.textContent = '⏳ Envoi en cours...';
+
+  const nbPJ = emailAttachments.length;
+  status.textContent = nbPJ > 0 ? `⏳ Envoi avec ${nbPJ} pièce${nbPJ > 1 ? 's' : ''} jointe${nbPJ > 1 ? 's' : ''}...` : '⏳ Envoi en cours...';
 
   try {
+    const payload = {
+      from_email: config.email,
+      from_name: config.nom,
+      to, subject, body
+    };
+
+    // Ajouter les pièces jointes si présentes
+    if (emailAttachments.length > 0) {
+      payload.attachments = emailAttachments.map(a => ({ name: a.name, base64: a.base64 }));
+    }
+
     const res = await fetch(SMTP_WORKER, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from_email: config.email,
-        from_name: config.nom,
-        to, subject, body
-      })
+      body: JSON.stringify(payload)
     });
+
     const data = await res.json();
     if (data.success) {
+      const pjStr = nbPJ > 0 ? ` avec **${nbPJ} pièce${nbPJ > 1 ? 's' : ''} jointe${nbPJ > 1 ? 's' : ''}**` : '';
       status.textContent = '✅ Email envoyé !';
-      // Sauvegarder dans l'historique des envois
-      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString() });
+      emailsEnvoyes.unshift({ to, subject, body, date: new Date().toISOString(), nbPJ });
       MEM.save('emails_envoyes', emailsEnvoyes.slice(0, 50));
       document.getElementById('compose-to').value = '';
       document.getElementById('compose-subject').value = '';
       document.getElementById('compose-body').value = '';
-      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**`);
+      // Réinitialiser les pièces jointes
+      emailAttachments = [];
+      renderPiecesJointes();
+      addNovaMessage(`✅ Email envoyé à **${to}** — Objet: **${subject}**${pjStr}`);
       setTimeout(() => status.textContent = '', 3000);
     } else {
       status.textContent = '❌ ' + (data.error || 'Erreur envoi');
@@ -9068,27 +9183,46 @@ async function inscription() {
 }
 
 async function onConnected() {
-  document.getElementById('auth-page').classList.add('hidden');
-  await chargerProfilSupabase();
-  const app = document.getElementById('app');
-  const splash = document.getElementById('splash');
-  if (splash) { splash.style.display = 'none'; splash.classList.add('hidden'); }
-  if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
-  chargerMemoire();
-  afficherBoutonAdmin();
-  // Activer mode employé si URL contient ?mode=employe
-  if (MODE_EMPLOYE) activerModeEmploye();
+  try {
+    document.getElementById('auth-page').classList.add('hidden');
+    const app = document.getElementById('app');
+    const splash = document.getElementById('splash');
+    if (splash) { splash.style.display = 'none'; splash.classList.add('hidden'); }
+    if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
 
-  // Vérifier abonnement Stripe
-  await verifierAbonnement();
+    // Charger le profil — non bloquant si ça échoue
+    try { await chargerProfilSupabase(); } catch(e) { console.log('Profil non chargé:', e); }
 
-  // Montrer onboarding si première visite
-  const dejavu = MEM.load('onboarding_done', false);
-  if (!dejavu) {
-    setTimeout(() => demarrerOnboarding(), 800);
-  } else {
-    // Message de bienvenue personnalisé
-    setTimeout(() => afficherMessageBienvenue(), 1000);
+    chargerMemoire();
+    afficherBoutonAdmin();
+    if (MODE_EMPLOYE) activerModeEmploye();
+
+    // Vérifier abonnement Stripe — non bloquant
+    try { await verifierAbonnement(); } catch(e) { console.log('Stripe non vérifié:', e); }
+
+    // Onboarding ou message de bienvenue
+    const dejavu = MEM.load('onboarding_done', false);
+    if (!dejavu) {
+      setTimeout(() => demarrerOnboarding(), 800);
+    } else {
+      setTimeout(() => afficherMessageBienvenue(), 1000);
+    }
+
+    // Chargements différés — non bloquants
+    setTimeout(() => { try { verifierRelancesFactures(); } catch(e) {} }, 3000);
+    setTimeout(() => { try { const h = new Date().getHours(); if (h >= 18) verifierTachesJour(); } catch(e) {} }, 5000);
+    setTimeout(() => { try { chargerMemoireLongue(); } catch(e) {} }, 2000);
+    setTimeout(() => { try { chargerStripeConfig(); } catch(e) {} }, 2500);
+    setTimeout(() => { try { chargerTachesEquipePourEmploye(); } catch(e) {} }, 3500);
+    setTimeout(() => { try { verifierRapportMensuelAuto(); } catch(e) {} }, 6000);
+    setTimeout(() => { try { chargerNotifications(); demarrerEcouteNotifications(); } catch(e) {} }, 2000);
+
+  } catch(e) {
+    console.error('Erreur onConnected:', e);
+    // Afficher quand même l'app même si quelque chose échoue
+    const app = document.getElementById('app');
+    if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
+    addNovaMessage('⚠️ Connexion partielle — certaines fonctionnalités peuvent être limitées. Rafraîchis la page si nécessaire.');
   }
 }
 
@@ -9266,11 +9400,17 @@ function afficherPagePaiement(fonctionBloquee) {
   // Mettre à jour le message selon la fonction bloquée
   const messages = {
     'voix': '🎙 La conversation vocale est réservée au plan Pro',
-    'gmail': '📧 Gmail est réservé au plan Pro',
+    'gmail': '📧 L\'email est réservé au plan Pro',
     'shopify': '🛍 Shopify est réservé au plan Pro',
-    'calendrier': '📅 Google Calendar est réservé au plan Pro',
+    'calendrier': '📅 Le calendrier est réservé au plan Pro',
     'facturation': '🧾 La facturation TPS/TVQ est réservée au plan Pro',
     'dashboard': '📊 Le tableau de bord est réservé au plan Pro',
+    'finances': '💰 Le module Finance est réservé au plan Pro',
+    'taxes': '🏛 Le module TPS/TVQ est réservé au plan Pro',
+    'equipe': '👥 La gestion d\'équipe est réservée au plan Pro',
+    'documents': '📁 Le module Documents est réservé au plan Pro',
+    'crm': '👤 Le CRM clients est réservé au plan Pro',
+    'rapport': '📊 Le rapport mensuel est réservé au plan Pro',
   };
   const msgEl = document.getElementById('paywall-feature-msg');
   if (msgEl && fonctionBloquee && messages[fonctionBloquee]) {
