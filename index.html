@@ -6523,6 +6523,46 @@ function activerModeEmploye() {
   document.getElementById('app').classList.add('employe-mode');
   if (EQUIPE_ID_URL && currentUser) associerEmployeEquipe(EQUIPE_ID_URL);
   chargerInterfaceEmploye();
+  // Écouter les nouvelles tâches en temps réel
+  demarrerEcouteTachesEmploye();
+}
+
+function demarrerEcouteTachesEmploye() {
+  if (!currentUser) return;
+  supabaseClient
+    .channel('taches-employe-' + currentUser.id)
+    .on('postgres_changes', {
+      event: '*', // INSERT, UPDATE, DELETE
+      schema: 'public',
+      table: 'taches_equipe',
+      filter: `assigne_a=eq.${currentUser.id}`
+    }, (payload) => {
+      // Recharger les tâches automatiquement
+      chargerTachesEmployeV2();
+
+      // Notifier l'employé si c'est une nouvelle tâche
+      if (payload.eventType === 'INSERT') {
+        const tache = payload.new;
+        // Petit feedback visuel
+        const countEl = document.getElementById('employe-taches-count');
+        if (countEl) {
+          countEl.style.background = 'rgba(255,150,50,0.3)';
+          countEl.style.color = '#ff9060';
+          setTimeout(() => {
+            countEl.style.background = 'rgba(68,136,255,0.15)';
+            countEl.style.color = 'var(--accent-blue)';
+          }, 2000);
+        }
+        // Notification navigateur
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Nexus AI — Nouvelle tâche', {
+            body: tache.texte,
+            icon: '/favicon.ico'
+          });
+        }
+      }
+    })
+    .subscribe();
 }
 
 async function chargerInterfaceEmploye() {
