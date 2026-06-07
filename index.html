@@ -6638,24 +6638,60 @@ async function chargerTachesEmployeV2() {
       container.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">Aucune tâche pour l\'instant 🎉</div>';
       return;
     }
+
     const prioriteColors = { haute: '#e05c5c', normale: 'var(--accent-blue)', basse: 'var(--muted)' };
-    container.innerHTML = toutes.map(t => {
-      const estAssignee = t.assigne_par !== currentUser.id;
-      return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:${t.completee ? 'transparent' : 'var(--surface)'};border:1px solid ${t.completee ? 'var(--border)' : 'rgba(68,136,255,0.15)'};border-radius:10px;margin-bottom:8px;opacity:${t.completee ? '0.6' : '1'}">
-        <div onclick="toggleTacheEmployeV2('${t.id}',${t.completee})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : prioriteColors[t.priorite]||'var(--accent-blue)'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s">
-          ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    const demain = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const moisNoms = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+    const joursNoms = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+    // Grouper par date
+    const parDate = {};
+    toutes.forEach(t => {
+      const d = t.date || aujourdhui;
+      if (!parDate[d]) parDate[d] = [];
+      parDate[d].push(t);
+    });
+
+    // Trier les dates
+    const datesTriees = Object.keys(parDate).sort();
+    let html = '';
+
+    datesTriees.forEach(date => {
+      const tachesDuJour = parDate[date];
+      const aFaireJour = tachesDuJour.filter(t => !t.completee).length;
+
+      let labelJour;
+      if (date === aujourdhui) labelJour = "Aujourd'hui";
+      else if (date === demain) labelJour = 'Demain';
+      else { const d = parseDate(date); labelJour = `${joursNoms[d.getDay()]} ${d.getDate()} ${moisNoms[d.getMonth()]}`; }
+
+      html += `<div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:11px;font-weight:600;color:${date === aujourdhui ? 'var(--accent-blue)' : 'var(--muted)'};text-transform:uppercase;letter-spacing:0.08em">${labelJour}</div>
+          ${aFaireJour > 0 ? `<span style="font-size:10px;background:${date === aujourdhui ? 'rgba(68,136,255,0.15)' : 'rgba(100,100,100,0.1)'};color:${date === aujourdhui ? 'var(--accent-blue)' : 'var(--muted)'};padding:2px 8px;border-radius:10px">${aFaireJour} à faire</span>` : '<span style="font-size:10px;color:#4ec87a">✅ Tout fait</span>'}
         </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
-          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-            ${estAssignee ? '<span style="font-size:10px;background:rgba(68,136,255,0.1);color:var(--accent-blue);padding:1px 6px;border-radius:6px">Assignée</span>' : ''}
-            ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}</span>` : ''}
-            <span style="font-size:11px;color:${prioriteColors[t.priorite]||'var(--muted)'}">${t.priorite === 'haute' ? '🔴 Urgent' : t.priorite === 'basse' ? '⚪ Basse' : '🔵 Normale'}</span>
-          </div>
-        </div>
-        ${!estAssignee ? `<button onclick="supprimerTacheEmployeV2('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">🗑</button>` : ''}
+        ${tachesDuJour.map(t => {
+          const estAssignee = t.assigne_par !== currentUser.id;
+          return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:${t.completee ? 'transparent' : 'var(--surface)'};border:1px solid ${t.completee ? 'var(--border)' : date === aujourdhui ? 'rgba(68,136,255,0.15)' : 'var(--border)'};border-radius:10px;margin-bottom:6px;opacity:${t.completee ? '0.5' : '1'}">
+            <div onclick="toggleTacheEmployeV2('${t.id}',${t.completee})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : prioriteColors[t.priorite]||'var(--accent-blue)'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.2s">
+              ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
+              <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
+                ${estAssignee ? '<span style="font-size:10px;background:rgba(68,136,255,0.1);color:var(--accent-blue);padding:1px 6px;border-radius:6px">Assignée</span>' : ''}
+                ${t.priorite === 'haute' ? '<span style="font-size:10px;color:#e05c5c">🔴 Urgent</span>' : t.priorite === 'basse' ? '<span style="font-size:10px;color:var(--muted)">⚪ Basse</span>' : ''}
+                ${t.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">${escapeHtml(t.notes)}</span>` : ''}
+              </div>
+            </div>
+            ${!estAssignee ? `<button onclick="supprimerTacheEmployeV2('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">🗑</button>` : ''}
+          </div>`;
+        }).join('')}
       </div>`;
-    }).join('');
+    });
+
+    container.innerHTML = html;
   } catch(e) { container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Erreur de chargement</div>'; }
 }
 
