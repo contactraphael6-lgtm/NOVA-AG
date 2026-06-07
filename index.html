@@ -7357,29 +7357,31 @@ async function inviterMembre() {
   if (!email) { status.textContent = '⚠️ Entre un email.'; return; }
   status.textContent = '⏳ Invitation...';
 
+  // Générer le lien unique avec l'ID de l'équipe
+  const lienEmploye = `${window.location.origin}${window.location.pathname}?mode=employe&equipe=${equipeData.id}`;
+  const prefs = MEM.load('prefs', {});
+  const nomPatron = prefs.nom || 'Votre gestionnaire';
+  const nomEquipe = equipeData.nom || 'l\'équipe';
+
   try {
     // Ajouter comme membre en attente
     await supabaseClient.from('equipe_membres').insert({
       equipe_id: equipeData.id,
-      user_id: currentUser.id, // Temporaire jusqu'à ce qu'ils s'inscrivent
+      user_id: currentUser.id,
       nom: nom || email,
-      email,
-      role,
+      email, role,
       statut: 'en_attente'
     });
 
-    // Envoyer email d'invitation via Brevo
-    const config = MEM.load('smtp_config');
-    if (config) {
-      await envoyerEmailDepuisNova(
-        email,
-        `Invitation à rejoindre Nexus AI`,
-        `Bonjour ${nom || ''},\n\n${MEM.load('prefs',{}).nom || 'Votre gestionnaire'} vous invite à rejoindre son équipe sur Nexus AI.\n\nCréez votre compte sur ${window.location.origin} avec cet email.\n\nNexus AI — Votre assistant IA personnel`
-      );
-    }
+    // Envoyer email d'invitation avec le bon lien
+    await envoyerEmailDepuisNova(
+      email,
+      `${nomPatron} vous invite à rejoindre son équipe sur Nexus AI`,
+      `Bonjour ${nom || ''},\n\n${nomPatron} vous invite à rejoindre ${nomEquipe} sur Nexus AI.\n\nCliquez sur le lien ci-dessous pour accéder à votre espace :\n\n${lienEmploye}\n\nVous devrez créer un compte avec cette adresse email (${email}) si vous n'en avez pas déjà un.\n\nUne fois connecté, vous verrez directement vos tâches et votre calendrier.\n\nBonne journée,\n${nomPatron}\nvia Nexus AI`
+    );
 
     membresCached.push({ nom: nom || email, email, role, statut: 'en_attente' });
-    status.textContent = `✅ Invitation envoyée à ${email} !`;
+    status.textContent = `✅ Invitation envoyée à ${email} avec le lien !`;
     document.getElementById('inv-nom').value = '';
     document.getElementById('inv-email').value = '';
     renderMembres();
