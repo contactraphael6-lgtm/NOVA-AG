@@ -1601,7 +1601,35 @@
   .search-results-count { font-size: 12px; color: var(--muted); align-self: center; white-space: nowrap; }
   .msg-bubble.highlight { border: 1px solid var(--accent) !important; background: rgba(200,169,110,0.1) !important; }
 
-  /* ===== CRM ===== */
+  /* ===== MODE EMPLOYÉ ===== */
+  .employe-mode .sidebar { display: none !important; }
+  .employe-mode .main-dashboard { display: none !important; }
+  .employe-mode .header-icons-extra { display: none !important; }
+  .employe-header {
+    display: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .employe-mode .employe-header { display: flex; }
+  .employe-taches {
+    display: none;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    max-height: 280px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .employe-mode .employe-taches { display: block; }
+  .employe-tache-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 8px;
+  }
   .crm-overlay {
     position: fixed; inset: 0; z-index: 300;
     background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
@@ -2025,6 +2053,20 @@
 .ob-step { animation: obFadeIn 0.3s ease; }
 @keyframes obFadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
+
+<!-- ===== PANNEAU NOTIFICATIONS ===== -->
+<div id="notif-panel" style="display:none;position:fixed;top:62px;right:12px;width:340px;max-height:480px;background:var(--surface);border:1px solid var(--border2);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:8000;overflow:hidden">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:14px;font-weight:500;color:var(--text)">Notifications</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="marquerToutesLues()" style="font-size:11px;color:var(--accent-blue);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif">Tout marquer lu</button>
+      <button onclick="toggleNotifications()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+  </div>
+  <div id="notif-liste" style="overflow-y:auto;max-height:400px">
+    <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucune notification</div>
+  </div>
+</div>
 
 <!-- ===== PANNEAU ADMIN ===== -->
 <div class="admin-overlay" id="admin-overlay">
@@ -3101,6 +3143,10 @@
   </div>
   <div class="header-actions">
     <button id="admin-btn" onclick="ouvrirAdmin()" style="display:none;width:36px;height:36px;border-radius:9px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,50,50,0.06);color:rgba(255,150,150,0.8);font-size:16px;cursor:pointer;align-items:center;justify-content:center;transition:all 0.2s" title="Panneau Admin">⚙️</button>
+    <button class="icon-btn" onclick="toggleNotifications()" title="Notifications" id="notif-btn" style="position:relative">
+      🔔
+      <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#e05c5c;color:#fff;font-size:9px;font-weight:700;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif">0</span>
+    </button>
     <button class="icon-btn" onclick="toggleRecherche()" title="Rechercher" id="search-btn">🔍</button>
     <button class="icon-btn" onclick="toggleTheme()" title="Thème" id="theme-btn">🌙</button>
     <button class="icon-btn" onclick="retourAccueil()" title="Accueil">←</button>
@@ -3178,6 +3224,9 @@
     </button>
     <button class="quick-action" onclick="ouvrirFinances(); toggleSidebar()">
       Finance
+    </button>
+    <button class="quick-action" onclick="genererRapportMensuel(); toggleSidebar()">
+      Rapport mensuel
     </button>
     <button class="quick-action" onclick="ouvrirTaxes(); toggleSidebar()">
       TPS/TVQ
@@ -3292,6 +3341,29 @@
 
   <!-- Main chat -->
   <main class="main">
+    <!-- Header employé (visible seulement en mode employé) -->
+    <div class="employe-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(68,136,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--accent-blue)" id="employe-avatar">E</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--text)" id="employe-nom">Mon espace</div>
+          <div style="font-size:11px;color:var(--muted)">Nexus AI — Mode employé</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="toggleTheme()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:14px;cursor:pointer">🌙</button>
+        <button onclick="deconnexion()" style="padding:6px 14px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- Zone tâches employé (visible seulement en mode employé) -->
+    <div class="employe-taches" id="employe-taches-zone">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">Mes tâches assignées</div>
+      <div id="employe-taches-liste">
+        <div style="font-size:12px;color:var(--muted);text-align:center;padding:10px">Chargement...</div>
+      </div>
+    </div>
+
     <!-- Barre de recherche -->
     <div class="search-bar hidden" id="search-bar">
       <input class="search-input" id="search-input" placeholder="Rechercher dans les conversations..." oninput="rechercherMessages(this.value)" />
@@ -5065,6 +5137,10 @@ function chargerMemoire() {
     setTimeout(() => chargerStripeConfig(), 2500);
     // Charger les tâches équipe assignées
     setTimeout(() => chargerTachesEquipePourEmploye(), 3500);
+    // Vérifier rapport mensuel automatique
+    setTimeout(() => verifierRapportMensuelAuto(), 6000);
+    // Charger et écouter les notifications
+    setTimeout(() => { chargerNotifications(); demarrerEcouteNotifications(); }, 2000);
   }
 }
 
@@ -6045,6 +6121,650 @@ async function callClaudeAvecImage(texte, imageBase64, imageType) {
 }
 
 // =====================
+// SYSTÈME DE NOTIFICATIONS
+// =====================
+let notificationsData = [];
+let notifPanelOpen = false;
+let notifSubscription = null;
+
+async function chargerNotifications() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabaseClient
+      .from('notifications').select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    notificationsData = data || [];
+    renderNotifications();
+    updateNotifBadge();
+  } catch(e) { console.log('Erreur notifications:', e); }
+}
+
+function renderNotifications() {
+  const container = document.getElementById('notif-liste');
+  if (!notificationsData.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucune notification</div>';
+    return;
+  }
+
+  const typeColors = {
+    success: { bg: 'rgba(78,200,122,0.08)', border: 'rgba(78,200,122,0.2)', icon: '✅' },
+    warning: { bg: 'rgba(255,180,50,0.08)', border: 'rgba(255,180,50,0.2)', icon: '⚠️' },
+    info: { bg: 'rgba(68,136,255,0.08)', border: 'rgba(68,136,255,0.2)', icon: '📋' },
+    task: { bg: 'rgba(155,89,182,0.08)', border: 'rgba(155,89,182,0.2)', icon: '✅' },
+  };
+
+  container.innerHTML = notificationsData.map(n => {
+    const tc = typeColors[n.type] || typeColors.info;
+    const d = new Date(n.created_at);
+    const label = d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `<div onclick="marquerNotifLue('${n.id}')" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:${n.lu ? 'transparent' : tc.bg};transition:background 0.2s">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px;flex-shrink:0">${tc.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:${n.lu ? '400' : '500'};color:var(--text)">${escapeHtml(n.titre)}</div>
+          <div style="font-size:12px;color:var(--muted2);margin-top:2px;line-height:1.5">${escapeHtml(n.message)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${label}</div>
+        </div>
+        ${!n.lu ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--accent-blue);flex-shrink:0;margin-top:4px"></div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateNotifBadge() {
+  const nonLues = notificationsData.filter(n => !n.lu).length;
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  if (nonLues > 0) {
+    badge.textContent = nonLues > 9 ? '9+' : nonLues;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleNotifications() {
+  notifPanelOpen = !notifPanelOpen;
+  document.getElementById('notif-panel').style.display = notifPanelOpen ? 'block' : 'none';
+  if (notifPanelOpen) chargerNotifications();
+}
+
+async function marquerNotifLue(id) {
+  try {
+    await supabaseClient.from('notifications').update({ lu: true }).eq('id', id);
+    const n = notificationsData.find(x => x.id === id);
+    if (n) n.lu = true;
+    renderNotifications();
+    updateNotifBadge();
+  } catch(e) {}
+}
+
+async function marquerToutesLues() {
+  if (!currentUser) return;
+  try {
+    await supabaseClient.from('notifications').update({ lu: true })
+      .eq('user_id', currentUser.id).eq('lu', false);
+    notificationsData.forEach(n => n.lu = true);
+    renderNotifications();
+    updateNotifBadge();
+  } catch(e) {}
+}
+
+async function envoyerNotification(userId, titre, message, type = 'info', data = {}) {
+  try {
+    await supabaseClient.from('notifications').insert({
+      user_id: userId, titre, message, type, lu: false, data
+    });
+  } catch(e) { console.log('Erreur envoi notif:', e); }
+}
+
+// Écouter les notifications en temps réel (Supabase Realtime)
+function demarrerEcouteNotifications() {
+  if (!currentUser || notifSubscription) return;
+  notifSubscription = supabaseClient
+    .channel('notifications-' + currentUser.id)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${currentUser.id}`
+    }, (payload) => {
+      const notif = payload.new;
+      notificationsData.unshift(notif);
+      updateNotifBadge();
+      // Notification système du navigateur
+      afficherNotifNavigateur(notif.titre, notif.message);
+      // Message dans le chat si important
+      if (notif.type === 'task') {
+        addNovaMessage(`🔔 **${notif.titre}**\n${notif.message}`);
+      }
+    })
+    .subscribe();
+}
+
+function afficherNotifNavigateur(titre, message) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(`Nexus AI — ${titre}`, {
+      body: message,
+      icon: '/favicon.ico'
+    });
+  } else if ('Notification' in window && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        new Notification(`Nexus AI — ${titre}`, { body: message });
+      }
+    });
+  }
+}
+
+// Fermer le panneau si on clique ailleurs
+document.addEventListener('click', (e) => {
+  if (notifPanelOpen &&
+      !e.target.closest('#notif-panel') &&
+      !e.target.closest('#notif-btn')) {
+    notifPanelOpen = false;
+    document.getElementById('notif-panel').style.display = 'none';
+  }
+});
+
+// =====================
+// MODE EMPLOYÉ
+// =====================
+const MODE_EMPLOYE = new URLSearchParams(window.location.search).get('mode') === 'employe';
+const EQUIPE_ID_URL = new URLSearchParams(window.location.search).get('equipe');
+
+function activerModeEmploye() {
+  if (!MODE_EMPLOYE) return;
+  document.getElementById('app').classList.add('employe-mode');
+  // Associer automatiquement l'employé à l'équipe si ID fourni
+  if (EQUIPE_ID_URL && currentUser) {
+    associerEmployeEquipe(EQUIPE_ID_URL);
+  }
+  chargerTachesEmploye();
+}
+
+async function associerEmployeEquipe(equipeId) {
+  if (!currentUser) return;
+  try {
+    // Vérifier si déjà membre
+    const { data: existant } = await supabaseClient
+      .from('equipe_membres').select('id')
+      .eq('equipe_id', equipeId)
+      .eq('user_id', currentUser.id)
+      .single();
+
+    if (!existant) {
+      // Ajouter comme membre actif
+      const prefs = MEM.load('prefs', {});
+      await supabaseClient.from('equipe_membres').upsert({
+        equipe_id: equipeId,
+        user_id: currentUser.id,
+        nom: prefs.nom || currentUser.email,
+        email: currentUser.email,
+        role: 'employe',
+        statut: 'actif'
+      }, { onConflict: 'equipe_id,user_id' });
+    }
+  } catch(e) { console.log('Erreur association équipe:', e); }
+}
+
+async function chargerTachesEmploye() {
+  if (!currentUser || !MODE_EMPLOYE) return;
+
+  const prefs = MEM.load('prefs', {});
+  const nom = prefs.nom || 'Employé';
+  const avatarEl = document.getElementById('employe-avatar');
+  const nomEl = document.getElementById('employe-nom');
+  if (avatarEl) avatarEl.textContent = nom.charAt(0).toUpperCase();
+  if (nomEl) nomEl.textContent = nom;
+
+  const container = document.getElementById('employe-taches-liste');
+  if (!container) return;
+
+  try {
+    let query = supabaseClient
+      .from('taches_equipe').select('*')
+      .eq('assigne_a', currentUser.id)
+      .order('date', { ascending: true })
+      .limit(20);
+
+    // Filtrer par équipe spécifique si ID dans l'URL
+    if (EQUIPE_ID_URL) {
+      query = query.eq('equipe_id', EQUIPE_ID_URL);
+    }
+
+    const { data: taches } = await query;
+
+    if (!taches?.length) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Aucune tâche assignée pour linstant 🎉</div>';
+      return;
+    }
+
+    const prioriteColors = { haute: '#e05c5c', normale: 'var(--accent-blue)', basse: 'var(--muted)' };
+    const aFaire = taches.filter(t => !t.completee);
+    const completees = taches.filter(t => t.completee);
+
+    container.innerHTML = `
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${aFaire.length} à faire · ${completees.length} complétée${completees.length > 1 ? 's' : ''}</div>
+      ${taches.map(t => `
+        <div class="employe-tache-item" style="opacity:${t.completee ? '0.6' : '1'}">
+          <div onclick="toggleTacheEmploye('${t.id}',${t.completee})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${t.completee ? '#4ec87a' : prioriteColors[t.priorite]||'var(--accent-blue)'};background:${t.completee ? '#4ec87a' : 'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.2s">
+            ${t.completee ? '<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;color:${t.completee ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.completee ? 'line-through' : 'none'}">${escapeHtml(t.texte)}</div>
+            <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+              ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}</span>` : ''}
+              <span style="font-size:11px;color:${prioriteColors[t.priorite]||'var(--muted)'}">${t.priorite === 'haute' ? '🔴 Urgent' : t.priorite === 'basse' ? '⚪ Basse' : '🔵 Normale'}</span>
+              ${t.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">${escapeHtml(t.notes)}</span>` : ''}
+            </div>
+          </div>
+        </div>`).join('')}`;
+
+    // Message de bienvenue employé
+    if (aFaire.length > 0) {
+      addNovaMessage(`Bonjour **${nom}** ! 👋 Tu as **${aFaire.length} tâche${aFaire.length > 1 ? 's' : ''}** assignée${aFaire.length > 1 ? 's' : ''} aujourd'hui. Coche-les quand tu les complètes, ou demande-moi de l'aide !`);
+    } else {
+      addNovaMessage(`Bonjour **${nom}** ! 👋 Toutes tes tâches sont complétées — excellent travail ! Comment puis-je t'aider ?`);
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Erreur de chargement</div>';
+  }
+}
+
+async function toggleTacheEmploye(id, estComplete) {
+  try {
+    await supabaseClient.from('taches_equipe').update({
+      completee: !estComplete,
+      statut: !estComplete ? 'completee' : 'a_faire'
+    }).eq('id', id);
+
+    // Notifier le patron
+    if (!estComplete) {
+      const { data: tache } = await supabaseClient
+        .from('taches_equipe').select('*').eq('id', id).single();
+      if (tache?.assigne_par) {
+        const prefs = MEM.load('prefs', {});
+        await envoyerNotification(
+          tache.assigne_par,
+          'Tâche complétée ✅',
+          `${prefs.nom || currentUser?.email || 'Votre employé'} a complété : "${tache.texte}"`,
+          'task'
+        );
+      }
+      addNovaMessage('✅ Tâche marquée comme complétée — bon travail !');
+    }
+    chargerTachesEmploye();
+  } catch(e) { console.log('Erreur toggle tâche employé:', e); }
+}
+
+// Obtenir le lien employé pour partager
+function obtenirLienEmploye() {
+  if (!equipeData) { alert('Créez d\'abord une équipe.'); return; }
+  const lien = `${window.location.origin}${window.location.pathname}?mode=employe&equipe=${equipeData.id}`;
+  navigator.clipboard.writeText(lien).catch(() => {});
+  addNovaMessage(`🔗 **Lien employé de ton équipe copié !**\n\n\`${lien}\`\n\nCe lien est **unique à ton équipe**. Envoie-le à tes employés par SMS, email ou WhatsApp. Quand ils l'ouvrent et se connectent, ils rejoignent automatiquement ton équipe.`);
+  fermerEquipe();
+}
+
+// =====================
+// RAPPORT FINANCIER MENSUEL PDF
+// =====================
+async function genererRapportMensuel(moisOffset = 0) {
+  const maintenant = new Date();
+  const moisCible = new Date(maintenant.getFullYear(), maintenant.getMonth() - moisOffset, 1);
+  const debutMois = new Date(moisCible.getFullYear(), moisCible.getMonth(), 1);
+  const finMois = new Date(moisCible.getFullYear(), moisCible.getMonth() + 1, 0);
+  const moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const labelMois = `${moisNoms[moisCible.getMonth()]} ${moisCible.getFullYear()}`;
+
+  const prefs = MEM.load('prefs', {});
+  const ent = MEM.load('entreprise', {});
+
+  // Données finances
+  let entreesMois = [], depensesMois = [];
+  if (currentUser) {
+    try {
+      const { data } = await supabaseClient.from('finances').select('*')
+        .eq('user_id', currentUser.id)
+        .gte('date', debutMois.toISOString().split('T')[0])
+        .lte('date', finMois.toISOString().split('T')[0])
+        .order('date', { ascending: true });
+      entreesMois = (data || []).filter(f => f.type === 'entree');
+      depensesMois = (data || []).filter(f => f.type === 'depense');
+    } catch(e) {}
+  }
+
+  // Données factures
+  const factures = MEM.load('factures', []);
+  const facturesMois = factures.filter(f => {
+    const d = new Date(f.createdAt || f.date);
+    return d >= debutMois && d <= finMois;
+  });
+
+  // Données tâches
+  const taches = MEM.load('taches', []);
+  const tachesMois = taches.filter(t => {
+    const d = new Date(t.createdAt || t.date);
+    return d >= debutMois && d <= finMois;
+  });
+  const tachesCompletes = tachesMois.filter(t => t.completee).length;
+
+  // Calculs
+  const totalEntrees = entreesMois.reduce((t, f) => t + parseFloat(f.montant), 0);
+  const totalDepenses = depensesMois.reduce((t, f) => t + parseFloat(f.montant), 0);
+  const profitNet = totalEntrees - totalDepenses;
+  const margeStr = totalEntrees > 0 ? (profitNet / totalEntrees * 100).toFixed(1) + '%' : '—';
+  const totalFactures = facturesMois.reduce((t, f) => t + (f.total || 0), 0);
+  const facturesPayees = facturesMois.filter(f => f.statut === 'payee').length;
+
+  // Taxes — SEULEMENT sur les factures manuelles (pas Shopify)
+  let tpsTotal = 0, tvqTotal = 0;
+  let tpsShopify = 0; // Taxes déjà collectées par Shopify
+  facturesMois.forEach(f => {
+    tpsTotal += f.tps || 0;
+    tvqTotal += f.tvq || 0;
+    if (f.items && !f.tps) {
+      f.items.forEach(item => {
+        const st = (item.qty||1)*(item.prix||0);
+        if (item.hasTPS) tpsTotal += st * 0.05;
+        if (item.hasTVQ) tvqTotal += st * 0.09975;
+      });
+    }
+  });
+
+  // Lire les taxes Shopify depuis les données en cache
+  try {
+    if (shopifyConfig) {
+      const since = debutMois.toISOString();
+      const until = finMois.toISOString();
+      const res = await fetch(`https://${shopifyConfig.url}/admin/api/2024-01/orders.json?status=any&created_at_min=${since}&created_at_max=${until}&limit=100`, {
+        headers: { 'X-Shopify-Access-Token': shopifyConfig.token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const orders = data.orders || [];
+        orders.forEach(o => {
+          tpsShopify += parseFloat(o.total_tax || 0);
+        });
+      }
+    }
+  } catch(e) {}
+
+  // Catégories dépenses
+  const catDepenses = {};
+  depensesMois.forEach(f => {
+    catDepenses[f.categorie] = (catDepenses[f.categorie] || 0) + parseFloat(f.montant);
+  });
+  const topCats = Object.entries(catDepenses).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+  // Générer le HTML du rapport
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rapport mensuel — ${labelMois}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; color:#1a1a2e; background:#fff; font-size:13px; }
+  .page { padding:40px; max-width:900px; margin:0 auto; }
+
+  /* Header */
+  .header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:24px; border-bottom:3px solid #1a1a2e; margin-bottom:28px; }
+  .logo-section .logo { font-size:28px; font-weight:700; color:#1a1a2e; letter-spacing:-0.5px; }
+  .logo-section .subtitle { font-size:12px; color:#888; margin-top:3px; }
+  .rapport-info { text-align:right; }
+  .rapport-info .titre-rapport { font-size:20px; font-weight:600; color:#1a1a2e; }
+  .rapport-info .periode { font-size:13px; color:#888; margin-top:3px; }
+  .rapport-info .date-gen { font-size:11px; color:#bbb; margin-top:2px; }
+
+  /* Stats principales */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+  .stat-card { border-radius:10px; padding:16px; }
+  .stat-card.entrees { background:#f0faf4; border:1px solid #c3e6cb; }
+  .stat-card.depenses { background:#fff5f5; border:1px solid #f5c6cb; }
+  .stat-card.profit { background:#fff8e7; border:1px solid #ffd700; }
+  .stat-card.factures { background:#f0f4ff; border:1px solid #b8d0ff; }
+  .stat-label { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+  .stat-value { font-size:22px; font-weight:600; }
+  .stat-card.entrees .stat-value { color:#28a745; }
+  .stat-card.depenses .stat-value { color:#dc3545; }
+  .stat-card.profit .stat-value { color:#c8a96e; }
+  .stat-card.factures .stat-value { color:#2255cc; }
+  .stat-sub { font-size:11px; color:#888; margin-top:3px; }
+
+  /* Sections */
+  .section { margin-bottom:28px; }
+  .section-title { font-size:14px; font-weight:600; color:#1a1a2e; padding-bottom:8px; border-bottom:1px solid #eee; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .section-title::before { content:''; display:block; width:4px; height:16px; background:#1a1a2e; border-radius:2px; }
+
+  /* Tableaux */
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { background:#f8f8f8; padding:8px 12px; text-align:left; font-weight:500; color:#555; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }
+  td { padding:8px 12px; border-bottom:1px solid #f0f0f0; }
+  tr:last-child td { border-bottom:none; }
+  .amount-positive { color:#28a745; font-weight:500; }
+  .amount-negative { color:#dc3545; font-weight:500; }
+  tfoot td { background:#f8f8f8; font-weight:600; font-size:13px; }
+
+  /* Catégories */
+  .cat-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f0f0f0; }
+  .cat-bar-wrap { flex:1; margin:0 12px; height:6px; background:#f0f0f0; border-radius:3px; }
+  .cat-bar { height:6px; background:#dc3545; border-radius:3px; opacity:0.6; }
+
+  /* Résumé taxes */
+  .taxes-box { background:#f8f9ff; border:1px solid #c0d0f0; border-radius:10px; padding:16px; }
+  .taxes-row { display:flex; justify-content:space-between; padding:5px 0; font-size:13px; }
+  .taxes-row.total { font-weight:600; font-size:14px; border-top:1px solid #dde; padding-top:10px; margin-top:6px; }
+
+  /* Résumé activité */
+  .activity-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .activity-item { background:#f8f8f8; border-radius:8px; padding:12px; text-align:center; }
+  .activity-val { font-size:20px; font-weight:600; color:#1a1a2e; }
+  .activity-lbl { font-size:11px; color:#888; margin-top:3px; }
+
+  /* Footer */
+  .footer { margin-top:32px; padding-top:16px; border-top:1px solid #eee; text-align:center; color:#bbb; font-size:11px; }
+
+  @media print {
+    body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .page { padding:20px; }
+    button { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-section">
+      <div class="logo">${escapeHtml(ent.nom || prefs.nom || 'Mon Entreprise')}</div>
+      <div class="subtitle">${escapeHtml(ent.adresse || '')} ${ent.taxesNo ? '· TPS/TVQ: ' + ent.taxesNo : ''}</div>
+    </div>
+    <div class="rapport-info">
+      <div class="titre-rapport">Rapport Financier Mensuel</div>
+      <div class="periode">${labelMois}</div>
+      <div class="date-gen">Généré le ${maintenant.toLocaleDateString('fr-CA')} par Nexus AI</div>
+    </div>
+  </div>
+
+  <!-- STATS PRINCIPALES -->
+  <div class="stats-grid">
+    <div class="stat-card entrees">
+      <div class="stat-label">Revenus totaux</div>
+      <div class="stat-value">${totalEntrees.toFixed(0)}$</div>
+      <div class="stat-sub">${entreesMois.length} transaction${entreesMois.length > 1 ? 's' : ''}</div>
+    </div>
+    <div class="stat-card depenses">
+      <div class="stat-label">Dépenses totales</div>
+      <div class="stat-value">${totalDepenses.toFixed(0)}$</div>
+      <div class="stat-sub">${depensesMois.length} transaction${depensesMois.length > 1 ? 's' : ''}</div>
+    </div>
+    <div class="stat-card profit">
+      <div class="stat-label">Profit net</div>
+      <div class="stat-value">${profitNet.toFixed(0)}$</div>
+      <div class="stat-sub">Marge: ${margeStr}</div>
+    </div>
+    <div class="stat-card factures">
+      <div class="stat-label">Factures émises</div>
+      <div class="stat-value">${totalFactures.toFixed(0)}$</div>
+      <div class="stat-sub">${facturesPayees}/${facturesMois.length} payées</div>
+    </div>
+  </div>
+
+  <!-- REVENUS -->
+  ${entreesMois.length ? `
+  <div class="section">
+    <div class="section-title">Revenus</div>
+    <table>
+      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th style="text-align:right">Montant</th></tr></thead>
+      <tbody>
+        ${entreesMois.map(f => `
+          <tr>
+            <td>${f.date}</td>
+            <td>${escapeHtml(f.description || '—')}</td>
+            <td>${escapeHtml(f.categorie)}</td>
+            <td style="text-align:right" class="amount-positive">+${parseFloat(f.montant).toFixed(2)}$</td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot><tr><td colspan="3">Total revenus</td><td style="text-align:right;color:#28a745">${totalEntrees.toFixed(2)}$</td></tr></tfoot>
+    </table>
+  </div>` : ''}
+
+  <!-- DÉPENSES -->
+  ${depensesMois.length ? `
+  <div class="section">
+    <div class="section-title">Dépenses</div>
+    <table>
+      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th style="text-align:right">Montant</th></tr></thead>
+      <tbody>
+        ${depensesMois.map(f => `
+          <tr>
+            <td>${f.date}</td>
+            <td>${escapeHtml(f.description || '—')}</td>
+            <td>${escapeHtml(f.categorie)}</td>
+            <td style="text-align:right" class="amount-negative">-${parseFloat(f.montant).toFixed(2)}$</td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot><tr><td colspan="3">Total dépenses</td><td style="text-align:right;color:#dc3545">${totalDepenses.toFixed(2)}$</td></tr></tfoot>
+    </table>
+  </div>` : ''}
+
+  <!-- DÉPENSES PAR CATÉGORIE -->
+  ${topCats.length ? `
+  <div class="section">
+    <div class="section-title">Dépenses par catégorie</div>
+    ${topCats.map(([cat, val]) => {
+      const pct = totalDepenses > 0 ? (val/totalDepenses*100).toFixed(0) : 0;
+      return `<div class="cat-row">
+        <div style="width:140px;font-size:12px;color:#333">${escapeHtml(cat)}</div>
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%"></div></div>
+        <div style="font-size:12px;color:#dc3545;font-weight:500;width:80px;text-align:right">${val.toFixed(2)}$ (${pct}%)</div>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <!-- FACTURES ÉMISES -->
+  ${facturesMois.length ? `
+  <div class="section">
+    <div class="section-title">Factures émises</div>
+    <table>
+      <thead><tr><th>Numéro</th><th>Client</th><th>Date</th><th style="text-align:right">Total</th><th style="text-align:center">Statut</th></tr></thead>
+      <tbody>
+        ${facturesMois.map(f => `
+          <tr>
+            <td>${f.numero || 'FAC'}</td>
+            <td>${escapeHtml(f.client || '—')}</td>
+            <td>${f.date || ''}</td>
+            <td style="text-align:right;font-weight:500">${(f.total||0).toFixed(2)}$</td>
+            <td style="text-align:center"><span style="padding:2px 8px;border-radius:6px;font-size:11px;background:${f.statut==='payee'?'#e8f5e9':'#fff5f5'};color:${f.statut==='payee'?'#28a745':'#dc3545'}">${f.statut==='payee'?'Payée':'Non payée'}</span></td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot><tr><td colspan="3">Total facturé</td><td style="text-align:right">${totalFactures.toFixed(2)}$</td><td></td></tr></tfoot>
+    </table>
+  </div>` : ''}
+
+  <!-- TAXES -->
+  ${(tpsTotal + tvqTotal + tpsShopify) > 0 ? `
+  <div class="section">
+    <div class="section-title">Résumé TPS/TVQ</div>
+    <div class="taxes-box">
+      ${(tpsTotal + tvqTotal) > 0 ? `
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Factures manuelles</div>
+      <div class="taxes-row"><span>TPS collectée (5%)</span><span style="color:#2255cc">${tpsTotal.toFixed(2)}$</span></div>
+      <div class="taxes-row"><span>TVQ collectée (9.975%)</span><span style="color:#6644aa">${tvqTotal.toFixed(2)}$</span></div>` : ''}
+      ${tpsShopify > 0 ? `
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 8px">Taxes Shopify (déjà collectées)</div>
+      <div class="taxes-row"><span>Taxes collectées par Shopify</span><span style="color:#2255cc">${tpsShopify.toFixed(2)}$</span></div>
+      <div style="font-size:11px;color:#888;font-style:italic;margin-top:4px">✓ Ces taxes sont gérées directement par Shopify — ne pas remettre en double</div>` : ''}
+      <div class="taxes-row total">
+        <span>Total à remettre (factures seulement)</span>
+        <span style="color:#c8a96e">${(tpsTotal+tvqTotal).toFixed(2)}$</span>
+      </div>
+    </div>
+  </div>` : ''}
+
+  <!-- RÉSUMÉ ACTIVITÉ -->
+  <div class="section">
+    <div class="section-title">Résumé de l'activité</div>
+    <div class="activity-grid">
+      <div class="activity-item">
+        <div class="activity-val">${facturesMois.length}</div>
+        <div class="activity-lbl">Factures créées</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-val">${tachesCompletes}</div>
+        <div class="activity-lbl">Tâches complétées</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-val">${profitNet >= 0 ? '+' : ''}${profitNet.toFixed(0)}$</div>
+        <div class="activity-lbl">Profit net</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Rapport généré par <strong>Nexus AI</strong> — Votre assistant IA personnel · ${maintenant.toLocaleDateString('fr-CA')}
+    <br>Ce rapport est fourni à titre indicatif. Consultez votre comptable pour la déclaration officielle.
+  </div>
+
+</div>
+<scr` + `ipt>window.print();<\/scr` + `ipt>
+</body>
+</html>`;
+
+  // Ouvrir le rapport dans un nouvel onglet
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+
+  addNovaMessage(`📊 **Rapport financier de ${labelMois}** généré !\n\n💰 Revenus: **${totalEntrees.toFixed(2)}$** · 💸 Dépenses: **${totalDepenses.toFixed(2)}$** · 📈 Profit: **${profitNet.toFixed(2)}$**`);
+}
+
+// Vérifier si on doit envoyer le rapport mensuel automatiquement
+function verifierRapportMensuelAuto() {
+  const maintenant = new Date();
+  // Le 1er de chaque mois
+  if (maintenant.getDate() !== 1) return;
+
+  const lastSent = MEM.load('rapport_mensuel_last', null);
+  const moisActuel = `${maintenant.getFullYear()}-${maintenant.getMonth()}`;
+
+  if (lastSent === moisActuel) return; // Déjà envoyé ce mois
+
+  MEM.save('rapport_mensuel_last', moisActuel);
+
+  // Générer et proposer d'envoyer
+  setTimeout(() => {
+    addNovaMessage(`📊 C'est le 1er du mois ! Veux-tu que je génère ton **rapport financier de ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][maintenant.getMonth()-1]}** automatiquement ?`);
+  }, 5000);
+}
+
+// =====================
 // MODULE ÉQUIPE
 // =====================
 let equipeData = null;
@@ -6116,6 +6836,9 @@ function renderMembres() {
       </div>
       <button onclick="equipeTab(document.getElementById('etab-inviter'),'e-inviter')" style="padding:7px 14px;border-radius:8px;border:1px solid rgba(68,136,255,0.3);background:rgba(68,136,255,0.08);color:var(--accent-blue);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
         + Inviter
+      </button>
+      <button onclick="obtenirLienEmploye()" style="padding:7px 14px;border-radius:8px;border:1px solid rgba(78,200,122,0.3);background:rgba(78,200,122,0.08);color:#4ec87a;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
+        🔗 Lien employé
       </button>
     </div>`;
 
@@ -6280,6 +7003,22 @@ async function toggleTacheEquipe(id, estComplete) {
       completee: !estComplete,
       statut: !estComplete ? 'completee' : 'a_faire'
     }).eq('id', id);
+
+    // Si l'employé complète une tâche → notifier le patron
+    if (!estComplete && equipeData) {
+      const { data: tache } = await supabaseClient
+        .from('taches_equipe').select('*').eq('id', id).single();
+      if (tache?.assigne_par) {
+        const prefs = MEM.load('prefs', {});
+        await envoyerNotification(
+          tache.assigne_par,
+          'Tâche complétée',
+          `${prefs.nom || 'Un employé'} a complété : "${tache.texte}"`,
+          'task',
+          { tache_id: id, equipe_id: equipeData.id }
+        );
+      }
+    }
     chargerTachesEquipe();
   } catch(e) { console.log('Erreur toggle tâche équipe:', e); }
 }
@@ -8200,6 +8939,8 @@ async function onConnected() {
   if (app) { app.style.opacity = '1'; app.style.pointerEvents = 'all'; app.classList.add('visible'); }
   chargerMemoire();
   afficherBoutonAdmin();
+  // Activer mode employé si URL contient ?mode=employe
+  if (MODE_EMPLOYE) activerModeEmploye();
 
   // Vérifier abonnement Stripe
   await verifierAbonnement();
