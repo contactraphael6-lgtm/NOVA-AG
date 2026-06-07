@@ -4920,7 +4920,7 @@ function renderSections(sh, fa, rdvs) {
 
   // Section RDV
   const rdvsHTML = rdvs.length ? rdvs.slice(0, 4).map(rdv => {
-    const d = new Date(rdv.date + 'T12:00:00');
+    const d = parseDate(rdv.date);
     const joursN = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
     const aujourdhui = new Date().toISOString().split('T')[0];
     const label = rdv.date === aujourdhui ? "Aujourd'hui" : joursN[d.getDay()] + ' ' + d.getDate();
@@ -5010,7 +5010,7 @@ function getDashRDVNexus() {
   const now = new Date();
   const fin = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   return (calEvents || []).filter(e => {
-    const d = new Date(e.date + 'T12:00:00');
+    const d = parseDate(e.date);
     return d >= now && d <= fin;
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -5693,6 +5693,13 @@ async function fallbackVoixNavigateur(texte) {
 // =====================
 // CALENDRIER NEXUS AI (Supabase)
 // =====================
+
+// Utilitaire — parser une date sans bug de timezone (UTC vs local)
+function parseDate(dateStr) {
+  if (!dateStr) return new Date();
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 let calPanelOpen = false;
 let calEvents = [];
 let calMoisAffiche = new Date();
@@ -5713,11 +5720,16 @@ function toggleCalPanel() {
 function showCalTab(tab) {
   ['agenda','nouveau','semaine'].forEach(t => {
     const el = document.getElementById('cal-'+t+'-view');
-    if(el) el.style.display = t === tab ? 'flex' : 'none';
+    if (el) el.style.display = t === tab ? (t === 'agenda' ? 'flex' : 'block') : 'none';
     const btn = document.getElementById('ctab-'+t);
-    if(btn) btn.classList.toggle('active', t === tab);
+    if (btn) btn.classList.toggle('active', t === tab);
   });
   if (tab === 'semaine') renderSemaineNexus();
+  if (tab === 'nouveau') {
+    // S'assurer que la date est initialisée
+    const dateEl = document.getElementById('ev-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  }
 }
 
 function selectCouleurRdv(couleur, el) {
@@ -5732,18 +5744,23 @@ async function chargerRdvNexus() {
   const container = document.getElementById('events-list');
   if(container) container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">⏳ Chargement...</div>';
   try {
+    // Charger 1 mois passé + futurs pour un bon contexte
+    const depuis = new Date();
+    depuis.setMonth(depuis.getMonth() - 1);
     const { data } = await supabaseClient
       .from('rdv').select('*').eq('user_id', currentUser.id)
-      .gte('date', new Date().toISOString().split('T')[0])
-      .order('date', { ascending: true }).order('heure', { ascending: true }).limit(100);
+      .gte('date', depuis.toISOString().split('T')[0])
+      .order('date', { ascending: true }).order('heure', { ascending: true }).limit(200);
     calEvents = data || [];
     renderAgendaNexus();
     renderMiniCalNexus();
     demarrerRappelsNexus();
+    afficherMiniDashboard();
   } catch(e) {
     if(container) container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Erreur de chargement</div>';
   }
 }
+
 
 function renderAgendaNexus() {
   const container = document.getElementById('events-list');
@@ -5759,7 +5776,7 @@ function renderAgendaNexus() {
   const demain = new Date(Date.now()+86400000).toISOString().split('T')[0];
   calEvents.forEach(rdv => {
     if (rdv.date !== dernierDate) {
-      const d = new Date(rdv.date+'T12:00:00');
+      const d = parseDate(rdv.date);
       let label = joursN[d.getDay()]+' '+d.getDate()+' '+moisN[d.getMonth()];
       if(rdv.date===aujourdhui) label = "📅 Aujourd\'hui";
       if(rdv.date===demain) label = "📅 Demain";
@@ -5790,7 +5807,7 @@ function renderMiniCalNexus() {
   const joursN = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
   const premierJour = new Date(annee,mois,1).getDay();
   const nbJours = new Date(annee,mois+1,0).getDate();
-  const joursRdv = new Set(calEvents.filter(e=>{const d=new Date(e.date+'T12:00:00');return d.getFullYear()===annee&&d.getMonth()===mois;}).map(e=>parseInt(e.date.split('-')[2])));
+  const joursRdv = new Set(calEvents.filter(e=>{const d=parseDate(e.date);return d.getFullYear()===annee&&d.getMonth()===mois;}).map(e=>parseInt(e.date.split('-')[2])));
   const dateSelectStr = calDateSelectionnee ? calDateSelectionnee.toISOString().split('T')[0] : null;
 
   let html = `<div style="padding:12px 14px 8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -5821,7 +5838,6 @@ function renderMiniCalNexus() {
   html+='</div></div>';
   container.innerHTML = html;
 }
-
 
 function selectionnerJourNexus(dateStr) {
   calDateSelectionnee = new Date(dateStr + 'T12:00:00');
@@ -5935,16 +5951,31 @@ async function supprimerRdvNexus(id) {
 async function creerEvenementDepuisNova(data) {
   if(!currentUser) return;
   try {
+    // S'assurer que la date est au bon format YYYY-MM-DD
+    let dateStr = data.date || data.debut?.split('T')[0];
+    if (!dateStr) dateStr = new Date().toISOString().split('T')[0];
+
+    // Extraire l'heure si dans le champ debut
+    let heure = data.heure || '';
+    if (!heure && data.debut?.includes('T')) {
+      heure = data.debut.split('T')[1]?.substring(0, 5) || '';
+    }
+
     const {data:rdv}=await supabaseClient.from('rdv').insert({
       user_id:currentUser.id,
       titre:data.titre||data.summary||'Nouveau RDV',
-      date:data.date||new Date().toISOString().split('T')[0],
-      heure:data.heure||data.debut||'',
+      date: dateStr,
+      heure: heure,
       duree:data.duree||60,
       notes:data.notes||data.description||'',
       couleur:'#4488ff'
     }).select().single();
-    if(rdv){calEvents.push(rdv);calEvents.sort((a,b)=>a.date.localeCompare(b.date));}
+    if(rdv){
+      calEvents.push(rdv);
+      calEvents.sort((a,b)=>a.date.localeCompare(b.date));
+      renderMiniCalNexus();
+      afficherMiniDashboard();
+    }
   } catch(e){console.log('Erreur RDV:',e);}
 }
 
@@ -9007,9 +9038,9 @@ async function afficherMiniDashboard() {
 
   const rdvEl = document.getElementById('mini-dash-rdv');
   if (rdvEl) {
-    const rdvs = (calEvents || []).filter(e => new Date(e.date + 'T12:00:00') >= new Date()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    const rdvs = (calEvents || []).filter(e => parseDate(e.date) >= new Date()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
     rdvEl.innerHTML = rdvs.length ? rdvs.map(rdv => {
-      const d = new Date(rdv.date + 'T12:00:00');
+      const d = parseDate(rdv.date);
       const joursN = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
       const label = rdv.date === aujourdhui ? "Auj." : joursN[d.getDay()] + ' ' + d.getDate();
       return `<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:3px;height:28px;border-radius:2px;background:${rdv.couleur || '#4488ff'};flex-shrink:0"></div><div><div style="font-size:12px;color:var(--text)">${escapeHtml(rdv.titre)}</div><div style="font-size:11px;color:var(--muted)">${label}${rdv.heure ? ' · ' + rdv.heure : ''}</div></div></div>`;
