@@ -1348,8 +1348,11 @@
   .facture-overlay.open { display: flex; }
   .facture-modal {
     background: var(--bg);
-    width: 100%; height: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
     overflow-y: auto; display: flex; flex-direction: column;
+    border-radius: 0 !important;
   }
   .facture-modal::-webkit-scrollbar { width: 4px; }
   .facture-modal::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -1638,9 +1641,13 @@
 
   .crm-modal, .dash-modal {
     background: var(--bg);
-    width: 100%; height: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
     display: flex; flex-direction: column;
     overflow: hidden;
+    border-radius: 0 !important;
+    border: none !important;
   }
 
   .crm-header, .dash-header {
@@ -2337,7 +2344,7 @@
 <!-- Historique Conversations -->
 <div class="dash-overlay" id="hist-overlay">
   <button onclick="fermerHistorique()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="dash-modal" style="max-width:680px">
+  <div class="dash-modal">
     <div class="dash-header">
       <h2>💬 Historique des conversations</h2>
       <button class="back-to-chat" onclick="fermerHistorique()">← Retour au chat</button>
@@ -2354,7 +2361,7 @@
 <!-- ===== MODULE ÉQUIPE ===== -->
 <div class="crm-overlay" id="equipe-overlay">
   <button onclick="fermerEquipe()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="crm-modal" style="max-width:860px">
+  <div class="crm-modal">
     <div class="crm-header">
       <h2>👥 Mon Équipe</h2>
       <button class="back-to-chat" onclick="fermerEquipe()">← Retour au chat</button>
@@ -2468,7 +2475,7 @@
 <!-- ===== MODULE DOCUMENTS ===== -->
 <div class="crm-overlay" id="documents-overlay">
   <button onclick="fermerDocuments()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="crm-modal" style="max-width:800px">
+  <div class="crm-modal">
     <div class="crm-header">
       <h2>📁 Documents</h2>
       <div style="display:flex;gap:8px">
@@ -2536,7 +2543,7 @@
 <!-- ===== MODULE FINANCE ===== -->
 <div class="crm-overlay" id="finances-overlay">
   <button onclick="fermerFinances()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="crm-modal" style="max-width:860px">
+  <div class="crm-modal">
     <div class="crm-header">
       <h2>💰 Finance</h2>
       <div style="display:flex;gap:8px">
@@ -2654,7 +2661,7 @@
 <!-- ===== MODULE TPS/TVQ ===== -->
 <div class="crm-overlay" id="taxes-overlay">
   <button onclick="fermerTaxes()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="crm-modal" style="max-width:700px">
+  <div class="crm-modal">
     <div class="crm-header">
       <h2>🏛 TPS/TVQ — Rapport de taxes</h2>
       <button class="back-to-chat" onclick="fermerTaxes()">← Retour au chat</button>
@@ -2714,7 +2721,7 @@
 <!-- ===== TÂCHES ===== -->
 <div class="crm-overlay" id="taches-overlay">
   <button onclick="fermerTaches()" style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 22px;border-radius:50px;border:none;background:linear-gradient(135deg,rgba(68,136,255,0.9),rgba(100,60,200,0.9));color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(68,136,255,0.4);display:flex;align-items:center;gap:8px">← Chat</button>
-  <div class="crm-modal" style="max-width:560px">
+  <div class="crm-modal">
     <div class="crm-header">
       <h2>✅ Mes tâches</h2>
       <button class="back-to-chat" onclick="fermerTaches()">← Retour au chat</button>
