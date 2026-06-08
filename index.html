@@ -8965,10 +8965,31 @@ function getFactureData() {
   };
 }
 
-function genererFacturePDF() {
+async function genererFacturePDF() {
   const d = getFactureData();
   if (!d.client) { alert('Veuillez entrer le nom du client.'); return; }
   if (d.items.length === 0) { alert('Ajoutez au moins un article.'); return; }
+
+  // Générer le lien Stripe automatiquement si configuré
+  let lienPaiement = d.lienStripe || null;
+  if (!lienPaiement && clientStripeConfig?.stripe_sk_encrypted) {
+    try {
+      const res = await fetch(STRIPE_WORKER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_payment_link',
+          stripe_sk: clientStripeConfig.stripe_sk_encrypted,
+          montant: d.total,
+          description: `Facture ${d.numero}`,
+          client_nom: d.client,
+          facture_numero: d.numero
+        })
+      });
+      const data = await res.json();
+      if (data.url) lienPaiement = data.url;
+    } catch(e) { /* Silencieux — PDF quand même généré */ }
+  }
 
   const TPS_RATE = 5, TVQ_RATE = 9.975;
   const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
@@ -9075,6 +9096,16 @@ function genererFacturePDF() {
 
   ${d.notes ? `<div class="notes">📝 ${d.notes}</div>` : ''}
 
+  ${lienPaiement ? `
+  <div style="margin:24px 0;padding:20px;background:#f0fff4;border:2px solid #4ec87a;border-radius:12px;text-align:center">
+    <div style="font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:8px">💳 Payer en ligne maintenant</div>
+    <div style="font-size:12px;color:#555;margin-bottom:12px">Cliquez sur le bouton ci-dessous pour payer par carte de crédit de façon sécurisée via Stripe.</div>
+    <a href="${lienPaiement}" target="_blank" style="display:inline-block;padding:12px 28px;background:#4ec87a;color:#fff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none">
+      Payer ${fmtNum(d.total)} $ en ligne →
+    </a>
+    <div style="font-size:11px;color:#999;margin-top:8px">🔒 Paiement sécurisé par Stripe</div>
+  </div>` : ''}
+
   <div class="footer">
     Merci pour votre confiance · ${d.entreprise || ''} · ${d.contact || ''}
   </div>
@@ -9089,9 +9120,10 @@ function genererFacturePDF() {
   window.open(url, '_blank');
   sauvegarderEntreprise();
   sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
-  sauvegarderFacture(d);
+  // Sauvegarder avec le lien Stripe si généré
+  sauvegarderFacture({ ...d, lienStripe: lienPaiement || d.lienStripe });
   toggleFacturePanel();
-  addNovaMessage(`✅ Facture **${d.numero}** générée pour **${d.client}** — Total : **${fmtNum(d.total)} $** (TPS+TVQ incluses). La facture s'est ouverte dans un nouvel onglet — clique sur "Imprimer / Sauvegarder en PDF" pour la télécharger.`);
+  addNovaMessage(`✅ Facture **${d.numero}** générée pour **${d.client}** — Total : **${fmtNum(d.total)} $**${lienPaiement ? ' · 💳 Lien Stripe inclus dans le PDF !' : ''}`);
 }
 
 function genererFactureExcel() {
