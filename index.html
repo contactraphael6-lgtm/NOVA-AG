@@ -3651,12 +3651,12 @@
 // Détection IMMÉDIATE du mode employé — avant tout le reste
 (function() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('mode') === 'employe') {
+  const estEmploye = params.get('mode') === 'employe' || localStorage.getItem('nexus_mode_employe') === 'true';
+  if (estEmploye) {
     document.documentElement.classList.add('employe-mode-early');
-    // Cacher le paywall immédiatement si jamais il apparaît
     document.addEventListener('DOMContentLoaded', function() {
       const paywall = document.getElementById('paywall');
-      if (paywall) paywall.style.display = 'none !important';
+      if (paywall) paywall.style.display = 'none';
       const app = document.getElementById('app');
       if (app) app.classList.add('employe-mode');
     });
@@ -6515,8 +6515,9 @@ document.addEventListener('click', (e) => {
 // =====================
 // MODE EMPLOYÉ
 // =====================
-const MODE_EMPLOYE = new URLSearchParams(window.location.search).get('mode') === 'employe';
-const EQUIPE_ID_URL = new URLSearchParams(window.location.search).get('equipe');
+const _urlParams = new URLSearchParams(window.location.search);
+const MODE_EMPLOYE = _urlParams.get('mode') === 'employe' || localStorage.getItem('nexus_mode_employe') === 'true';
+const EQUIPE_ID_URL = _urlParams.get('equipe') || localStorage.getItem('nexus_equipe_id') || null;
 
 function activerModeEmploye() {
   if (!MODE_EMPLOYE) return;
@@ -6580,6 +6581,10 @@ async function chargerInterfaceEmploye() {
 async function associerEmployeEquipe(equipeId) {
   if (!currentUser) return;
   try {
+    // Sauvegarder dans localStorage pour les visites futures
+    localStorage.setItem('nexus_mode_employe', 'true');
+    localStorage.setItem('nexus_equipe_id', equipeId);
+
     // Vérifier si déjà membre actif avec son vrai user_id
     const { data: existant } = await supabaseClient.from('equipe_membres').select('id,statut')
       .eq('equipe_id', equipeId).eq('user_id', currentUser.id).single();
@@ -10120,6 +10125,9 @@ async function sauvegarderProfilSupabase() {
 }
 
 async function deconnexion() {
+  // Effacer le mode employé du localStorage
+  localStorage.removeItem('nexus_mode_employe');
+  localStorage.removeItem('nexus_equipe_id');
   await supabaseClient.auth.signOut();
   currentUser = null;
   conversationHistory = [];
@@ -10130,10 +10138,32 @@ async function verifierSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
-    // Sauvegarder les params URL avant que Supabase les efface
+
+    // Récupérer les params URL + sessionStorage + localStorage
     const params = new URLSearchParams(window.location.search);
-    const modeEmploye = params.get('mode') === 'employe' || MODE_EMPLOYE;
-    const equipeId = params.get('equipe') || EQUIPE_ID_URL;
+    let modeEmploye = params.get('mode') === 'employe' || MODE_EMPLOYE;
+    let equipeId = params.get('equipe') || EQUIPE_ID_URL;
+
+    // Si pas de paramètres — vérifier dans Supabase si c'est un employé
+    if (!modeEmploye) {
+      try {
+        const { data: membre } = await supabaseClient
+          .from('equipe_membres')
+          .select('equipe_id, role, statut')
+          .eq('user_id', currentUser.id)
+          .eq('role', 'employe')
+          .eq('statut', 'actif')
+          .single();
+
+        if (membre) {
+          modeEmploye = true;
+          equipeId = membre.equipe_id;
+          // Sauvegarder pour les prochaines visites
+          localStorage.setItem('nexus_mode_employe', 'true');
+          localStorage.setItem('nexus_equipe_id', membre.equipe_id);
+        }
+      } catch(e) { /* Pas employé */ }
+    }
 
     // Si mode employé — bloquer le paywall immédiatement
     if (modeEmploye) {
@@ -10156,7 +10186,6 @@ async function verifierSession() {
     afficherBoutonAdmin();
 
     if (modeEmploye) {
-      // S'assurer que la classe est bien appliquée
       app.classList.add('employe-mode');
       if (equipeId) await associerEmployeEquipe(equipeId);
       await chargerInterfaceEmploye();
@@ -10175,8 +10204,7 @@ async function verifierSession() {
       setTimeout(() => { try { chargerNotifications(); demarrerEcouteNotifications(); } catch(e) {} }, 2000);
     }
   } else {
-    // Pas de session — afficher la page de connexion
-    // Sauvegarder les params dans sessionStorage pour les retrouver après connexion
+    // Pas de session — sauvegarder les params pour après connexion
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'employe') {
       sessionStorage.setItem('nexus_mode', 'employe');
