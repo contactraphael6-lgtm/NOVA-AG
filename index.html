@@ -3728,13 +3728,15 @@ let notifInterval = null;
 let dernierNbCommandes = 0;
 
 async function activerNotifications() {
-  if (!('Notification' in window)) { return; }
-  const perm = await Notification.requestPermission();
-  if (perm === 'granted') {
-    MEM.save('notifs', true);
-    demarrerSurveillanceShopify();
-    addNovaMessage('🔔 Notifications activées ! Je vous avertirai quand une nouvelle commande Shopify arrive.');
-  }
+  try {
+    if (!('Notification' in window)) { return; }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      MEM.save('notifs', true);
+      demarrerSurveillanceShopify();
+      addNovaMessage('🔔 Notifications activées ! Je vous avertirai quand une nouvelle commande Shopify arrive.');
+    }
+  } catch(e) { console.log('Erreur activerNotifications:', e); }
 }
 
 function demarrerSurveillanceShopify() {
@@ -4964,77 +4966,58 @@ function fermerDash() {
 }
 
 async function actualiserDash() {
-  // Greeting
-  const prefs = MEM.load('prefs', {});
-  const maintenant = new Date();
-  const heure = maintenant.getHours();
-  const prenomStr = prefs.nom ? prefs.nom.split(' ')[0] : '';
-  let salut = 'Bonjour';
-  if (heure >= 12 && heure < 18) salut = 'Bon après-midi';
-  else if (heure >= 18) salut = 'Bonsoir';
+  try {
+    // Greeting
+    const prefs = MEM.load('prefs', {});
+    const maintenant = new Date();
+    const heure = maintenant.getHours();
+    const prenomStr = prefs.nom ? prefs.nom.split(' ')[0] : '';
+    let salut = 'Bonjour';
+    if (heure >= 12 && heure < 18) salut = 'Bon après-midi';
+    else if (heure >= 18) salut = 'Bonsoir';
 
-  const bonjour = document.getElementById('dash-bonjour');
-  const dateLabel = document.getElementById('dash-date-label');
-  if (bonjour) bonjour.textContent = `${salut}${prenomStr ? ' ' + prenomStr : ''} !`;
-  if (dateLabel) dateLabel.textContent = maintenant.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const bonjour = document.getElementById('dash-bonjour');
+    const dateLabel = document.getElementById('dash-date-label');
+    if (bonjour) bonjour.textContent = `${salut}${prenomStr ? ' ' + prenomStr : ''} !`;
+    if (dateLabel) dateLabel.textContent = maintenant.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Données
-  const sh = await getDashShopify();
-  const fa = getDashFactures();
-  const rdvs = getDashRDVNexus();
-  const taches = MEM.load('taches', []);
-  const aujourdhui = maintenant.toISOString().split('T')[0];
-  const tachesAujourdHui = taches.filter(t => t.date === aujourdhui && !t.completee);
+    const sh = await getDashShopify();
+    const fa = getDashFactures();
+    const rdvs = getDashRDVNexus();
+    const taches = MEM.load('taches', []);
+    const aujourdhui = maintenant.toISOString().split('T')[0];
+    const tachesAujourdHui = taches.filter(t => t.date === aujourdhui && !t.completee);
 
-  // Bannière IA
-  genererMessageIA(sh, fa, rdvs, tachesAujourdHui);
-
-  // Métriques
-  renderMetriques(sh, fa);
-
-  // Sections
-  renderSections(sh, fa, rdvs);
-
-  // Graphique
-  renderGraphique(sh);
-
-  // Actions rapides
-  renderActionsRapides();
+    genererMessageIA(sh, fa, rdvs, tachesAujourdHui);
+    renderMetriques(sh, fa);
+    renderSections(sh, fa, rdvs);
+    renderGraphique(sh);
+    renderActionsRapides();
+  } catch(e) { console.log('Erreur actualiserDash:', e); }
 }
 
 async function genererMessageIA(sh, fa, rdvs, taches) {
-  const parties = [];
-  const factures = MEM.load('factures', []);
-  const enRetard = factures.filter(f => {
-    if (f.statut === 'payee') return false;
-    const jours = Math.floor((new Date() - new Date(f.createdAt || f.date)) / (1000 * 60 * 60 * 24));
-    return jours >= 30;
-  });
-
-  if (sh?.orders?.length > 0) {
-    const ventes = sh.orders.reduce((t, o) => t + parseFloat(o.total_price || 0), 0);
-    parties.push(`💰 <strong>${sh.orders.length} commande${sh.orders.length > 1 ? 's' : ''}</strong> Shopify pour <strong>${ventes.toFixed(0)}$</strong> ce mois`);
-  }
-  if (enRetard.length > 0) {
-    const total = enRetard.reduce((t, f) => t + (f.total || 0), 0);
-    parties.push(`🧾 <strong>${enRetard.length} facture${enRetard.length > 1 ? 's' : ''} en retard</strong> — <strong>${total.toFixed(0)}$</strong> à récupérer`);
-  }
-  if (rdvs.length > 0) {
-    parties.push(`📅 <strong>${rdvs.length} RDV</strong> à venir cette semaine`);
-  }
-  if (taches.length > 0) {
-    parties.push(`✅ <strong>${taches.length} tâche${taches.length > 1 ? 's' : ''}</strong> à compléter aujourd'hui`);
-  }
-
-  const msg = document.getElementById('dash-ai-message');
-  if (!msg) return;
-
-  if (parties.length === 0) {
-    msg.innerHTML = `Tout est calme aujourd'hui — profites-en pour planifier ta semaine ! <button onclick="sendMessageFromDash('Donne-moi des conseils pour développer mon business')" style="background:none;border:none;color:rgba(68,136,255,0.8);cursor:pointer;font-size:12px;text-decoration:underline">Des conseils ?</button>`;
-    return;
-  }
-
-  msg.innerHTML = parties.join(' · ') + (enRetard.length > 0 ? ` <button onclick="sendMessageFromDash(\'Envoie les relances pour les ${enRetard.length} factures en retard\')" style="background:none;border:none;color:rgba(68,136,255,0.8);cursor:pointer;font-size:12px;text-decoration:underline;margin-left:6px">Envoyer les relances →</button>` : '');
+  try {
+    const parties = [];
+    const factures = MEM.load('factures', []);
+    const enRetard = factures.filter(f => {
+      if (f.statut === 'payee') return false;
+      return Math.floor((new Date() - new Date(f.createdAt || f.date)) / 86400000) >= 30;
+    });
+    if (sh?.orders?.length > 0) {
+      const ventes = sh.orders.reduce((t, o) => t + parseFloat(o.total_price || 0), 0);
+      parties.push('Shopify: <strong>' + sh.orders.length + ' commande(s)</strong> — <strong>' + ventes.toFixed(0) + '$</strong>');
+    }
+    if (enRetard.length > 0) {
+      const total = enRetard.reduce((t, f) => t + (f.total || 0), 0);
+      parties.push('<strong>' + enRetard.length + ' facture(s) en retard</strong> — ' + total.toFixed(0) + '$');
+    }
+    if (rdvs.length > 0) parties.push('<strong>' + rdvs.length + ' RDV</strong> cette semaine');
+    if (taches.length > 0) parties.push('<strong>' + taches.length + ' tache(s)</strong> a faire');
+    const msg = document.getElementById('dash-ai-message');
+    if (!msg) return;
+    msg.innerHTML = parties.length === 0 ? "Tout est calme aujourd'hui — bonne journee !" : parties.join(' · ');
+  } catch(e) { console.log('Erreur genererMessageIA:', e); }
 }
 
 function sendMessageFromDash(msg) {
