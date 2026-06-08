@@ -2230,7 +2230,7 @@ src="https://www.facebook.com/tr?id=974589822045618&ev=PageView&noscript=1"/></n
     <div style="font-size:11px;color:rgba(68,136,255,0.7);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px">Nexus AI Pro</div>
     <div id="paywall-feature-msg" style="display:none;font-size:13px;color:rgba(255,180,100,0.9);background:rgba(255,150,50,0.08);border:1px solid rgba(255,150,50,0.2);border-radius:8px;padding:8px 14px;margin-bottom:14px"></div>
     <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#e8e6f0;margin-bottom:10px">Débloquez toutes les fonctionnalités</h2>
-    <p style="font-size:14px;color:rgba(150,180,255,0.7);line-height:1.7;margin-bottom:28px">7 jours d'essai gratuit, puis 44,99$/mois.<br>Annulez à tout moment.</p>
+    <p style="font-size:14px;color:rgba(150,180,255,0.7);line-height:1.7;margin-bottom:28px">7 jours d'essai gratuit, puis 99,99$/mois.<br>Annulez à tout moment.</p>
 
     <!-- Features -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;text-align:left">
@@ -2244,7 +2244,7 @@ src="https://www.facebook.com/tr?id=974589822045618&ev=PageView&noscript=1"/></n
 
     <!-- Prix -->
     <div style="background:rgba(68,136,255,0.06);border:1px solid rgba(68,136,255,0.15);border-radius:14px;padding:20px;margin-bottom:20px">
-      <div style="font-family:'Orbitron',monospace;font-size:38px;font-weight:700;background:linear-gradient(135deg,#e8c98a,#fff8e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">44,99$<span style="font-size:18px;font-family:'DM Sans',sans-serif;font-weight:400;opacity:0.6">/mois</span></div>
+      <div style="font-family:'Orbitron',monospace;font-size:38px;font-weight:700;background:linear-gradient(135deg,#e8c98a,#fff8e0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">99,99$<span style="font-size:18px;font-family:'DM Sans',sans-serif;font-weight:400;opacity:0.6">/mois</span></div>
       <div style="font-size:12px;color:rgba(150,200,255,0.6);margin-top:4px">✓ 7 jours gratuits · Aucune carte requise pour l'essai</div>
     </div>
 
@@ -9884,7 +9884,7 @@ async function chargerStatsAdmin() {
     // Abonnés Pro (vérifier dans Supabase)
     const { data: proUsers } = await supabaseClient.from('profiles').select('*').eq('plan', 'pro');
     const nbPro = proUsers?.length || 0;
-    const mrr = (nbPro * 44.99).toFixed(2);
+    const mrr = (nbPro * 99.99).toFixed(2);
 
     document.getElementById('as-total').textContent = total;
     document.getElementById('as-pro').textContent = nbPro;
@@ -10050,7 +10050,7 @@ async function verifierAbonnement() {
 
     // Track Facebook Pixel — achat abonnement
     if (abonnementActif && typeof fbq !== 'undefined') {
-      fbq('track', 'Purchase', { value: 100.00, currency: 'CAD', content_name: 'Nexus AI Pro' });
+      fbq('track', 'Purchase', { value: 99.99, currency: 'CAD', content_name: 'Nexus AI Pro' });
     }
 
     // 2. Si pas Stripe, vérifier accès gratuit dans Supabase
@@ -10120,7 +10120,7 @@ async function demarrerPaiement() {
     else throw new Error('URL manquante');
   } catch(e) {
     alert('Erreur lors du paiement : ' + e.message);
-    document.getElementById('stripe-btn').textContent = '🚀 S\'abonner — 44,99$/mois';
+    document.getElementById('stripe-btn').textContent = '🚀 S\'abonner — 99,99$/mois';
   }
 }
 
