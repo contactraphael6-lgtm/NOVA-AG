@@ -4295,6 +4295,9 @@ async function ajouterFinance(type) {
   const montant = parseFloat(montantEl.value);
   if (!montant || montant <= 0) { statusEl.textContent = '⚠️ Entre un montant valide.'; statusEl.style.color = '#ff6060'; return; }
 
+  const categorie = catEl?.value?.trim() || (type === 'entree' ? 'Vente' : 'Autre dépense');
+  if (!categorie) { statusEl.textContent = '⚠️ Choisis une catégorie.'; statusEl.style.color = '#ff6060'; return; }
+
   statusEl.textContent = '⏳ Sauvegarde...'; statusEl.style.color = 'var(--muted)';
 
   try {
@@ -4302,7 +4305,7 @@ async function ajouterFinance(type) {
       user_id: currentUser.id,
       type,
       montant,
-      categorie: catEl.value,
+      categorie,
       description: descEl.value.trim(),
       date: dateEl.value || new Date().toISOString().split('T')[0],
       source: 'manuel'
@@ -4585,11 +4588,23 @@ async function chargerHistoriqueTaxes() {
 
 async function marquerRemisePayee() {
   if (!currentUser) return;
-  // Forcer le recalcul avant de marquer — s'assurer que les données sont à jour
   calculerTaxes();
   if (!window._taxesData) return;
   const { label, tpsTotal, tvqTotal } = window._taxesData;
   try {
+    // Vérifier si déjà remis pour cette période
+    const { data: existante } = await supabaseClient
+      .from('remises_taxes').select('id')
+      .eq('user_id', currentUser.id)
+      .eq('periode', label)
+      .eq('statut', 'remis')
+      .maybeSingle();
+
+    if (existante) {
+      addNovaMessage(`⚠️ La période **${label}** a déjà été marquée comme remise !`);
+      return;
+    }
+
     await supabaseClient.from('remises_taxes').insert({
       user_id: currentUser.id,
       periode: label,
