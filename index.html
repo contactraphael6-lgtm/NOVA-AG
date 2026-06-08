@@ -3156,12 +3156,22 @@
         <textarea class="facture-input" id="f-notes" rows="2" placeholder="Ex: Paiement dû dans 30 jours. Merci pour votre confiance !"></textarea>
       </div>
 
+      <!-- Toggle Stripe -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-top:4px">
+        <div>
+          <div style="font-size:13px;color:var(--text);font-weight:500">💳 Inclure le lien de paiement Stripe</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="stripe-toggle-label">Activé — lien inclus dans le PDF et l'email</div>
+        </div>
+        <div onclick="toggleStripeInFacture()" id="stripe-toggle-btn" style="width:44px;height:24px;border-radius:12px;background:rgba(78,200,122,0.8);cursor:pointer;position:relative;transition:all 0.2s;flex-shrink:0">
+          <div id="stripe-toggle-dot" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+        </div>
+      </div>
+
     </div>
     <div class="facture-actions">
       <button class="btn-ghost" onclick="toggleFacturePanel()">Annuler</button>
       <button class="btn-primary" onclick="genererFactureExcel()" style="flex:0;padding:10px 18px;white-space:nowrap">📊 Excel</button>
       <button class="btn-primary" onclick="envoyerFactureEmail()" style="flex:0;padding:10px 18px;white-space:nowrap;background:rgba(0,120,255,0.8)">📧 Email</button>
-      <button class="btn-primary" onclick="genererLienStripe()" style="flex:0;padding:10px 18px;white-space:nowrap;background:rgba(78,200,122,0.8)">💳 Lien paiement</button>
       <button class="btn-primary" onclick="genererFacturePDF()" style="flex:1;background:var(--accent2)">🧾 PDF</button>
     </div>
   </div>
@@ -3767,6 +3777,23 @@ function demarrerSurveillanceShopify() {
 // =====================
 // ENVOI FACTURE PAR EMAIL
 // =====================
+// =====================
+// TOGGLE STRIPE DANS FACTURES
+// =====================
+let stripeInFacture = true; // Activé par défaut
+
+function toggleStripeInFacture() {
+  stripeInFacture = !stripeInFacture;
+  const btn = document.getElementById('stripe-toggle-btn');
+  const dot = document.getElementById('stripe-toggle-dot');
+  const label = document.getElementById('stripe-toggle-label');
+  if (btn) btn.style.background = stripeInFacture ? 'rgba(78,200,122,0.8)' : 'rgba(100,100,100,0.3)';
+  if (dot) dot.style.right = stripeInFacture ? '2px' : 'auto', dot.style.left = stripeInFacture ? 'auto' : '2px';
+  if (label) label.textContent = stripeInFacture
+    ? 'Activé — lien inclus dans le PDF et l\'email'
+    : 'Désactivé — facture sans lien de paiement';
+}
+
 async function envoyerFactureEmail() {
   const config = MEM.load('smtp_config');
   if (!config) {
@@ -3783,7 +3810,27 @@ async function envoyerFactureEmail() {
   const d = getFactureData();
   if (d.items.length === 0) { alert('Ajoutez au moins un article.'); return; }
 
-  // Générer le contenu email
+  // Générer le lien Stripe si toggle activé
+  let lienPaiement = null;
+  if (stripeInFacture && clientStripeConfig?.stripe_sk_encrypted) {
+    try {
+      const res = await fetch(STRIPE_WORKER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_payment_link',
+          stripe_sk: clientStripeConfig.stripe_sk_encrypted,
+          montant: d.total,
+          description: `Facture ${d.numero}`,
+          client_nom: d.client,
+          facture_numero: d.numero
+        })
+      });
+      const data = await res.json();
+      if (data.url) lienPaiement = data.url;
+    } catch(e) { /* Continuer sans lien */ }
+  }
+
   const TPS_RATE = 5, TVQ_RATE = 9.975;
   const sujet = `Facture ${d.numero} — ${d.entreprise || 'Nexus AI'}`;
   const corps = `Bonjour ${client},
@@ -3802,8 +3849,7 @@ TPS (${TPS_RATE}%) : ${fmtNum(d.totalTPS)}$
 TVQ (${TVQ_RATE}%) : ${fmtNum(d.totalTVQ)}$
 TOTAL DÛ : ${fmtNum(d.total)}$
 
-${d.notes ? 'Notes : ' + d.notes : ''}
-
+${d.notes ? 'Notes : ' + d.notes + '\n' : ''}${lienPaiement ? `\n💳 PAYER EN LIGNE : ${lienPaiement}\n` : ''}
 Merci pour votre confiance !
 ${d.entreprise || ''}
 ${d.contact || ''}`;
@@ -3813,9 +3859,9 @@ ${d.contact || ''}`;
     if (success) {
       sauvegarderEntreprise();
       sauvegarderClient(d.client, d.clientEntreprise, d.clientAdresse, d.clientEmail);
-      sauvegarderFacture(d);
+      sauvegarderFacture({ ...d, lienStripe: lienPaiement });
       toggleFacturePanel();
-      addNovaMessage(`✅ Facture **${d.numero}** envoyée par email à **${clientEmail}** — Total : **${fmtNum(d.total)} $**`);
+      addNovaMessage(`✅ Facture **${d.numero}** envoyée à **${clientEmail}**${lienPaiement ? ' avec lien de paiement Stripe 💳' : ''}`);
     } else {
       alert('Erreur lors de l\'envoi. Vérifiez votre configuration email dans le menu ☰ → Email.');
     }
