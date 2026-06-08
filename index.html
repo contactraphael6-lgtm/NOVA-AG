@@ -2443,6 +2443,10 @@
               <label class="compose-label">Date limite</label>
               <input class="compose-input" id="et-date" type="date" />
             </div>
+            <div class="compose-field">
+              <label class="compose-label">Heure précise</label>
+              <input class="compose-input" id="et-heure" type="time" placeholder="Ex: 14:30" />
+            </div>
           </div>
           <div class="compose-field" style="margin-bottom:10px">
             <label class="compose-label">Notes (optionnel)</label>
@@ -6731,6 +6735,7 @@ async function chargerTachesEmployeV2() {
               <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
                 ${estAssignee ? '<span style="font-size:10px;background:rgba(68,136,255,0.1);color:var(--accent-blue);padding:1px 6px;border-radius:6px">Assignée</span>' : ''}
                 ${t.priorite === 'haute' ? '<span style="font-size:10px;color:#e05c5c">🔴 Urgent</span>' : t.priorite === 'basse' ? '<span style="font-size:10px;color:var(--muted)">⚪ Basse</span>' : ''}
+                ${t.heure ? `<span style="font-size:11px;color:var(--accent-blue);font-weight:500">🕐 ${t.heure}</span>` : ''}
                 ${t.notes ? `<span style="font-size:11px;color:var(--muted);font-style:italic">${escapeHtml(t.notes)}</span>` : ''}
               </div>
             </div>
@@ -7394,6 +7399,7 @@ async function assignerTacheEquipe() {
   const assigneA = document.getElementById('et-assigne-a').value;
   const priorite = document.getElementById('et-priorite').value;
   const date = document.getElementById('et-date').value;
+  const heure = document.getElementById('et-heure')?.value || '';
   const notes = document.getElementById('et-notes').value.trim();
   const status = document.getElementById('et-status');
 
@@ -7407,7 +7413,7 @@ async function assignerTacheEquipe() {
       equipe_id: equipeData.id,
       assigne_par: currentUser.id,
       assigne_a: assigneA,
-      texte, priorite, notes,
+      texte, priorite, notes, heure,
       date: date || new Date().toISOString().split('T')[0],
       statut: 'a_faire',
       completee: false
@@ -7416,10 +7422,13 @@ async function assignerTacheEquipe() {
     status.textContent = '✅ Tâche assignée !';
     document.getElementById('et-texte').value = '';
     document.getElementById('et-notes').value = '';
+    const heureEl = document.getElementById('et-heure');
+    if (heureEl) heureEl.value = '';
     chargerTachesEquipe();
 
     const membre = membresCached.find(m => (m.user_id || m.id) === assigneA);
-    addNovaMessage(`✅ Tâche **"${texte}"** assignée à **${membre?.nom || 'l\'employé'}** !`);
+    const heureStr = heure ? ` à **${heure}**` : '';
+    addNovaMessage(`✅ Tâche **"${texte}"** assignée à **${membre?.nom || 'l\'employé'}**${heureStr} !`);
     setTimeout(() => status.textContent = '', 3000);
   } catch(e) {
     status.textContent = 'Erreur: ' + e.message;
@@ -7470,7 +7479,7 @@ function renderTachesEquipe(taches) {
               <div style="width:20px;height:20px;border-radius:50%;background:rgba(68,136,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--accent-blue)">${initiale}</div>
               <span style="font-size:11px;color:var(--muted)">${escapeHtml(nomMembre)}</span>
             </div>
-            ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}</span>` : ''}
+            ${t.date ? `<span style="font-size:11px;color:var(--muted)">📅 ${t.date}${t.heure ? ' à ' + t.heure : ''}</span>` : ''}
             <span style="font-size:11px;color:${prioriteColors[t.priorite]||'var(--muted)'}">${t.priorite === 'haute' ? '🔴 Haute' : t.priorite === 'basse' ? '⚪ Basse' : '🔵 Normale'}</span>
             ${t.notes ? `<span style="font-size:11px;color:var(--muted)">${escapeHtml(t.notes)}</span>` : ''}
           </div>
