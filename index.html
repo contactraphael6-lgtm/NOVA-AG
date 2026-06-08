@@ -7953,8 +7953,11 @@ async function genererLienStripe() {
     if (data.url) {
       sauvegarderFacture({ ...d, lienStripe: data.url });
       navigator.clipboard.writeText(data.url).catch(() => {});
-      addNovaMessage(`💳 **Lien de paiement créé !**\n\n**${d.numero}** — ${d.client} — **${d.total.toFixed(2)} $CA**\n\n🔗 ${data.url}\n\n*Lien copié dans le presse-papier ! Envoie-le par email, SMS ou WhatsApp.*`);
-      window.open(data.url, '_blank');
+
+      // Afficher le lien sans l'ouvrir — c'est le CLIENT qui doit payer
+      addNovaMessage(`💳 **Lien de paiement créé !**\n\n**${d.numero}** — ${d.client} — **${d.total.toFixed(2)} $CA**\n\n🔗 ${data.url}\n\n*Lien copié ! Envoie-le à **${d.client}** par email, SMS ou WhatsApp pour qu'il paie.*`);
+
+      // Proposer d'envoyer par email directement
       toggleFacturePanel();
     } else {
       throw new Error(data.error || 'Erreur création lien');
