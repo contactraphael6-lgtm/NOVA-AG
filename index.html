@@ -9622,6 +9622,17 @@ async function afficherMiniDashboard() {
   const facturesMois = factures.filter(f => new Date(f.createdAt || f.date) >= debut);
   const nonPayees = factures.filter(f => f.statut !== 'payee').length;
   const revFactures = facturesMois.reduce((t, f) => t + (f.total || 0), 0);
+
+  // Ajouter les revenus Shopify si connecté
+  let revShopify = 0;
+  if (shopifyConfig && financesData?.length) {
+    const debutStr = debut.toISOString().split('T')[0];
+    revShopify = financesData
+      .filter(f => f.type === 'entree' && f.categorie === 'Shopify' && f.date >= debutStr)
+      .reduce((t, f) => t + parseFloat(f.montant || 0), 0);
+  }
+  const revTotal = revFactures + revShopify;
+
   const taches = MEM.load('taches', []);
   const aujourdhui = maintenant.toISOString().split('T')[0];
   const tachesAuj = taches.filter(t => t.date === aujourdhui && !t.completee).length;
@@ -9634,7 +9645,7 @@ async function afficherMiniDashboard() {
   const metricsEl = document.getElementById('mini-dash-metrics');
   if (metricsEl) {
     metricsEl.innerHTML = [
-      { icon: '💰', val: revFactures.toFixed(0) + '$', label: 'Revenus mois' },
+      { icon: '💰', val: revTotal.toFixed(0) + '$', label: revShopify > 0 ? 'Revenus (fact.+Shopify)' : 'Revenus mois' },
       { icon: '🧾', val: nonPayees.toString(), label: 'Non payées', alert: nonPayees > 0 },
       { icon: '📅', val: rdvsAuj.toString(), label: "RDV aujourd'hui" },
       { icon: '✅', val: tachesAuj.toString(), label: 'Tâches restantes', alert: tachesAuj > 0 },
