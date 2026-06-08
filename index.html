@@ -1919,6 +1919,21 @@
   .voice-setup-modal p { font-size: 13px; color: var(--muted2); line-height: 1.7; margin-bottom: 16px; }
 
 </style>
+
+<!-- Facebook Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '974589822045618');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=974589822045618&ev=PageView&noscript=1"/></noscript>
+<!-- Fin Facebook Pixel -->
+
 </head>
 <body>
 
@@ -9541,6 +9556,8 @@ async function inscription() {
 
 async function onConnected() {
   try {
+    // Track Facebook Pixel — CompleteRegistration
+    if (typeof fbq !== 'undefined') fbq('track', 'CompleteRegistration');
     // Récupérer les params sauvegardés si Supabase a effacé l'URL
     const savedMode = sessionStorage.getItem('nexus_mode');
     const savedEquipe = sessionStorage.getItem('nexus_equipe');
@@ -10030,6 +10047,11 @@ async function verifierAbonnement() {
     const data = await res.json();
     abonnementActif = data.active || false;
     stripeCustomerId = data.customer_id || null;
+
+    // Track Facebook Pixel — achat abonnement
+    if (abonnementActif && typeof fbq !== 'undefined') {
+      fbq('track', 'Purchase', { value: 100.00, currency: 'CAD', content_name: 'Nexus AI Pro' });
+    }
 
     // 2. Si pas Stripe, vérifier accès gratuit dans Supabase
     if (!abonnementActif) {
